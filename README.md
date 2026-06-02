@@ -19,3 +19,29 @@
 
 ```bash
 git clone https://github.com/yangdada863/aimy-sikll.git && cd aimy-sikll && pip install -r requirements.txt
+
+# aimy-sikll 功能清单
+
+## 📋 概览
+
+| 模块 | 功能 | 输入 | 输出 |
+|:---|:---|:---|:---|
+| **端口扫描** | TCP 端口存活探测 | IP / 域名 | JSON 开放端口列表 |
+| **目录枚举** | Web 路径模糊测试 | URL + 字典 | 可访问路径 + HTTP 状态码 |
+| **SQL 注入检测** | 错误型 / 时间型漏洞探测 | URL + 参数名 | 脆弱点 + Payload + 漏洞类型 |
+
+---
+
+## 🔍 端口扫描 (Port Scanner)
+
+- **默认扫描端口**  
+  `21, 22, 23, 25, 80, 443, 445, 8080, 8443, 3306, 3389, 5432, 6379, 27017`
+
+- **特性**
+  - 支持自定义端口列表
+  - 超时可调（默认 2 秒）
+  - 非阻塞并发探测
+
+- **输出示例**
+  ```json
+  {"target": "scanme.nmap.org", "open_ports": [22, 80, 9929]}

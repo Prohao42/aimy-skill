@@ -29,7 +29,7 @@ test,-1+1
 test,@SUM(1+1)
 ```
 
-**中文路由提示**：导出 CSV、后台报表、用户资料进表格时优先测这些前缀字符。
+**Routing note**: when testing CSV exports, back-office reports, or user data opened in spreadsheets, prioritize these prefix characters.
 
 ---
 
@@ -120,7 +120,7 @@ Document which function executed and what network side effects occurred.
 4. **Open in target software** — Match victim workflow: Excel desktop, LibreOffice, Google Sheets import, locale-specific decimal separators.
 5. **Evidence** — Screenshot/capture whether the cell shows a calculated result, a security warning, or DDE prompt; note product version.
 
-**中文**：重点找「用户输入 → 导出 → 用表格软件打开」的链路。
+**Note**: focus on the `user input -> export -> opened in spreadsheet software` chain.
 
 ---
 
@@ -141,4 +141,4 @@ Input:  =1+1
 Output: '=1+1   OR   \t=1+1   OR   (empty prefix) with escaped quotes per RFC 4180
 ```
 
-**中文**：与业务导出、报表、API 导出参数联动分析时可结合 injection、business-logic、API 安全相关技能。
+**Note**: when correlating business exports, reports, and API export parameters, combine with injection, business-logic, and API-security skills.

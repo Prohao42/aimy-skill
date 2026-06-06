@@ -8,13 +8,13 @@ description: >-
 
 # Business Logic Router
 
-这是业务逻辑和状态机问题的分类入口。
+This is the routing entry point for business-logic and state-machine issues.
 
 ## When to Use
 
-- 目标涉及优惠券、库存、支付、审批、配额、邀请、试用或状态流转
-- 问题不在解析器，而在“什么时候检查”和“检查了什么业务条件”
-- 你怀疑是竞态、流程绕过、价格篡改、负值、叠加优惠或多步骤缺陷
+- The target involves coupons, inventory, payment, approvals, quotas, invites, trials, or state transitions
+- The issue is not parser-level; it is about when checks happen and which business conditions are checked
+- You suspect race conditions, workflow bypass, price tampering, negative values, stacked discounts, or multi-step flaws
 
 ## Skill Map
 
@@ -22,9 +22,9 @@ description: >-
 
 ## Recommended Flow
 
-1. 先画出关键业务状态和一次性动作
-2. 再判断是否存在 check-then-act 窗口、顺序依赖或跨步骤授权缺失
-3. 若业务链路依赖 API、上传或对象权限，再回到对应分类 skill 补链路
+1. First map key business states and one-time actions
+2. Then check for check-then-act windows, sequence dependencies, or missing cross-step authorization
+3. If the chain depends on APIs, uploads, or object permissions, return to the corresponding router skill to complete the path
 
 ## Related Categories
 

@@ -23,7 +23,7 @@ High-value paths to probe first (GET or HEAD, respect rate limits):
 /.env
 ```
 
-**中文路由提示**：快速扫这些路径；若需完整侦察流程，从 `recon-for-sec`、`recon-and-methodology` 技能载入方法论后再深入。
+**Routing note**: quickly probe these paths first; for full recon workflow, load methodology from `recon-for-sec` and `recon-and-methodology` before deeper testing.
 
 ---
 
@@ -158,4 +158,4 @@ Probe (adjust for app root and naming conventions):
 - From **[recon-for-sec](../recon-for-sec/SKILL.md)** — scope-safe discovery, crawling, and fingerprinting before deep VCS tests.
 - From **[recon-and-methodology](../recon-and-methodology/SKILL.md)** — structured methodology and evidence handling.
 
-**中文**：与侦察类技能联动——先定范围与速率，再针对 VCS/备份做定向验证。
+**Note**: coordinate with recon skills—set scope and request rate first, then run targeted VCS/backup validation.

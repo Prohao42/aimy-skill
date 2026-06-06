@@ -8,24 +8,24 @@ description: >-
 
 # File Access Router
 
-这是文件系统、下载接口、上传链路与文件预览处理的分类入口。
+This is the routing entry point for filesystem paths, download endpoints, upload pipelines, and file preview handling.
 
 ## When to Use
 
-- 参数、文件名、下载接口或导入流程会影响文件路径
-- 目标支持上传、预览、转码、解压、分享、下载或代理文件访问
-- 你需要判断当前更偏向路径穿越、LFI，还是上传验证与处理链问题
+- Parameters, filenames, download endpoints, or import flows influence file paths
+- The target supports upload, preview, transcoding, extraction, sharing, download, or proxied file access
+- You need to decide whether this is path traversal/LFI or an upload-validation/processing-chain issue
 
 ## Skill Map
 
-- [Path Traversal LFI](../path-traversal-lfi/SKILL.md): 路径穿越、文件读取、wrapper、包含链
-- [Upload Insecure Files](../upload-insecure-files/SKILL.md): 上传校验、存储路径、处理链、覆盖、预览与分享边界
+- [Path Traversal LFI](../path-traversal-lfi/SKILL.md): path traversal, file read, wrapper abuse, include chains
+- [Upload Insecure Files](../upload-insecure-files/SKILL.md): upload validation, storage paths, processing chains, overwrite risk, preview/share boundaries
 
 ## Recommended Flow
 
-1. 先看入口是路径参数、下载接口还是上传流程
-2. 再看问题出现在 accept、store、process、serve 哪一段
-3. 小样本路径链和上传绕过样本已经并入主专题 skill，不再单独走 payload 入口
+1. First identify whether the entry point is a path parameter, download endpoint, or upload workflow
+2. Then locate whether the issue appears in accept, store, process, or serve stages
+3. Small path-chain and upload-bypass samples are merged into the main topic skills; no separate payload entry is needed
 
 ## Related Categories
 

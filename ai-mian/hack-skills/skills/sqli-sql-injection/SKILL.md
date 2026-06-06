@@ -8,7 +8,11 @@ description: >-
 
 > **AI LOAD INSTRUCTION**: Advanced SQLi techniques. Assumes basic UNION/error/boolean-blind fundamentals known. Focuses on: per-database exploitation, out-of-band exfiltration, second-order injection, parameterized query bypass scenarios, filter evasion, and escalation to OS. For real-world CVE cases, SMB/DNS OOB exfiltration, INSERT/UPDATE injection patterns, and framework-specific exploitation (ThinkPHP, Django GIS), load the companion [SCENARIOS.md](./SCENARIOS.md).
 
-## 0. QUICK START
+## 0. RELATED ROUTING
+
+- [ghost-bits-cast-attack](../ghost-bits-cast-attack/SKILL.md) when the backend is **Java with Jackson** and your SQL keywords are WAF-blocked — Jackson's `charToHex` table is indexed by `ch & 0xFF`, so a Unicode character like `丰` (U+4E30) resolves to hex digit `0` inside a `\uXXXX` escape sequence, letting you smuggle `UNION`, `SELECT`, `1`, etc. without the WAF ever seeing them
+
+## 1. QUICK START
 
 ### Extended Scenarios
 
@@ -20,7 +24,17 @@ Also load [SCENARIOS.md](./SCENARIOS.md) when you need:
 - Django GIS Oracle `utl_inaddr.get_host_name` CVE
 - ORDER BY / LIMIT injection techniques
 
-如果只是刚确认可疑 SQL sink，不要先加载额外的 payload skill，直接在这里完成第一轮验证。
+### Advanced Reference
+
+Also load [SQLMAP_ADVANCED.md](./SQLMAP_ADVANCED.md) when you need:
+- SQLMap tamper scripts matrix and WAF bypass tamper chain recipes (space2comment, between, charencode, etc.)
+- `--technique`, `--risk`/`--level` combinations and `--second-url` for second-order injection
+- `--os-shell` / `--os-pwn` OS-level exploitation via SQLMap
+- INSERT/UPDATE/DELETE injection patterns with data exfiltration examples
+- GraphQL + SQL injection (batched queries, nested field injection, mutation injection)
+- DB-specific advanced functions: PostgreSQL dollar-sign quoting, MSSQL linked servers, Oracle DBMS_PIPE/DBMS_SCHEDULER
+
+If you have only confirmed a suspicious SQL sink, do not load extra payload skills first; complete first-pass validation here.
 
 ### First-pass payload families
 

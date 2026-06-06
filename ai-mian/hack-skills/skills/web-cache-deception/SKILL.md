@@ -8,6 +8,17 @@ description: >-
 
 > **AI LOAD INSTRUCTION**: Web cache deception and poisoning techniques. Covers path confusion attacks, CDN cache behavior exploitation, cache key manipulation, and the distinction between cache deception (steal data) and cache poisoning (serve malicious content). Presented by Omer Gil at Black Hat 2017 and significantly expanded since.
 
+### Advanced Reference
+
+Also load [CACHE_POISONING_TECHNIQUES.md](./CACHE_POISONING_TECHNIQUES.md) when you need:
+- Web Cache Poisoning vs Web Cache Deception — clear distinction and attack flow comparison
+- Unkeyed header poisoning (X-Forwarded-Host, X-Forwarded-Scheme, X-Original-URL, multiple Host headers)
+- Unkeyed parameter poisoning (utm_content, fbclid, callback, reflected but not in cache key)
+- Fat GET cache poisoning (body parameters reflected but not keyed)
+- Parameter cloaking via semicolons and duplicate parameter parsing differentials
+- CDN-specific behavior: Cloudflare, CloudFront, Akamai, Varnish, Fastly (cache key composition, debug headers, ESI)
+- Vary header manipulation, cache partitioning attacks, and missing Vary vulnerabilities
+
 ## 1. CORE CONCEPTS
 
 ### Web Cache Deception (steal authenticated data)

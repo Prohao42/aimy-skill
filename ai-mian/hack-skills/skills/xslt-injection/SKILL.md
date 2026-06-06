@@ -6,7 +6,7 @@ description: >-
 
 # SKILL: XSLT Injection — Testing Playbook
 
-> **AI LOAD INSTRUCTION**: XSLT injection occurs when **attacker-influenced XSLT** is compiled/executed server-side. Map the **processor family** first (Java/.NET/PHP/libxslt). Then chain **document()**, **external entities**, **EXSLT**, or **embedded script/extension functions** per platform. **Authorized testing only**; many payloads are destructive. 中文路由：若输入为通用 XML 解析且未必走 XSLT，交叉加载 `xxe-xml-external-entity`；若关注 `document(http:…)` 出网，交叉加载 `ssrf-server-side-request-forgery`。
+> **AI LOAD INSTRUCTION**: XSLT injection occurs when **attacker-influenced XSLT** is compiled/executed server-side. Map the **processor family** first (Java/.NET/PHP/libxslt). Then chain **document()**, **external entities**, **EXSLT**, or **embedded script/extension functions** per platform. **Authorized testing only**; many payloads are destructive. Routing note: if input is generic XML parsing and may not flow through XSLT, cross-load `xxe-xml-external-entity`; if you care about outbound `document(http:...)` requests, cross-load `ssrf-server-side-request-forgery`.
 
 ---
 

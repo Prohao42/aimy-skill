@@ -333,7 +333,7 @@ cat subdomains.txt | nuclei -t exposures/ -t misconfiguration/ -o exposed.txt
 /actuator/configprops  → All configuration properties
 /actuator/mappings     → All URL mappings (hidden endpoints)
 /actuator/beans        → All Spring beans
-/actuator/shutdown     → POST to shutdown application (DoS)
+/actuator/threaddump   → Thread dump (may leak session tokens / secrets in stack frames)
 ```
 
 ---

@@ -32,7 +32,7 @@ Beyond GET/POST parameters, SQL injection may occur in less-tested locations:
 | HTTP headers | `X-Forwarded-For: 127.0.0.1' OR 1=1--` |
 | Cookie values | `session=abc' UNION SELECT...` |
 | Multipart filename | `filename="test' OR '1'='1.jpg"` |
-| ORDER BY from API sort param | `?sort=name; DROP TABLE--` |
+| ORDER BY from API sort param | `?sort=name;SELECT SLEEP(5)--` |
 
 ---
 
@@ -62,10 +62,10 @@ INPUT: admin', 'login'), ('attacker', (SELECT password FROM users LIMIT 1))--
 ### DELETE Statement Injection
 
 ```sql
--- Original: DELETE FROM cart WHERE item_id='INPUT' AND user_id=5;
--- Injection: 1' OR '1'='1
--- Result: DELETE FROM cart WHERE item_id='1' OR '1'='1' AND user_id=5;
--- Deletes all cart items (DoS / data destruction)
+-- Application's own statement (the injectable sink): DELETE FROM cart WHERE item_id='INPUT' AND user_id=5;
+-- Non-destructive proof: confirm injection with a time-based payload, not by widening the WHERE:
+-- Injection: 1' AND IF((SELECT 1),SLEEP(5),0)-- 
+-- Note: a boolean payload (e.g. 1' OR '1'='1) would match every row (DoS / data destruction) — do not run it against real data.
 ```
 
 ---

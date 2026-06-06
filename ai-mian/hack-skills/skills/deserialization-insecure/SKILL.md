@@ -12,6 +12,17 @@ description: >-
 
 - [jndi-injection](../jndi-injection/SKILL.md) when deserialization leads to JNDI lookup (e.g., post-JDK 8u191 bypass via LDAP → deserialization)
 - [unauthorized-access-common-services](../unauthorized-access-common-services/SKILL.md) when the deserialization endpoint is an exposed management service (RMI Registry, T3, AJP)
+- [ghost-bits-cast-attack](../ghost-bits-cast-attack/SKILL.md) when a WAF blocks your BCEL ClassLoader or Fastjson `@type` payload — Ghost Bits wraps each bytecode byte in a Unicode char whose low 8 bits match, yielding a payload the WAF cannot fingerprint
+
+### Advanced Reference
+
+Also load [JAVA_GADGET_CHAINS.md](./JAVA_GADGET_CHAINS.md) when you need:
+- Java gadget chain version compatibility matrix (CommonsCollections 1–7, CommonsBeanutils, Spring, JDK-only, Groovy, Hibernate, ROME, C3P0, etc.)
+- SnakeYAML gadget (ScriptEngineManager/URLClassLoader) with exploit JAR structure
+- Hessian/Kryo/Avro/XStream deserialization patterns and traffic fingerprints
+- .NET ViewState deserialization (machineKey requirement, ViewState forgery with ysoserial.net, Blacklist3r)
+- Ruby YAML.load vs YAML.safe_load exploitation with version-specific chains
+- Detection fingerprints: magic bytes table by format (Java `AC ED`, .NET `AAEAAD`, Python pickle `80 0N`, PHP `O:`, Ruby `04 08`)
 
 ---
 

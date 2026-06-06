@@ -6,7 +6,7 @@ description: >-
 
 # SKILL: PHP Type Juggling — Weak Comparison & Magic Hash Bypass
 
-> **AI LOAD INSTRUCTION**: PHP `==` coercion, magic hashes (`0e…`), HMAC/hash loose checks, NULL from bad types, and CTF-style `strcmp` / `json_decode` / `intval` tricks. Use strict routing: map the sink (`==` vs `hash_equals`), PHP major version, and whether both operands are attacker-controlled. 中文路由：遇到 PHP 登录/签名/`md5($_GET['x'])==md5($_GET['y'])` 类题目或代码，优先读本 skill；若已用 `hash_equals`/`===` 则本路径通常不成立。
+> **AI LOAD INSTRUCTION**: PHP `==` coercion, magic hashes (`0e…`), HMAC/hash loose checks, NULL from bad types, and CTF-style `strcmp` / `json_decode` / `intval` tricks. Use strict routing: map the sink (`==` vs `hash_equals`), PHP major version, and whether both operands are attacker-controlled. Routing note: when you encounter PHP login/signature logic or code like `md5($_GET['x'])==md5($_GET['y'])`, start with this skill; if `hash_equals`/`===` is already used, this path usually does not apply.
 
 ## 0. QUICK START
 
@@ -39,11 +39,11 @@ var_dump(md5('240610708') == md5('QNKCDZO'));
 
 ### Routing hints
 
-| 线索 | 下一步 |
+| Clue | Next step |
 |---|---|
-| 源码里出现 `==` 比较密码、token、HMAC 结果 | 走 Section 1–3 |
-| `md5($a) == md5($b)` 或 `sha1` 松散比较 | Section 2 魔法哈希 |
-| `hash_hmac(...) != '0'` 或和 `"0"` 比较 | Section 3 |
+| Source code uses `==` to compare passwords, tokens, or HMAC values | Go to Sections 1-3 |
+| `md5($a) == md5($b)` or loose `sha1` comparison | Section 2 magic hashes |
+| `hash_hmac(...) != '0'` or compared with `"0"` | Section 3 |
 | `strcmp`、`json_decode(..., true)`、`intval` | Section 5 |
 
 ---

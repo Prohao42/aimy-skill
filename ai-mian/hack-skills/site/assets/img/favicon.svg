@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .bg { fill: #ffffff; }
+    .stroke { fill: none; stroke: #059669; stroke-width: 2.4; stroke-linejoin: round; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0a0a0a; }
+      .stroke { stroke: #10b981; }
+    }
+  </style>
+  <rect class="bg" width="32" height="32" rx="6"/>
+  <g class="stroke">
+    <path d="M5 10 L16 5 L27 10 L27 22 L16 27 L5 22 Z"/>
+    <path d="M16 5 L16 27" stroke-opacity="0.4"/>
+    <path d="M5 10 L27 22" stroke-opacity="0.25"/>
+    <path d="M27 10 L5 22"  stroke-opacity="0.25"/>
+  </g>
+</svg>

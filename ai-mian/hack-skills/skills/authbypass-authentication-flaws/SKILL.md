@@ -10,7 +10,7 @@ description: >-
 
 ## 0. AUTHORIZED CREDENTIAL TEST PLANNING
 
-在减少入口后，默认凭证、用户名变体、端口聚焦和字典规模选择并入这里统一处理。
+After reducing routing entries, default credentials, username variants, port focus, and wordlist sizing are handled here in one place.
 
 ### Service-first tiny sets
 
@@ -43,7 +43,7 @@ description: >-
 | Rate-limited login | tiny list + header/rotation strategy | Preserve attempts |
 | Offline hash cracking | large dictionaries | Online brute rules do not apply |
 
-优先端口和服务面：80/443/8080/8443 管理面板，22 SSH，21 FTP，3306/5432/6379/27017 数据或管理服务。
+Prioritize common ports and service surfaces: 80/443/8080/8443 admin panels, 22 SSH, 21 FTP, and 3306/5432/6379/27017 data or management services.
 
 ---
 

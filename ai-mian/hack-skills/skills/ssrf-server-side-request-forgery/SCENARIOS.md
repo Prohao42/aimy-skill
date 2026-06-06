@@ -152,7 +152,7 @@ Headers: Metadata: true
 # Returns OAuth2 token for Azure management plane
 ```
 
-### Alibaba Cloud (阿里云)
+### Alibaba Cloud (Aliyun)
 
 ```
 http://100.100.100.200/latest/meta-data/

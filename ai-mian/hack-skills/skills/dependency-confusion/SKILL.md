@@ -18,7 +18,7 @@ description: >-
 
 **Fast mental model**: *If the resolver can see both private and public indexes, and version ranges allow it, the “newest” matching version may be the attacker’s.*
 
-中文路由提示：若任务来自「供应链 / 仓库泄露 / CI 构建」类侦察，先对照 `recon-for-sec` 把内部包名与公开注册表可对齐性列成清单。
+Routing note: if the task comes from supply-chain, repository exposure, or CI-build recon, first use `recon-for-sec` to list internal package names and possible public-registry collisions.
 
 ---
 
@@ -74,7 +74,7 @@ gem search '^some-internal-package-name$' --remote
 # curl "https://search.maven.org/solrsearch/select?q=g:com.example+AND+a:internal-lib&rows=1&wt=json"
 ```
 
-中文路由提示：包名枚举完成后，在「仅授权环境」下再考虑 PoC；公开注册表查询本身多为被动侦察。
+Routing note: after package-name enumeration, consider PoC only in authorized environments; public registry lookups themselves are usually passive recon.
 
 ---
 

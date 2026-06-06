@@ -11,77 +11,77 @@ description: >-
 
 ## Overview
 
-这是一个面向 **漏洞赏金、Web 安全、API 安全、授权渗透测试** 的总入口技能。
+This is a top-level routing skill for **bug bounty, web security, API security, and authorized penetration testing**.
 
-它的核心作用不是替代所有专题技巧，而是帮助 Agent：
+Its core role is not to replace all specialized techniques, but to help the agent:
 
-1. 先确定测试阶段（Recon / 验证 / 提权 / 组合链）
-2. 再选择正确的漏洞类别
-3. 避免只依赖基础训练数据，优先使用结构化方法论
-4. 优先关注 AI 容易忽略但在实战里很重要的边界条件
+1. First determine the testing phase (Recon / Validation / Privilege Escalation / Chain building)
+2. Then select the correct vulnerability category
+3. Avoid relying only on baseline model memory; prefer structured methodology
+4. Prioritize boundary conditions AI often misses but that matter in real engagements
 
 ## Trust Model
 
-- 本知识库强调内容安全与可审查性。
-- 使用时应限定在 **授权目标**、**合法研究**、**防御验证**、**漏洞赏金规则允许** 的范围内。
-- 不要把这里的技巧用于未授权攻击。
+- This knowledge base emphasizes content safety and auditability.
+- Use this only within **authorized targets**, **legitimate research**, **defensive validation**, and **bug-bounty-approved rules**.
+- Do not use these techniques for unauthorized attacks.
 
 ## When to Use This Skill
 
-在以下场景优先使用本技能：
+Use this skill first in the following scenarios:
 
-- 你刚接手一个新的漏洞赏金目标，不知道先测什么
-- 你需要决定应该加载 XSS / SQLi / SSRF / IDOR / JWT / API 等哪类思路
-- 你想让 Agent 按更稳定的方法论进行 Web/API 安全测试
-- 你需要把零散的现象路由到合适的攻击面
-- 你希望 AI 在安全领域少漏掉关键测试点
+- You just received a new bug bounty target and do not know where to start
+- You need to decide whether to load XSS / SQLi / SSRF / IDOR / JWT / API tracks first
+- You want the agent to perform Web/API security testing with a more stable methodology
+- You need to route scattered findings to the right attack surface
+- You want AI to miss fewer critical test points in security work
 
 ## Operating Model
 
-### Step 1: 先做 Recon 和上下文确认
+### Step 1: Start with Recon and context validation
 
-优先收集：
+Collect first:
 
-- 目标类型：传统 Web、REST API、移动端后端、管理后台、支付流程、文件上传、GraphQL
-- 身份与权限模型：匿名、普通用户、管理员、多租户
-- 输入位置：URL、查询参数、JSON、Header、Cookie、文件名、导入文件、模板、回显点
-- 输出位置：HTML、属性、JS、PDF、邮件、日志、后台任务、移动端接口
+- Target type: classic web, REST API, mobile backend, admin panel, payment flow, file upload, GraphQL
+- Identity and permission model: anonymous, regular user, admin, multi-tenant
+- Input locations: URL, query parameters, JSON, headers, cookies, filenames, imported files, templates, reflection points
+- Output locations: HTML, attributes, JS, PDF, email, logs, background tasks, mobile endpoints
 
-### Step 2: 按观察到的现象路由
+### Step 2: Route by observed behavior
 
-| 现象 | 优先方向 |
+| Signal | Priority direction |
 |---|---|
-| 输入反射到 HTML / JS | XSS / SSTI |
-| 服务端会主动访问 URL / 主机名 | SSRF |
-| 接收 XML / Office / SVG | XXE |
-| 路径、文件名、下载接口可控 | Path Traversal / LFI |
-| API 中大量对象 ID | IDOR / BOLA / BFLA |
-| 登录、找回密码、2FA、Session | Auth Bypass / JWT / OAuth |
-| 多步骤交易、优惠券、价格、库存 | Business Logic |
-| MongoDB / JSON 查询语法暴露 | NoSQL Injection |
-| 命令行工具、图像处理、导入器 | Command Injection |
-| HTTP 请求解析异常 / 前后端分帧不一致 | Request Smuggling |
-| Node.js JSON 处理 / `__proto__` 可控 | Prototype Pollution |
-| PHP 弱比较 / 0e hash / 松散条件 | Type Juggling |
-| 同名参数重复 / WAF 与应用解析不一致 | HTTP Parameter Pollution |
-| 一次性操作（优惠券/库存/重置） | Race Condition |
-| XML/XSLT 模板处理 | XSLT Injection |
-| .git/.svn/.env 路径可访问 | Insecure SCM |
-| 导出 CSV/Excel 功能 | CSV Formula Injection |
-| WebSocket 协议升级 | WebSocket Security |
-| 内部包名 / 供应链清单 | Dependency Confusion |
+| Input reflects into HTML / JS | XSS / SSTI |
+| Server actively fetches URL / hostname | SSRF |
+| Accepts XML / Office / SVG | XXE |
+| Path, filename, or download endpoint is controllable | Path Traversal / LFI |
+| Many object IDs appear in APIs | IDOR / BOLA / BFLA |
+| Login, reset password, 2FA, sessions | Auth Bypass / JWT / OAuth |
+| Multi-step transactions, coupons, pricing, inventory | Business Logic |
+| MongoDB / JSON query syntax exposure | NoSQL Injection |
+| CLI tools, image processing, importers | Command Injection |
+| HTTP parsing anomalies / front-back framing mismatch | Request Smuggling |
+| Node.js JSON handling / controllable `__proto__` | Prototype Pollution |
+| PHP weak comparison / 0e hash / loose conditions | Type Juggling |
+| Repeated parameter names / WAF-app parsing mismatch | HTTP Parameter Pollution |
+| One-time operations (coupon/inventory/reset) | Race Condition |
+| XML/XSLT template processing | XSLT Injection |
+| Accessible .git/.svn/.env paths | Insecure SCM |
+| CSV/Excel export features | CSV Formula Injection |
+| WebSocket protocol upgrades | WebSocket Security |
+| Internal package names / supply-chain inventory | Dependency Confusion |
 
-### Step 3: 使用最可能命中的测试顺序
+### Step 3: Use the most likely-hit testing order
 
 1. Recon / Methodology
 2. API Security / Auth / IDOR
 3. XSS / SQLi / SSRF / SSTI / XXE
 4. Business Logic / Race Condition
-5. 组合链与提权路径
+5. Chained exploits and privilege-escalation paths
 
 ## Core Skill Map
 
-如果你拥有完整仓库，优先结合这些专题文档一起使用：
+If you have the full repository, prioritize using these topic documents together:
 
 - [Recon and Methodology](../recon-and-methodology/SKILL.md)
 - [XSS Cross Site Scripting](../xss-cross-site-scripting/SKILL.md)
@@ -112,50 +112,51 @@ description: >-
 - [CSV Formula Injection](../csv-formula-injection/SKILL.md)
 - [WebSocket Security](../websocket-security/SKILL.md)
 - [Dependency Confusion](../dependency-confusion/SKILL.md)
+- [Ghost Bits Cast Attack](../ghost-bits-cast-attack/SKILL.md)
 
-原先单独拆出的 payload-selection、brute-selection 一类小 skill 已并回对应主 skill，避免入口过多导致 loader 负担和选择噪音。
+Previously separate mini skills such as payload-selection and brute-selection were merged back into their main skills to avoid router overload and selection noise.
 
 ## High-Value Expert Intuitions
 
-这些点是很多基础模型容易忽略，但在真实漏洞赏金里经常有效：
+These are points many baseline models miss, but they are frequently effective in real bug bounty work:
 
-1. **同一套过滤逻辑往往复用在多个页面**：一个点可绕过，类似页面通常也能绕过。
-2. **参数名本身也是攻击面**：WAF 经常只盯参数值，不盯参数名。
-3. **二阶漏洞非常常见**：存储时安全，不代表读取后进入危险上下文时也安全。
-4. **BOLA 的本质是“有认证、无授权”**：A/B 账号切换重放非常关键。
-5. **老版本接口最容易漏补丁**：v2 修了不代表 v1 下线了。
-6. **业务逻辑漏洞往往回报最高**：它们难以被扫描器发现，也更容易长期存在。
-7. **Race Condition 应优先测试“一次性”操作**：优惠券、领取、重置、邀请、试用、库存扣减。
-8. **JWT 攻击先看密钥与算法上下文**：不要盲目试 payload，要先确认 `alg`、`kid`、JWKS、密钥来源。
+1. **The same filtering logic is often reused across multiple pages**: if one point is bypassable, similar pages usually are too.
+2. **Parameter names are an attack surface too**: WAFs often inspect values but not names.
+3. **Second-order vulnerabilities are common**: safe at storage time does not mean safe when later read into a dangerous context.
+4. **BOLA is fundamentally 'authenticated but unauthorized'**: replaying with account A/B switching is critical.
+5. **Older API versions are most likely to miss patches**: fixing v2 does not mean v1 was retired.
+6. **Business-logic vulnerabilities often bring highest impact**: scanners miss them and they persist longer.
+7. **Race conditions should prioritize one-time actions**: coupon redemption, claims, resets, invites, trials, inventory deduction.
+8. **For JWT attacks, check key and algorithm context first**: do not blindly spray payloads; verify `alg`, `kid`, JWKS, and key source first.
 
 ## Suggested Prompts
 
-可把本技能当作路由器来用，先让 Agent 明确阶段和目标：
+Use this skill as a router to make the agent clarify phase and goal first:
 
-- “先按漏洞赏金方法论帮我做这个目标的测试路线规划。”
-- “这是一个 REST API，请优先从 BOLA、BFLA、Mass Assignment、JWT 角度审视。”
-- “这个参数会触发服务端请求，请按 SSRF 思路列出关键验证点。”
-- “这个功能是支付/优惠券/库存流程，请优先考虑业务逻辑和竞态。”
-- “我只看到登录和找回密码流程，请按 Auth Bypass + OAuth/JWT + CSRF 路线分析。”
+- "First, plan the testing route for this target using bug bounty methodology.
+- "This is a REST API; prioritize BOLA, BFLA, Mass Assignment, and JWT angles.
+- "This parameter triggers server-side requests; list key validation points from an SSRF perspective.
+- "This feature is a payment/coupon/inventory flow; prioritize business logic and race-condition analysis.
+- "I only see login and password-reset flows; analyze via Auth Bypass + OAuth/JWT + CSRF.
 
 ## Installation Notes
 
-推荐 skill 名称：
+Recommended skill name:
 
 - `hack`
 
-推荐检索关键词：
+Recommended search keywords:
 
 - `HackSkills`
 - `HACKING SKILLS`
 - `bug bounty`
-- `赏金猎人`
+- `bug bounty hunter`
 
 ## Guidelines
 
-- 优先按目标类型与现象路由，而不是随机枚举 payload。
-- 需要 payload 时，优先使用对应主 skill 里的 quick start / first-pass 样本，而不是再跳一个中间入口。
-- 优先寻找可复用的过滤器、共享组件和跨页面复现路径。
-- 先确认认证边界、授权边界、版本边界，再深入利用。
-- 优先保留可解释、可审查、可复现的测试过程。
-- 当完整仓库可用时，优先回到专题文档获取更细的攻击细节。
+- Prioritize routing by target type and observed behavior, not random payload enumeration.
+- When payloads are needed, prefer quick-start / first-pass samples in the corresponding main skill instead of adding another intermediate router.
+- Prioritize reusable filters, shared components, and cross-page reproduction paths.
+- Confirm authentication, authorization, and version boundaries before deeper exploitation.
+- Preserve explainable, auditable, reproducible testing processes.
+- When full repository context is available, return to topic documents for finer exploitation details.

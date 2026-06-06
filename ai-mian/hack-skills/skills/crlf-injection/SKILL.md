@@ -8,6 +8,10 @@ description: >-
 
 > **AI LOAD INSTRUCTION**: CRLF injection (HTTP response splitting) techniques. Covers header injection, response body injection via double CRLF, XSS escalation, cache poisoning, and encoding bypass. Often overlooked by scanners but chains into XSS, session fixation, and cache attacks.
 
+## 0. RELATED ROUTING
+
+- [ghost-bits-cast-attack](../ghost-bits-cast-attack/SKILL.md) when the target is a **Java service** and `%0D%0A` / `\r\n` encodings are WAF-blocked — substituting `瘍` (U+760D, low byte `\r`) and `瘊` (U+760A, low byte `\n`) injects a real CRLF through Angus Mail / Jakarta Mail SMTP, Apache HttpClient headers, JDK HttpServer responses, and ActiveJ HTTP (re-enables Jira CVE-2025-57733 and JDK CVE-2026-21933 classes)
+
 ## 1. CORE CONCEPT
 
 CRLF = `\r\n` (Carriage Return + Line Feed, `%0D%0A`). HTTP headers are separated by CRLF. If user input is reflected in a response header without sanitization, injecting CRLF characters creates new headers or even a response body.

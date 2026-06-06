@@ -20,6 +20,17 @@ Also load [SCENARIOS.md](./SCENARIOS.md) when you need:
 - Session fixation via XSS — pre-set session ID before victim login
 - DOM clobbering techniques for CSP-restricted environments
 
+### Advanced Tricks
+
+Also load [ADVANCED_XSS_TRICKS.md](./ADVANCED_XSS_TRICKS.md) when you need:
+- mXSS / DOMPurify bypass — namespace confusion, `<noscript>` parsing differential, form/table restructuring
+- DOM Clobbering — property override via `id`/`name`, HTMLCollection, deep property chains
+- Modern framework XSS — React `dangerouslySetInnerHTML`, Vue `v-html`, Angular `bypassSecurityTrust*`, Next.js SSR
+- Trusted Types bypass — default policy abuse, non-TT sinks, policy passthrough
+- Service Worker XSS persistence — malicious SW registration, fetch interception, post-patch survival
+- PDF/SVG/MathML XSS vectors, polyglot payloads, browser-specific tricks
+- XS-Leaks & side channels — timing oracle, frame counting, cache probing, error event oracle
+
 Before broad payload spraying, you can first load:
 
 - [upload insecure files](../upload-insecure-files/SKILL.md) when you need the full upload path: validation, storage, preview, and sharing behavior

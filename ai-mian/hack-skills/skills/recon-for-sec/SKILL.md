@@ -8,13 +8,13 @@ description: >-
 
 # Recon and Methodology Router
 
-这是新目标和未知攻击面的起始入口。
+This is the starting router for new targets and unknown attack surfaces.
 
 ## When to Use
 
-- 你刚接一个新的目标，还不知道先测什么
-- 你需要先做资产发现、技术识别、接口清点和测试路线规划
-- 你想把后续测试建立在结构化方法论上，而不是随机枚举 payload
+- You just received a new target and do not yet know what to test first
+- You need to begin with asset discovery, tech fingerprinting, endpoint inventory, and test-route planning
+- You want to build follow-up testing on structured methodology instead of random payload enumeration
 
 ## Skill Map
 
@@ -24,6 +24,6 @@ description: >-
 
 ## Recommended Flow
 
-1. 先确认 in-scope 资产和目标类型
-2. 再做资产发现、端口与服务识别、技术指纹与端点收集
-3. 按收集到的现象再路由到 [api-sec](../api-sec/SKILL.md)、[auth-sec](../auth-sec/SKILL.md)、[injection-checking](../injection-checking/SKILL.md) 或 [business-logic-vuln](../business-logic-vuln/SKILL.md)
+1. First confirm in-scope assets and target type
+2. Then perform asset discovery, port/service identification, technology fingerprinting, and endpoint collection
+3. Route based on collected findings to [api-sec](../api-sec/SKILL.md), [auth-sec](../auth-sec/SKILL.md), [injection-checking](../injection-checking/SKILL.md), or [business-logic-vuln](../business-logic-vuln/SKILL.md)

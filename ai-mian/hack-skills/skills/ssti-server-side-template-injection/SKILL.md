@@ -12,7 +12,7 @@ description: >-
 
 Before using full engine-specific exploitation, you can first load:
 
-- 先直接使用本文件开头的 polyglot probe sequence 做低噪声指纹判断
+- First use the polyglot probe sequence at the top of this file for low-noise fingerprinting
 - [expression-language-injection](../expression-language-injection/SKILL.md) when `${7*7}` or `%{7*7}` resolves in Java (SpEL/OGNL) — different attack surface from template engines
 
 ### Extended Scenarios
@@ -27,6 +27,10 @@ Also load [SCENARIOS.md](./SCENARIOS.md) when you need:
 - Additional template engines: ASP.NET Razor, Elixir EEx, PHP Smarty/Latte/Blade, JS Pug/Handlebars/Nunjucks/EJS/Lodash + universal detection + blind SSTI + Flask PIN calculation
 
 **SCENARIOS.md reference (§7–§11):** For expanded payloads and engine-specific notes on Razor, EEx/LEEx/HEEx, PHP stacks, JavaScript template engines, the universal polyglot probe, mathematical fingerprinting, blind SSTI (boolean / time / OOB), and Flask debug PIN prerequisites, see [SCENARIOS.md](./SCENARIOS.md). This skill keeps a short checklist in §13–§15.
+
+### Engine Payloads Reference
+
+For extended engine-specific fingerprinting, payload matrices (Jinja2, Twig, Freemarker, Velocity, Pebble, Mako, Slim, Handlebars, Thymeleaf, Smarty, ERB, Jade/Pug), and blind SSTI detection techniques (timing-based, DNS-based), see [ENGINE_PAYLOADS.md](./ENGINE_PAYLOADS.md).
 
 ### Universal detection & blind SSTI (pointer)
 

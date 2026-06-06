@@ -8,15 +8,15 @@ description: >-
 
 # Injection Testing Router
 
-这是输入进入危险解释器或执行环境时的分类入口。
+This is the routing entry point when input reaches a dangerous interpreter or execution environment.
 
-它适合在确认“这是注入类问题”之后，继续判断更偏向浏览器上下文、数据库、模板引擎、服务端请求、XML 解析器还是系统命令。
+After confirming this is an injection-class issue, use it to decide whether it is mainly browser context, database, template engine, server-side requests, XML parsing, or system commands.
 
 ## When to Use
 
-- 输入会进入 HTML、JS、SQL、模板、URL 提取器、XML 解析器或 shell
-- 你还没决定应该先走 XSS、SQLi、SSRF、XXE、SSTI、CMDi 还是 NoSQL
-- 你需要按输入流向选择正确的深度专题 skill
+- Input reaches HTML, JS, SQL, templates, URL fetchers, XML parsers, or shell
+- You have not yet decided whether to start with XSS, SQLi, SSRF, XXE, SSTI, CMDi, or NoSQL
+- You need to choose the correct deep-topic skill based on input flow
 
 ## Skill Map
 
@@ -41,9 +41,9 @@ description: >-
 
 ## Recommended Flow
 
-1. 先识别输入最终落点
-2. 再选与该解释器最匹配的专题 skill
-3. 小样本 payload 与 quick triage 已并入各主 skill，不再额外走 payload router
+1. First identify the final sink of the input
+2. Then choose the topic skill that best matches that interpreter
+3. Small payload samples and quick triage are merged into each main skill; no extra payload router is needed
 
 ## Related Categories
 

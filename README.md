@@ -141,6 +141,7 @@ User Input → AI Agent (Claude Code / AutoGPT)
 推荐扩展方向：子域名枚举、XSS 检测、CVE 匹配、弱口令爆破（需增加授权提示）。
 
 bash
+	模式选择：（rookie菜鸟模式，默认）或veteran（老鸟模式）。也可在对话中用/mode命令实时切换
 # 单独运行某个工具（不通过 main.py）
 python tools/port_scanner.py 127.0.0.1
 ⚠️ 法律声明

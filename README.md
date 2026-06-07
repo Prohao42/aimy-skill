@@ -19,7 +19,7 @@ markdown
 ## 📦 一条命令安装
 
 ```bash
-git clone https://github.com/yangdada863/aimy-sikll.git && cd aimy-sikll && pip install -r requirements.txt
+#git clone https://github.com/yangdada863/aimy-sikll.git && cd aimy-sikll && pip install -r requirements.txt  先别用  
 安装完成后，执行 python main.py --help 验证。
 
 ✨ 功能一览

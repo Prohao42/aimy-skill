@@ -1,4 +1,3 @@
-markdown
 <p align="center">
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&pause=1000&color=00FF00&center=true&vCenter=true&width=500&lines=aimy-sikll;Penetration+Testing+Skill;AI-Ready+%7C+Lightweight" alt="Typing SVG" />
 </p>
@@ -11,16 +10,28 @@ markdown
 </p>
 
 <p align="center">
-  <b>⚡ 轻量级渗透测试辅助 Skill | 端口扫描 · 目录枚举 · SQL 注入检测 | 可嵌入 AI Agent (Claude Code / AutoGPT)</b>
+  <b>⚡ 轻量级渗透测试辅助技能包 · 可嵌入 AI Agent · 让 Claude Code / AutoGPT 真正「动手」执行安全测试</b>
 </p>
 
 ---
 
-## 📦 一条命令安装
+## 🎯 为什么选择 aimy-sikll？
+
+- **🤖 AI‑Ready 设计**：所有工具输出标准 JSON，AI Agent 可直接解析、推理、决策。
+- **⚡ 轻量快速**：纯 Python 实现，非阻塞并发扫描，依赖极少，可离线运行。
+- **🧩 模块化扩展**：端口扫描、目录枚举、SQL 注入检测开箱即用，未来可轻松添加新模块。
+- **🔧 高度可定制**：支持自定义端口、字典、请求头、延时 Payload。
+- **📦 一条命令安装**：克隆 + 安装依赖，30 秒内即可使用。
+
+---
+
+## 📦 安装
 
 ```bash
-#git clone https://github.com/yangdada863/aimy-sikll.git && cd aimy-sikll && pip install -r requirements.txt  先别用  
-安装完成后，执行 python main.py --help 验证。
+git clone https://github.com/yangdada863/aimy-sikll.git
+cd aimy-sikll
+pip install -r requirements.txt
+
 
 ✨ 功能一览
 模块	功能	输入	输出

@@ -14,7 +14,26 @@
 </p>
 
 ---
+# Aimy-Sikll - AI Agent 轻量级渗透测试辅助工具
 
+`aimy-sikll` 是一个专为 **AI Agent**（如 Claude Code、AutoGPT）设计的轻量级渗透测试辅助工具。它提供简洁的命令行接口和 JSON 结构化输出，方便 AI 自动调用，也可手动用于快速漏洞检测。
+
+## ✨ 核心功能
+
+| 功能 | 说明 | 适用场景 |
+|------|------|----------|
+| **端口扫描 (Port Scan)** | 探测目标主机的常见 TCP 开放端口 | 快速发现目标暴露的服务端口，了解网络攻击面 |
+| **目录枚举 (Dir Fuzz)** | 基于字典对 Web 路径进行模糊测试 | 寻找未公开的管理后台、备份文件、敏感目录 |
+| **SQL 注入检测 (SQL Check)** | 支持错误型和时间型 Payload，自动探测注入点 | 快速验证 Web 参数是否存在 SQL 注入漏洞 |
+
+## 🚀 快速上手
+
+### 1. 克隆与安装
+
+```bash
+git clone https://github.com/yangdada863/aimy-sikll.git
+cd aimy-sikll
+pip install -r requirements.txt
 ---
 
 ## 📦 安装

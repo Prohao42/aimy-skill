@@ -28,22 +28,6 @@
 
 ## 🚀 快速上手
 
-### 1. 克隆与安装
-
-```bash
-git clone https://github.com/yangdada863/aimy-sikll.git
-cd aimy-sikll
-pip install -r requirements.txt
----
-
-## 📦 安装
-
-```bash
-git clone https://github.com/yangdada863/aimy-sikll.git
-cd aimy-sikll
-pip install -r requirements.txt
-
-
 ✨ 功能一览
 模块	功能	输入	输出
 🔍 端口扫描	探测目标主机常见 TCP 端口	IP / 域名	JSON 格式开放端口列表

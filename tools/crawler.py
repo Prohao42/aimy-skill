@@ -1,5 +1,9 @@
-import re, time, urllib.parse
+import re, time, urllib.parse, json
 from typing import Dict, List, Optional, Set
+
+from tools.log_utils import get_logger
+
+logger = get_logger("crawler")
 
 IGNORE_EXTENSIONS = {
     ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".ico", ".webp",
@@ -9,11 +13,37 @@ IGNORE_EXTENSIONS = {
     ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
 }
 
+SPA_INDICATORS = [
+    r'id=["\']root["\']',
+    r'id=["\']app["\']',
+    r'id=["\']__nuxt["\']',
+    r'id=["\']__next["\']',
+    r'__vite_is_modern_browser',
+    r'createApp\(',
+    r'ReactDOM\.createRoot',
+    r'Vue\.createApp',
+]
+
+COMMON_API_PATHS = [
+    "/api/health", "/api/status", "/api/v1/health", "/api/ping",
+    "/api/users", "/api/user", "/api/login", "/api/auth",
+    "/api/config", "/api/settings", "/api/info", "/api/version",
+    "/api/v1/users", "/api/v1/user", "/api/v1/login", "/api/v1/auth",
+    "/api/v1/config", "/api/v1/version", "/api/v1/models",
+    "/api/v1/chat/completions", "/api/v1/completions",
+    "/graphql", "/api/graphql", "/api/openapi.json",
+    "/swagger-resources", "/api/swagger-resources",
+    "/api/docs", "/api/v1/docs",
+    "/.env", "/api/.env",
+    "/actuator", "/api/actuator", "/actuator/health",
+    "/sitemap.xml", "/robots.txt",
+]
+
 HAS_BS4 = False
 try:
     from bs4 import BeautifulSoup
     HAS_BS4 = True
-except:
+except ImportError:
     pass
 
 
@@ -34,6 +64,8 @@ class Crawler:
         self.api_endpoints: Set[str] = set()
         self.all_params: Set[str] = set()
         self.pages_crawled = 0
+        self.js_api_endpoints: Set[str] = set()
+        self.is_spa = False
         self._http = None
 
     def _get_http(self) -> 'requests.Session':
@@ -65,6 +97,65 @@ class Crawler:
                 return False
         return True
 
+    def _detect_spa(self, html: str) -> bool:
+        for pat in SPA_INDICATORS:
+            if re.search(pat, html):
+                return True
+        return False
+
+    def _extract_js_bundles(self, html: str) -> List[str]:
+        bundles = []
+        for m in re.finditer(r'<script[^>]*src=["\']([^"\']+\.js[^"\']*)["\']', html, re.IGNORECASE):
+            src = m.group(1)
+            if src not in bundles:
+                bundles.append(src)
+        return bundles
+
+    def _analyze_js_for_api(self, js_content: str) -> Set[str]:
+        apis = set()
+        patterns = [
+            r'["\'](/api/[\w/]+)["\']',
+            r'["\'](/v1/[\w/]+)["\']',
+            r'["\'](/v2/[\w/]+)["\']',
+            r'["\'](/v3/[\w/]+)["\']',
+            r'baseURL["\']?\s*[:=]\s*["\']([^"\']+)["\']',
+            r'(?:get|post|put|delete|request)\s*\(\s*["\']([\w/]+)["\']',
+            r'url:\s*["\']([\w/]+)["\']',
+            r'path:\s*["\']([\w/]+)["\']',
+            r'route:\s*["\']([\w/]+)["\']',
+        ]
+        for pat in patterns:
+            for m in re.finditer(pat, js_content, re.IGNORECASE):
+                url = m.group(1).rstrip("/")
+                if url and len(url) > 4:
+                    apis.add(url)
+        route_patterns = [
+            r'path:\s*["\'](/\w+)["\']',
+            r'route:\s*["\'](/\w+)["\']',
+            r'["\'](/[\w/-]+)["\']\s*[:\]]\s*\{[^}]*component',
+        ]
+        for pat in route_patterns:
+            for m in re.finditer(pat, js_content):
+                route = m.group(1)
+                if route and len(route) > 1 and "/" in route:
+                    apis.add(route)
+        return apis
+
+    def _hit_common_api(self) -> Set[str]:
+        found = set()
+        http = self._get_http()
+        for path in COMMON_API_PATHS:
+            try:
+                r = http.get("%s%s" % (self.base_url, path), timeout=max(3, self.timeout * 0.5),
+                             verify=False)
+                ct = r.headers.get("Content-Type", "")
+                if r.status_code not in (404, 0) and (len(r.text) < 7000 or "text/html" not in ct):
+                    key = "%s [%d] %s" % (path, r.status_code, ct.split(";")[0])
+                    found.add((path, r.status_code, ct, r.text[:200]))
+            except Exception as e:
+                logger.debug("common api %s: %s", path, e)
+        return found
+
     def _extract_forms(self, html: str, current: str):
         if HAS_BS4:
             try:
@@ -90,8 +181,8 @@ class Crawler:
                         "method": form.get("method", "get").upper(),
                         "inputs": inputs,
                     })
-            except:
-                pass
+            except Exception as e:
+                logger.debug("extract forms: %s", e)
         else:
             for m in re.finditer(r'<form[^>]*action=["\']([^"\']+)["\']', html, re.IGNORECASE):
                 action = self._normalize(m.group(1), current) or current
@@ -125,8 +216,8 @@ class Crawler:
                                     "methods": ["GET"],
                                     "params": params,
                                 }
-            except:
-                pass
+            except Exception as e:
+                logger.debug("extract endpoints: %s", e)
         api_pattern = re.compile(r'["\'](/api/[\w/]+)["\']', re.IGNORECASE)
         for m in api_pattern.finditer(html):
             api_path = m.group(1)
@@ -172,6 +263,31 @@ class Crawler:
                 self._extract_endpoints(html, normalized)
                 self._extract_embedded_params(html)
 
+                if depth == 0:
+                    self.is_spa = self._detect_spa(html)
+                    if self.is_spa:
+                        bundles = self._extract_js_bundles(html)
+                        for js_url in bundles[:5]:
+                            try:
+                                js_r = http.get(js_url if js_url.startswith("http") else
+                                                "%s/%s" % (self.base_url, js_url.lstrip("/")),
+                                                timeout=self.timeout, verify=False)
+                                if js_r.status_code == 200:
+                                    apis = self._analyze_js_for_api(js_r.text)
+                                    for a in apis:
+                                        self.api_endpoints.add(a)
+                                        self.js_api_endpoints.add(a)
+                            except Exception as e:
+                                logger.debug("js bundle %s: %s", js_url, e)
+                        fallback = self._hit_common_api()
+                        for path, status, ct, preview in fallback:
+                            p = "/" + path.lstrip("/")
+                            if p not in self.endpoints:
+                                self.endpoints[p] = {"url": "%s%s" % (self.base_url, p),
+                                                     "methods": ["GET"], "params": [],
+                                                     "status": status, "content_type": ct,
+                                                     "preview": preview[:100]}
+
                 if depth < self.max_depth:
                     if HAS_BS4:
                         try:
@@ -182,8 +298,8 @@ class Crawler:
                                     next_url = self._normalize(href, normalized)
                                     if next_url and self._should_crawl(next_url):
                                         queue.append((next_url, depth + 1))
-                        except:
-                            pass
+                        except Exception as e:
+                            logger.debug("bs4 crawl: %s", e)
                     else:
                         for m in re.finditer(r'<a[^>]*href=["\']([^"\'>]+)["\']', html, re.IGNORECASE):
                             href = m.group(1)
@@ -194,8 +310,8 @@ class Crawler:
                     if self.delay > 0:
                         time.sleep(self.delay)
 
-            except:
-                pass
+            except Exception as e:
+                logger.debug("crawl %s: %s", url, e)
 
         return {
             "urls": list(self.visited),
@@ -203,17 +319,22 @@ class Crawler:
             "forms": self.forms,
             "api_endpoints": list(self.api_endpoints),
             "parameters": list(self.all_params),
+            "is_spa": self.is_spa,
+            "js_api_endpoints": list(self.js_api_endpoints)[:50],
             "summary": {
                 "pages_crawled": self.pages_crawled,
                 "endpoints_found": len(self.endpoints),
                 "forms_found": len(self.forms),
                 "unique_params": len(self.all_params),
                 "api_endpoints": len(self.api_endpoints),
+                "is_spa": self.is_spa,
+                "js_api_discovered": len(self.js_api_endpoints),
             },
         }
 
 
 def crawl(target: str, max_depth: int = 3, max_pages: int = 50,
-          sess: Optional['requests.Session'] = None, timeout: float = 10.0) -> Dict:
-    c = Crawler(target, max_depth, max_pages, sess, timeout)
+          sess: Optional['requests.Session'] = None, timeout: float = 10.0,
+          delay: float = 0.0) -> Dict:
+    c = Crawler(target, max_depth, max_pages, sess, timeout, delay)
     return c.crawl()

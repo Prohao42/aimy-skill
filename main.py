@@ -1,12 +1,137 @@
 #!/usr/bin/env python3
-import argparse, json, sys, os, time
+import argparse, json, sys, os, time, ssl, urllib.parse as _urlparse
+from requests.adapters import HTTPAdapter
 
-VERSION = "2.0.0"
+from tools.log_utils import get_logger
+
+logger = get_logger("main")
+
+VERSION = "2.1.0"
+
+
+URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
+
+
+class _TLS12Adapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
+        ctx = ssl.create_default_context()
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.maximum_version = ssl.TLSVersion.TLSv1_2
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        kwargs["ssl_context"] = ctx
+        kwargs["assert_hostname"] = False
+        return super().init_poolmanager(connections, maxsize=max(100, maxsize), block=block, **kwargs)
+
+
+_ADAPTER_CACHE = None
+def _tls12_adapter():
+    global _ADAPTER_CACHE
+    if _ADAPTER_CACHE is None:
+        _ADAPTER_CACHE = _TLS12Adapter()
+    return _ADAPTER_CACHE
+
+
+_CHALLENGE_PATTERN = None
+_AES_JS_CACHE = None
+
+def _detect_challenge(html):
+    global _CHALLENGE_PATTERN
+    if _CHALLENGE_PATTERN is None:
+        import re
+        _CHALLENGE_PATTERN = re.compile(
+            r'toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\)',
+            re.DOTALL,
+        )
+    return _CHALLENGE_PATTERN.search(html[:2000])
+
+
+def _solve_with_node(match):
+    import subprocess, socket as _sk
+    a, b, c = match.group(1), match.group(2), match.group(3)
+    global _AES_JS_CACHE
+    if _AES_JS_CACHE is None:
+        try:
+            sock = _sk.create_connection(("idcard.kesug.com", 443), timeout=10)
+            sctx = ssl.create_default_context()
+            sctx.check_hostname = False
+            sctx.verify_mode = ssl.CERT_NONE
+            ssock = sctx.wrap_socket(sock, server_hostname="idcard.kesug.com")
+            req = (
+                b"GET /aes.js HTTP/1.1\r\n"
+                b"Host: idcard.kesug.com\r\n"
+                b"User-Agent: Mozilla/5.0\r\n"
+                b"Connection: close\r\n\r\n"
+            )
+            ssock.sendall(req)
+            data = b""
+            while True:
+                try:
+                    chunk = ssock.recv(65536)
+                    if not chunk:
+                        break
+                    data += chunk
+                except Exception:
+                    break
+            ssock.close()
+            body = data.split(b"\r\n\r\n", 1)[1] if b"\r\n\r\n" in data else b""
+            _AES_JS_CACHE = body.decode("utf-8", errors="replace") if len(body) > 1000 else ""
+        except Exception:
+            _AES_JS_CACHE = ""
+    if not _AES_JS_CACHE:
+        return None
+    js_code = _AES_JS_CACHE + f"""
+function toNumbers(d){{var e=[];d.replace(/(..)/g,function(d){{e.push(parseInt(d,16))}});return e}}
+function toHex(){{for(var d=[],d=1==arguments.length&&arguments[0].constructor==Array?arguments[0]:arguments,e='',f=0;f<d.length;f++)e+=(16>d[f]?'0':'')+d[f].toString(16);return e.toLowerCase()}}
+try {{ console.log(toHex(slowAES.decrypt(toNumbers("{c}"),2,toNumbers("{a}"),toNumbers("{b}")))); }} catch(e) {{ console.error(e.message); }}
+"""
+    try:
+        result = subprocess.run(["node", "-e", js_code], capture_output=True, text=True, timeout=15)
+        val = result.stdout.strip()
+        if val and len(val) == 32 and all(c in "0123456789abcdef" for c in val):
+            return val
+    except Exception:
+        pass
+    return None
 
 
 def _sess(args):
     from tools.auth_engine import auth_from_args
-    return auth_from_args(args)
+    sess = auth_from_args(args)
+    sess.mount("https://", _tls12_adapter())
+    if "User-Agent" not in sess.headers:
+        sess.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+
+    _orig_send = sess.send
+    _challenge_solved = [False]
+
+    def _patched_send(req, **kwargs):
+        resp = _orig_send(req, **kwargs)
+        if not _challenge_solved[0]:
+            body = resp.text[:2000]
+            if "slowAES" in body:
+                m = _detect_challenge(body)
+                if m:
+                    cookie_val = _solve_with_node(m)
+                    if cookie_val:
+                        logger.info("Anti-bot challenge solved, retrying %s %s", req.method, req.url)
+                        _challenge_solved[0] = True
+                        # Add cookie to the prepared request and retry
+                        existing = req.headers.get("Cookie", "")
+                        req.headers["Cookie"] = ("%s; __test=%s" % (existing, cookie_val)).strip("; ")
+                        resp = _orig_send(req, **kwargs)
+        return resp
+
+    sess.send = _patched_send
+    return sess
+
+
+def _validate_url(url: str, name: str = "url") -> None:
+    if not url.startswith(URL_SCHEMES):
+        raise ValueError("%s must start with a valid scheme %s: %s" % (name, URL_SCHEMES, url))
+    parsed = _urlparse.urlparse(url)
+    if not parsed.netloc:
+        raise ValueError("Invalid %s (no hostname): %s" % (name, url))
 
 
 def cmd_portscan(args):
@@ -24,8 +149,8 @@ def cmd_portscan(args):
             sock.close()
             if r == 0:
                 results.append({"port": port, "state": "open"})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("port %d: %s", port, e)
     print(json.dumps({"target": target, "open_ports": results, "count": len(results)}))
 
 
@@ -37,7 +162,8 @@ def cmd_dirfuzz(args):
     try:
         with open(wordlist, "r") as f:
             paths = [line.strip() for line in f if line.strip()]
-    except:
+    except Exception as e:
+        logger.debug("dirfuzz wordlist: %s", e)
         paths = ["admin", "login", "wp-admin", "backup", "api",
                   "config", ".git", ".env", "robots.txt", "sitemap.xml"]
     for path in paths[:args.max]:
@@ -46,8 +172,8 @@ def cmd_dirfuzz(args):
             if r.status_code not in (404,):
                 results.append({"path": "/%s" % path, "status": r.status_code,
                                 "size": len(r.text)})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("dirfuzz %s: %s", path, e)
     print(json.dumps({"target": url, "found": results, "count": len(results)}))
 
 
@@ -141,6 +267,18 @@ def cmd_cors(args):
     print(json.dumps(r))
 
 
+def cmd_bizlogic(args):
+    from tools.biz_logic_scanner import check as biz_check
+    r = biz_check(args.url, args.param, _sess(args), args.timeout)
+    print(json.dumps(r))
+
+
+def cmd_waf_heavy(args):
+    from tools.waf_heavy_bypass import check as wh_check
+    r = wh_check(args.url, args.param, _sess(args), args.timeout)
+    print(json.dumps(r))
+
+
 def cmd_xss_validate(args):
     from tools.xss_validator import check as xssv_check
     r = xssv_check(args.url, args.param, _sess(args), args.timeout)
@@ -200,8 +338,17 @@ def cmd_chain(args):
 
 
 def cmd_proxy(args):
-    from tools.proxy import start_proxy
-    r = start_proxy(args.port, args.capture_time)
+    from tools.packet_capture import run_capture
+    r = run_capture(args)
+    print(json.dumps(r))
+
+
+def cmd_capture(args):
+    from tools.packet_capture import run_capture, run_realtime
+    if args.realtime:
+        r = run_realtime(args)
+    else:
+        r = run_capture(args)
     print(json.dumps(r))
 
 
@@ -283,11 +430,7 @@ def cmd_fuzz(args):
 
 def cmd_payload_mutate(args):
     from tools.payload_mutator import encode_payload, mutate_value, mutate_param_name
-    result = {
-        "originals": [],
-        "encoded": [],
-        "mutations": [],
-    }
+    result = {"originals": [], "encoded": [], "mutations": []}
     if args.payload:
         result["encoded"] = [
             {"method": m, "result": encode_payload(args.payload, m)}
@@ -297,6 +440,11 @@ def cmd_payload_mutate(args):
     if args.param:
         result["param_mutations"] = [{"variant": v} for v in mutate_param_name(args.param)]
     print(json.dumps(result))
+
+
+def cmd_list(args):
+    from tools.tool_registry import list_tools
+    print(json.dumps(list_tools(), indent=2))
 
 
 def main():
@@ -310,10 +458,16 @@ def main():
     parser.add_argument("--auth-user", default="", help="认证用户名")
     parser.add_argument("--auth-pass", default="", help="认证密码")
     parser.add_argument("--session-file", default="", help="会话文件路径(.pkl)")
+    parser.add_argument("--delay", type=float, default=0.0, help="请求间延迟秒数")
+    parser.add_argument("--kali-host", default="", help="Kali Linux SSH 主机地址")
+    parser.add_argument("--kali-port", type=int, default=22, help="Kali SSH 端口")
+    parser.add_argument("--kali-user", default="root", help="Kali SSH 用户名")
+    parser.add_argument("--kali-pass", default="", help="Kali SSH 密码")
+    parser.add_argument("--kali-key", default="", help="Kali SSH 私钥路径")
+    parser.add_argument("--kali-local", action="store_true", help="本地 Kali 模式 (直接用本机工具)")
     parser.add_argument("-v", "--version", action="version", version=VERSION)
     sub = parser.add_subparsers(dest="command")
 
-    # Discovery
     p = sub.add_parser("portscan", help="TCP端口扫描")
     p.add_argument("target")
     p.add_argument("--ports", default="", help="端口列表,逗号分隔")
@@ -325,7 +479,6 @@ def main():
     p.add_argument("--max", type=int, default=50, help="最大路径数")
     p.set_defaults(func=cmd_dirfuzz)
 
-    # Detection
     p = sub.add_parser("sqlcheck", help="SQL注入检测")
     p.add_argument("url"); p.add_argument("--param", default="id")
     p.add_argument("--post", action="store_true"); p.add_argument("--data", type=json.loads, default=None)
@@ -399,7 +552,14 @@ def main():
     p.add_argument("url"); p.add_argument("--param", default=None)
     p.set_defaults(func=cmd_waf)
 
-    # Multi-phase
+    p = sub.add_parser("waf-heavy", help="WAF严格绕过注入检测(HPP/分块/Unicode/注释嵌套)")
+    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.set_defaults(func=cmd_waf_heavy)
+
+    p = sub.add_parser("bizlogic", help="深度业务逻辑漏洞挖掘(2FA/价格/MassAssn/逻辑)")
+    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.set_defaults(func=cmd_bizlogic)
+
     p = sub.add_parser("deepscan", help="深度扫描(爬虫+检测+报告)")
     p.add_argument("target")
     p.set_defaults(func=cmd_deepscan)
@@ -421,10 +581,22 @@ def main():
     p.add_argument("--chain", default="full_chain")
     p.set_defaults(func=cmd_chain)
 
-    p = sub.add_parser("proxy", help="MITM代理(凭据捕获)")
+    p = sub.add_parser("proxy", help="MITM代理(请求/响应捕获+检测)")
     p.add_argument("--port", type=int, default=8080)
-    p.add_argument("--capture-time", type=int, default=60)
+    p.add_argument("--proxy-host", default="127.0.0.1")
+    p.add_argument("--proxy-duration", type=int, default=0,
+                   help="自动结束秒数(0=手动Ctrl+C)")
     p.set_defaults(func=cmd_proxy)
+
+    p = sub.add_parser("capture", help="环境感知数据包捕获(Kali tcpdump / 本地)")
+    p.add_argument("--capture-iface", default="", help="网卡接口名")
+    p.add_argument("--capture-count", type=int, default=1000, help="抓包数量")
+    p.add_argument("--capture-filter", default="", help="BPF过滤器")
+    p.add_argument("--capture-timeout", type=int, default=60, help="超时秒数")
+    p.add_argument("--capture-http", action="store_true", help="仅HTTP(80/8080)")
+    p.add_argument("--capture-tls", action="store_true", help="仅TLS(443)")
+    p.add_argument("--realtime", action="store_true", help="实时HTTP流模式(tshark -T fields)")
+    p.set_defaults(func=cmd_capture)
 
     p = sub.add_parser("workflow", help="工作流执行")
     p.add_argument("workflow", help="工作流名称或JSON文件路径")
@@ -433,7 +605,6 @@ def main():
     p.add_argument("--password", default="")
     p.set_defaults(func=cmd_workflow)
 
-    # Weaponization
     p = sub.add_parser("sqli-weaponize", help="SQL注入数据提取")
     p.add_argument("url"); p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_sqli_weaponize)
@@ -463,7 +634,6 @@ def main():
     p.add_argument("--encode", default="raw", choices=["raw", "url", "b64", "ps_b64"])
     p.set_defaults(func=cmd_reverse_shell)
 
-    # Utilities
     p = sub.add_parser("param-mine", help="参数挖掘")
     p.add_argument("target")
     p.add_argument("--threads", type=int, default=5)
@@ -486,12 +656,51 @@ def main():
     p.add_argument("--param", default="")
     p.set_defaults(func=cmd_payload_mutate)
 
+    p = sub.add_parser("list", help="列出所有可用工具")
+    p.set_defaults(func=cmd_list)
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
         sys.exit(1)
 
-    args.func(args)
+    url_cmds = {"dirfuzz", "sqlcheck", "xsscheck", "cmdi", "ssti", "ssrf",
+                "nosqli", "lfi", "sqli-blind", "sqli-oob", "auth-bypass",
+                "jwt", "graphql", "deser", "proto-pollution", "cors",
+                "xss-validate", "waf", "waf-heavy", "bizlogic",
+                "chain", "sqli-weaponize",
+                "jwt-exploit", "ssrf-pwn", "ssrf-lateral", "deser-weaponize"}
+    if args.command in url_cmds:
+        u = getattr(args, "url", "") or ""
+        if u:
+            try:
+                _validate_url(u)
+            except ValueError as e:
+                logger.error("URL validation failed: %s", e)
+                sys.exit(1)
+    if args.command in ("portscan", "param-mine", "crawl", "deepscan", "autohunt", "auto"):
+        t = getattr(args, "target", "") or ""
+        try:
+            _validate_url(t, "target")
+        except ValueError as e:
+            logger.error("Target validation failed: %s", e)
+            sys.exit(1)
+    if args.command == "portscan" and args.ports:
+        for p in args.ports.split(","):
+            p = p.strip()
+            if not p.isdigit() or not (1 <= int(p) <= 65535):
+                logger.error("Invalid port number: %s", p)
+                sys.exit(1)
+    if args.command == "dirfuzz" and args.wordlist and not os.path.isfile(args.wordlist):
+        logger.error("Wordlist file not found: %s", args.wordlist)
+        sys.exit(1)
+
+    try:
+        args.func(args)
+    except Exception as e:
+        logger.error("Command '%s' failed: %s", args.command, e)
+        logger.debug("Full traceback:", exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

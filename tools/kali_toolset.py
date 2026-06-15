@@ -1,0 +1,327 @@
+import json, re, time, os, uuid
+from typing import Optional, Dict, List
+from tools.log_utils import get_logger
+from tools.kali_executor import get_kali, is_available, has_tool
+
+logger = get_logger("kali_toolset")
+
+
+# ---------------------------------------------------------------------------
+# sqlmap wrapper
+# ---------------------------------------------------------------------------
+
+SQLMAP_OUTPUT_DIR = "/tmp/aimy_sqlmap"
+
+
+def sqlmap_detect(url: str, param: str, dbms: Optional[str] = None) -> Dict:
+    kali = get_kali()
+    if not kali:
+        return {"vulnerable": False, "error": "Kali not connected"}
+    if not has_tool("sqlmap") and not kali.check_tool("sqlmap"):
+        return {"vulnerable": False, "error": "sqlmap not found on Kali"}
+
+    tag = uuid.uuid4().hex[:8]
+    output_dir = f"{SQLMAP_OUTPUT_DIR}/{tag}"
+    cmd = (
+        f"sqlmap -u '{url}?{param}=1' "
+        f"--batch --output-dir={output_dir} "
+        f"--time-sec=3 --level=3 --risk=2 "
+        f"--random-agent --flush-session "
+    )
+    if dbms:
+        cmd += f"--dbms={dbms} "
+    cmd += "2>&1"
+
+    start = time.time()
+    r = kali.run(cmd, timeout=300)
+    elapsed = time.time() - start
+    stdout = r.get("stdout", "")
+    stderr = r.get("stderr", "")
+
+    result = {
+        "vulnerable": False,
+        "tool": "sqlmap",
+        "elapsed": round(elapsed, 1),
+        "dbms": None,
+        "technique": None,
+        "data": {},
+        "error": None,
+        "raw_output": stdout[-2000:] if len(stdout) > 2000 else stdout,
+    }
+
+    if "all tested parameters" in stdout and "not injectable" in stdout:
+        result["vulnerable"] = False
+        result["note"] = "sqlmap: not injectable"
+        return result
+
+    if "got a refresh" in stdout or "is vulnerable" in stdout:
+        result["vulnerable"] = True
+
+    dbms_match = re.search(r"web application technology:\s*(.+?)(?:\n|$)", stdout, re.I)
+    if dbms_match:
+        result["dbms"] = dbms_match.group(1).strip()
+
+    tech_match = re.search(r"Type:\s*(.+?)(?:\n|$)", stdout, re.I)
+    if tech_match:
+        result["technique"] = tech_match.group(1).strip()
+
+    payload_match = re.search(r"Parameter:\s*(\w+)\s+\((.+?)\)", stdout)
+    if payload_match:
+        result["injected_param"] = payload_match.group(1)
+        result["injection_type"] = payload_match.group(2)
+
+    # Try to read extracted data from sqlmap output
+    data_pattern = re.compile(
+        r'\[\d+:\d+:\d+\]\s*\[INFO\]\s*table\s*\'(.+?)\'\.\'(.+?)\'.*?\n'
+        r'(.*?)(?=\n\[|\Z)', re.DOTALL
+    )
+    data_matches = data_pattern.findall(stdout)
+    for table, column, data_block in data_matches:
+        rows = re.findall(r"\|(.+?)\|", data_block)
+        if rows:
+            result["data"][f"{table}.{column}"] = rows[:20]
+
+    # Check log files for extracted data
+    log_path = f"{output_dir}/log"
+    log_content = kali.read_file_lines(log_path)
+    for line in log_content[-50:]:
+        dmp = re.search(r"\[INFO\]\s*retrieved:\s*'(.+?)'", line)
+        if dmp:
+            val = dmp.group(1)
+            result["data"]["retrieved"] = result["data"].get("retrieved", []) + [val]
+
+    if not result["data"] and result["vulnerable"]:
+        result["data"]["note"] = "SQLi confirmed, run sqlmap_extract() for full data dump"
+
+    return result
+
+
+def sqlmap_extract(url: str, param: str, dbms: Optional[str] = None,
+                   queries: Optional[List[str]] = None) -> Dict:
+    kali = get_kali()
+    if not kali:
+        return {"success": False, "error": "Kali not connected"}
+
+    tag = uuid.uuid4().hex[:8]
+    output_dir = f"{SQLMAP_OUTPUT_DIR}/{tag}"
+    result = {"success": False, "data": {}}
+
+    if not queries:
+        queries = ["--dbs", "--current-db"]
+        cmd = (
+            f"sqlmap -u '{url}?{param}=1' --batch "
+            f"--output-dir={output_dir} --time-sec=3 "
+            f"--random-agent --no-cast "
+        )
+        if dbms:
+            cmd += f"--dbms={dbms} "
+        cmd += "--dbs 2>&1"
+        r = kali.run(cmd, timeout=600)
+        stdout = r.get("stdout", "")
+        dbs = re.findall(r"\[\*\]\s+(.+?)(?:\n|$)", stdout)
+        dbs = [d.strip() for d in dbs if d.strip() and d.strip() != "*"]
+        if dbs:
+            result["data"]["databases"] = dbs
+
+        cmd = (
+            f"sqlmap -u '{url}?{param}=1' --batch "
+            f"--output-dir={output_dir} --time-sec=3 "
+            f"--random-agent --no-cast "
+        )
+        if dbms:
+            cmd += f"--dbms={dbms} "
+        cmd += "--current-db --tables 2>&1"
+        r = kali.run(cmd, timeout=600)
+        stdout = r.get("stdout", "")
+        tables = re.findall(r"\| (.+?) \|", stdout)
+        if tables:
+            result["data"]["tables"] = tables
+
+        cmd = (
+            f"sqlmap -u '{url}?{param}=1' --batch "
+            f"--output-dir={output_dir} --time-sec=3 "
+            f"--random-agent --no-cast --dump-all "
+            f"--threads=4 2>&1"
+        )
+        if dbms:
+            cmd += f"--dbms={dbms} "
+
+        logger.info("sqlmap full dump started (may take minutes)...")
+        r = kali.run(cmd, timeout=1800)
+        stdout = r.get("stdout", "")
+
+        # Parse dumped data
+        dump_re = re.compile(
+            r"Table:\s+(.+?)\n.*?\[(\d+)\].*?\n(.*?)(?=\n\[|\Z)", re.DOTALL
+        )
+        for match in dump_re.finditer(stdout):
+            tbl = match.group(1).strip()
+            rows = re.findall(r"\|(.+?)\|", match.group(3))
+            if rows:
+                result["data"][f"dump_{tbl}"] = rows
+
+        result["success"] = True
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# nmap wrapper
+# ---------------------------------------------------------------------------
+
+def nmap_scan(target: str, ports: str = "21,22,80,443,3306,6379,8080,8443,9200,27017",
+              fast: bool = True) -> Dict:
+    kali = get_kali()
+    if not kali:
+        return {"success": False, "error": "Kali not connected"}
+    if not has_tool("nmap") and not kali.check_tool("nmap"):
+        return {"success": False, "error": "nmap not found on Kali"}
+
+    if fast:
+        cmd = f"nmap -T4 -F --open -oG - {target} 2>&1"
+    else:
+        cmd = f"nmap -sV -sC -p {ports} --open -oG - {target} 2>&1"
+
+    r = kali.run(cmd, timeout=300)
+    stdout = r.get("stdout", "")
+
+    ports_found = []
+    for line in stdout.splitlines():
+        if "/open/" in line or "/open|" in line:
+            parts = line.split()
+            for part in parts:
+                m = re.match(r"(\d+)/(open|filtered)/(tcp|udp)", part)
+                if m:
+                    entry = {"port": int(m.group(1)), "state": m.group(2), "protocol": m.group(3)}
+                    ports_found.append(entry)
+
+    os_info = ""
+    os_m = re.search(r"OS: (.+)", stdout)
+    if os_m:
+        os_info = os_m.group(1).strip()
+
+    return {
+        "success": True,
+        "target": target,
+        "ports": ports_found,
+        "count": len(ports_found),
+        "os": os_info,
+        "raw": stdout[:2000] if len(stdout) > 2000 else stdout,
+    }
+
+
+# ---------------------------------------------------------------------------
+# ffuf wrapper
+# ---------------------------------------------------------------------------
+
+def ffuf_discover(url: str, wordlist: str = "/usr/share/wordlists/dirb/common.txt",
+                  extensions: str = "", threads: int = 50) -> Dict:
+    kali = get_kali()
+    if not kali:
+        return {"success": False, "error": "Kali not connected"}
+    if not has_tool("ffuf") and not kali.check_tool("ffuf"):
+        return {"success": False, "error": "ffuf not found on Kali"}
+
+    target = url.rstrip("/") + "/FUZZ"
+    cmd = f"ffuf -u '{target}' -w {wordlist} -t {threads} -fc 404 -of json -o /tmp/ffuf_out.json 2>/dev/null"
+    if extensions:
+        cmd += f" -e {extensions}"
+    cmd += " && cat /tmp/ffuf_out.json 2>/dev/null"
+
+    r = kali.run(cmd, timeout=120)
+    stdout = r.get("stdout", "")
+
+    results = []
+    try:
+        data = json.loads(stdout)
+        for entry in data.get("results", []):
+            results.append({
+                "path": entry.get("input", {}).get("FUZZ", ""),
+                "status": entry.get("status"),
+                "size": entry.get("length", 0),
+            })
+    except (json.JSONDecodeError, TypeError):
+        for line in stdout.splitlines():
+            m = re.match(r"FUZZ:\s*(\S+)", line)
+            if m:
+                results.append({"path": m.group(1)})
+
+    return {
+        "success": True,
+        "url": url,
+        "paths": results,
+        "count": len(results),
+    }
+
+
+# ---------------------------------------------------------------------------
+# nuclei wrapper
+# ---------------------------------------------------------------------------
+
+def nuclei_scan(target: str, severity: str = "medium,high,critical",
+                templates: str = "") -> Dict:
+    kali = get_kali()
+    if not kali:
+        return {"success": False, "error": "Kali not connected"}
+    if not has_tool("nuclei") and not kali.check_tool("nuclei"):
+        return {"success": False, "error": "nuclei not found on Kali"}
+
+    cmd = f"nuclei -u '{target}' -severity {severity} -json -o /tmp/nuclei_out.json 2>/dev/null"
+    if templates:
+        cmd = f"nuclei -u '{target}' -t {templates} -json -o /tmp/nuclei_out.json 2>/dev/null"
+    cmd += " && cat /tmp/nuclei_out.json 2>/dev/null"
+
+    r = kali.run(cmd, timeout=300)
+    stdout = r.get("stdout", "")
+
+    findings = []
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+            findings.append({
+                "template": entry.get("template-id", ""),
+                "name": entry.get("info", {}).get("name", ""),
+                "severity": entry.get("info", {}).get("severity", ""),
+                "matched": entry.get("matched-at", ""),
+                "type": entry.get("type", ""),
+            })
+        except json.JSONDecodeError:
+            pass
+
+    return {
+        "success": True,
+        "target": target,
+        "findings": findings,
+        "count": len(findings),
+    }
+
+
+# ---------------------------------------------------------------------------
+# whatweb wrapper
+# ---------------------------------------------------------------------------
+
+def whatweb_identify(target: str) -> Dict:
+    kali = get_kali()
+    if not kali:
+        return {"success": False, "error": "Kali not connected"}
+    if not has_tool("whatweb") and not kali.check_tool("whatweb"):
+        return {"success": False, "error": "whatweb not found on Kali"}
+
+    cmd = f"whatweb -a 3 --color=never '{target}' 2>/dev/null"
+    r = kali.run(cmd, timeout=60)
+    stdout = r.get("stdout", "")
+
+    techs = []
+    tech_m = re.findall(r'([\w\s]+?)\[', stdout)
+    if tech_m:
+        techs = [t.strip() for t in tech_m if t.strip()]
+
+    return {
+        "success": True,
+        "target": target,
+        "technologies": techs,
+        "raw": stdout.strip(),
+    }

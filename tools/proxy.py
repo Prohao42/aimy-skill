@@ -3,6 +3,10 @@ from typing import Dict, Optional, Any
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
+from tools.log_utils import get_logger
+
+logger = get_logger("proxy")
+
 CREDENTIAL_PATTERNS = [
     (r'(?i)(password|passwd|pwd)=([^&\s"]+)', "password"),
     (r'(?i)(secret|api_key|apikey)=([^&\s"]+)', "api_key"),
@@ -14,8 +18,10 @@ CREDENTIAL_PATTERNS = [
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
-    req_body = b""
-    resp_body = b""
+    def __init__(self, *args, **kwargs):
+        self.req_body = b""
+        self.resp_body = b""
+        super().__init__(*args, **kwargs)
 
     def do_GET(self):
         self._handle_request("GET")
@@ -23,13 +29,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         if length > 0:
-            ProxyHandler.req_body = self.rfile.read(length)
+            self.req_body = self.rfile.read(length)
         self._handle_request("POST")
 
     def do_PUT(self):
         length = int(self.headers.get("Content-Length", 0))
         if length > 0:
-            ProxyHandler.req_body = self.rfile.read(length)
+            self.req_body = self.rfile.read(length)
         self._handle_request("PUT")
 
     def do_DELETE(self):
@@ -43,7 +49,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
             host, port = self.path.split(":")
             self.send_response(200)
             self.end_headers()
-        except:
+        except Exception as e:
+            logger.debug("CONNECT failed: %s", e)
             self.send_response(502)
             self.end_headers()
 
@@ -56,15 +63,16 @@ class ProxyHandler(BaseHTTPRequestHandler):
         try:
             resp = requests.request(method, target, headers=headers, data=body,
                                     timeout=10, verify=False)
-            ProxyHandler.resp_body = resp.content
+            self.resp_body = resp.content
             self.send_response(resp.status_code)
             for k, v in resp.headers.items():
                 if k.lower() not in ("transfer-encoding", "content-encoding"):
                     self.send_header(k, v)
             self.end_headers()
             self.wfile.write(resp.content)
-        except:
-            ProxyHandler.resp_body = b""
+        except Exception as e:
+            logger.debug("request failed: %s", e)
+            self.resp_body = b""
             self.send_response(502)
             self.end_headers()
 
@@ -79,12 +87,14 @@ class ProxyCapture:
         self.thread = None
         self.running = False
         self.callbacks = []
+        self.last_req_body = b""
+        self.last_resp_body = b""
 
     def start(self):
         if self.running:
             return
-        ProxyHandler.req_body = b""
-        ProxyHandler.resp_body = b""
+        self.last_req_body = b""
+        self.last_resp_body = b""
         self.server = HTTPServer(("127.0.0.1", self.port), ProxyHandler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -96,7 +106,7 @@ class ProxyCapture:
             self.running = False
 
     def extract_credentials(self) -> list:
-        raw = ProxyHandler.req_body.decode("utf-8", errors="replace") + "\n"
+        raw = self.last_req_body.decode("utf-8", errors="replace") + "\n"
         raw += "\n".join("%s: %s" % (k, v) for k, v in
                          [("Authorization", "Bearer X")])
         findings = []
@@ -108,7 +118,7 @@ class ProxyCapture:
 
     def extract_session(self) -> Dict:
         data = {"cookies": {}, "headers": {}}
-        raw = ProxyHandler.req_body.decode("utf-8", errors="replace")
+        raw = self.last_req_body.decode("utf-8", errors="replace")
         for m in re.finditer(r'(?i)(session[_-]?id|token|jwt)=([^&\s"]+)', raw):
             data["cookies"][m.group(1)] = m.group(2)
         return data

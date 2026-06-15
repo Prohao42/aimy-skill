@@ -2,6 +2,10 @@ import re, pickle, json
 from typing import Optional, Dict
 import requests
 
+from tools.log_utils import get_logger
+
+logger = get_logger("auth_engine")
+
 CSRF_PATTERNS = [
     r'name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)',
     r'name=["\']_csrf["\'][^>]*value=["\']([^"\']+)',
@@ -62,7 +66,8 @@ class AuthSession:
             action_url = fields.get("action") or login_url
             r = self.sess.post(action_url, data=data, timeout=10, verify=False)
             return r.status_code == 200 and len(r.text) > 100
-        except:
+        except Exception as e:
+            logger.debug("login_form: %s", e)
             return False
 
     def login_api(self, url: str, username: str, password: str,
@@ -78,11 +83,12 @@ class AuthSession:
                         tok = j.get("token") or j.get("access_token") or j.get("data", {}).get("token", "")
                         if tok:
                             self.sess.headers["Authorization"] = "Bearer %s" % tok
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.debug("login_api parse: %s", e)
                 return True
             return False
-        except:
+        except Exception as e:
+            logger.debug("login_api: %s", e)
             return False
 
     def login_basic(self, url: str, username: str, password: str) -> bool:
@@ -91,7 +97,8 @@ class AuthSession:
             r = self.sess.get(url, auth=HTTPBasicAuth(username, password),
                               timeout=10, verify=False)
             return r.status_code < 400
-        except:
+        except Exception as e:
+            logger.debug("login_basic: %s", e)
             return False
 
     def set_cookies(self, cookies: Dict[str, str]) -> None:
@@ -118,13 +125,30 @@ class AuthSession:
             for k, v in data.get("headers", {}).items():
                 self.sess.headers[k] = v
             return True
-        except:
+        except Exception as e:
+            logger.debug("load_session: %s", e)
             return False
 
 
 def auth_from_args(args) -> requests.Session:
     sess = requests.Session()
     sess.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+
+    from tools.kali_executor import init_kali, init_kali_local
+
+    if getattr(args, "kali_local", False):
+        init_kali_local()
+    else:
+        kali_host = getattr(args, "kali_host", None) or ""
+        if kali_host:
+            init_kali(
+                host=kali_host,
+                port=getattr(args, "kali_port", 22),
+                user=getattr(args, "kali_user", "root") or "root",
+                password=getattr(args, "kali_pass", "") or "",
+                key_file=getattr(args, "kali_key", "") or "",
+            )
+
     auth_type = getattr(args, "auth_type", None)
     if not auth_type:
         return sess
@@ -144,13 +168,8 @@ def auth_from_args(args) -> requests.Session:
     session_file = getattr(args, "session_file", None)
     if session_file:
         try:
-            with open(session_file, "rb") as f:
-                data = pickle.load(f)
-            for k, v in data.get("cookies", {}).items():
-                sess.cookies.set(k, v)
-            for k, v in data.get("headers", {}).items():
-                sess.headers[k] = v
-        except:
-            pass
+            engine.load_session(session_file)
+        except Exception as e:
+            logger.debug("session file load: %s", e)
 
     return sess

@@ -1,6 +1,11 @@
 import urllib.parse, re, time, threading, concurrent.futures
 from typing import Dict, List, Optional
 
+from tools.log_utils import get_logger
+from tools.http_client import build_url
+
+logger = get_logger("param_miner")
+
 COMMON_GET_PARAMS = [
     "id", "page", "file", "url", "cmd", "q", "search", "name", "user",
     "type", "category", "sort", "order", "limit", "offset", "filter",
@@ -27,10 +32,11 @@ COMMON_POST_PARAMS = [
 class ParamMiner:
     def __init__(self, target_url: str,
                  sess: Optional['requests.Session'] = None, timeout: float = 10.0,
-                 threads: int = 1):
+                 threads: int = 1, delay: float = 0.0):
         self.base_url = target_url.rstrip("/")
         self.timeout = timeout
         self.threads = threads
+        self.delay = delay
         self._http = None
         self._http_raw = sess
 
@@ -49,7 +55,8 @@ class ParamMiner:
             elapsed = time.time() - start
             return {"status": r.status_code, "length": len(r.text),
                     "body": r.text[:500], "time": elapsed, "url": r.url}
-        except:
+        except Exception as e:
+            logger.debug("baseline %s: %s", url, e)
             return {"status": 0, "length": 0, "body": "", "time": 0, "url": url}
 
     def _test_param(self, base_url: str, param: str, method: str = "GET") -> Dict:
@@ -57,8 +64,7 @@ class ParamMiner:
         test_value = "test_%d_%s" % (int(time.time() * 1000) % 10000, param)
         try:
             if method == "GET":
-                sep = "?" if "?" not in base_url else "&"
-                test_url = "%s%s%s=%s" % (base_url, sep, param, test_value)
+                test_url = build_url(base_url, param, test_value)
                 start = time.time()
                 r = http.get(test_url, timeout=self.timeout, verify=False)
                 elapsed = time.time() - start
@@ -85,7 +91,8 @@ class ParamMiner:
                 else:
                     result["reflected"] = False
             return result
-        except:
+        except Exception as e:
+            logger.debug("test param %s on %s: %s", param, base_url, e)
             return {"param": param, "method": method, "error": "request failed",
                     "status": 0, "length": 0, "time": 0}
 
@@ -103,6 +110,8 @@ class ParamMiner:
             if r.get("reflected") or r.get("different") or r["status"] not in (404, 400, 0):
                 with lock:
                     results.append(r)
+            if self.delay > 0:
+                time.sleep(self.delay)
 
         n = min(self.threads, len(params))
         if n > 1:
@@ -166,6 +175,6 @@ class ParamMiner:
 
 def mine(target_url: str, endpoints: Dict[str, Dict] = None,
          sess: Optional['requests.Session'] = None, timeout: float = 10.0,
-         threads: int = 1) -> Dict:
-    m = ParamMiner(target_url, sess, timeout, threads)
+         threads: int = 1, delay: float = 0.0) -> Dict:
+    m = ParamMiner(target_url, sess, timeout, threads, delay)
     return m.run(endpoints)

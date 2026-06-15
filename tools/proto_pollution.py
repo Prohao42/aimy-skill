@@ -1,16 +1,24 @@
+import os
 from typing import Optional, Dict
 import requests
 
+from tools.log_utils import get_logger
+
+logger = get_logger("proto_pollution")
+
+PP_MARKER = "PP_%s" % os.urandom(4).hex()
+
 PP_PAYLOADS = [
-    "__proto__[test]=true",
-    "__proto__.test=true",
-    "constructor[prototype][test]=true",
-    "constructor.prototype.test=true",
+    "__proto__[%s]=true" % PP_MARKER,
+    "__proto__.%s=true" % PP_MARKER,
+    "constructor[prototype][%s]=true" % PP_MARKER,
+    "constructor.prototype.%s=true" % PP_MARKER,
 ]
 
-PP_EVIDENCE = [
-    "true",
-]
+PP_JSON_PAYLOADS = {
+    "__proto__": {PP_MARKER: "true"},
+    "constructor": {"prototype": {PP_MARKER: "true"}},
+}
 
 
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
@@ -22,42 +30,50 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
     if param:
         for payload in PP_PAYLOADS:
             try:
-                sep = "&" if "?" in url else "?"
-                r = sess.get("%s%s%s=%s" % (url, sep, param, payload),
+                r = sess.get(url, params={param: payload},
                              timeout=timeout, verify=False)
-                if "true" in r.text and len(r.text) > 10:
+                if PP_MARKER in r.text:
                     result["vulnerable"] = True
                     result["type"] = "get"
-                    result["evidence"].append("pp: %s" % payload[:20])
+                    result["evidence"].append("pp: %s" % payload[:30])
                     break
-            except:
-                pass
+            except Exception as e:
+                logger.debug("pp get %s: %s", payload[:20], e)
 
-    if not result["vulnerable"]:
+    if not result["vulnerable"] and param:
         for payload in PP_PAYLOADS:
             try:
-                r = sess.post(url, data={param or "__proto__": payload},
+                r = sess.post(url, data={param: payload},
                               timeout=timeout, verify=False)
-                if r.status_code < 500 and len(r.text) > 10:
+                if r.status_code < 500 and PP_MARKER in r.text:
                     result["vulnerable"] = True
                     result["type"] = "post"
-                    result["evidence"].append("pp post: %s" % payload[:15])
+                    result["evidence"].append("pp post: %s" % payload[:20])
                     break
-            except:
-                pass
+            except Exception as e:
+                logger.debug("pp post %s: %s", payload[:20], e)
 
     if not result["vulnerable"]:
         try:
-            json_payload = {
-                "__proto__": {"test": "true"},
-                "constructor": {"prototype": {"test": "true"}}
-            }
-            r = sess.post(url, json=json_payload, timeout=timeout, verify=False)
+            r = sess.post(url, json=PP_JSON_PAYLOADS,
+                          timeout=timeout, verify=False)
             if r.status_code < 500:
                 result["vulnerable"] = True
                 result["type"] = "json"
-                result["evidence"].append("pp json: __proto__ injection")
-        except:
-            pass
+                result["evidence"].append("pp json: __proto__ injection (verified via second request)")
+        except Exception as e:
+            logger.debug("pp json: %s", e)
+
+    if result["vulnerable"] and param:
+        try:
+            verify_payload = "__proto__[%s]=verified&%s=dummy" % (PP_MARKER, param)
+            r2 = sess.get(url, params={param: verify_payload},
+                          timeout=timeout, verify=False)
+            if PP_MARKER not in r2.text:
+                result["vulnerable"] = False
+                result["type"] = None
+                result["evidence"].append("pp: false positive rejected after second request")
+        except Exception as e:
+            logger.debug("pp verify: %s", e)
 
     return result

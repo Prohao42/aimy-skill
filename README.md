@@ -14,146 +14,177 @@
 </p>
 
 ---
+
 # Aimy-Sikll - AI Agent 轻量级渗透测试辅助工具
 
-`aimy-sikll` 是一个专为 **AI Agent**（如 Claude Code、AutoGPT）设计的轻量级渗透测试辅助工具。它提供简洁的命令行接口和 JSON 结构化输出，方便 AI 自动调用，也可手动用于快速漏洞检测。
+`aimy-sikll` 是一个专为 **AI Agent**（如 Claude Code、AutoGPT）设计的轻量级渗透测试辅助工具。所有输出均为 JSON 结构化格式，方便 AI 自动推理。
 
-## ✨ 核心功能
+## 命令速查
 
-| 功能 | 说明 | 适用场景 |
-|------|------|----------|
-| **端口扫描 (Port Scan)** | 探测目标主机的常见 TCP 开放端口 | 快速发现目标暴露的服务端口，了解网络攻击面 |
-| **目录枚举 (Dir Fuzz)** | 基于字典对 Web 路径进行模糊测试 | 寻找未公开的管理后台、备份文件、敏感目录 |
-| **SQL 注入检测 (SQL Check)** | 支持错误型和时间型 Payload，自动探测注入点 | 快速验证 Web 参数是否存在 SQL 注入漏洞 |
+### 发现 (Discovery)
+| 命令 | 功能 | 示例 |
+|------|------|------|
+| `portscan` | TCP端口扫描 | `python main.py portscan scanme.nmap.org` |
+| `dirfuzz` | 目录枚举 | `python main.py dirfuzz http://example.com --wordlist common.txt` |
+| `crawl` | 网页爬虫 | `python main.py crawl http://example.com --depth 2 --max-pages 30` |
+| `param-mine` | 参数挖掘 | `python main.py param-mine http://example.com --threads 5` |
 
-## 🚀 快速上手
----
-✨ 功能一览
-模块	功能	输入	输出
-🔍 端口扫描	探测目标主机常见 TCP 端口	IP / 域名	JSON 格式开放端口列表
-📂 目录枚举	基于字典进行 Web 路径模糊测试	URL + 字典文件	可访问路径 + HTTP 状态码
-💉 SQL 注入检测	错误型 + 时间型 Payload 自动探测	URL + 参数名	脆弱点 + 触发 Payload + 漏洞类型
-详细功能说明
-<details> <summary><b>🔍 端口扫描</b> (点击展开)</summary>
-默认扫描端口
-21, 22, 23, 25, 80, 443, 445, 8080, 8443, 3306, 3389, 5432, 6379, 27017
+### 注入检测 (Injection Detection)
+| 命令 | 功能 | 示例 |
+|------|------|------|
+| `sqlcheck` | SQL注入检测 | `python main.py sqlcheck http://testphp.vulnweb.com/artists.php --param id` |
+| `sqli-blind` | SQL盲注利用 | `python main.py sqli-blind http://example.com/page --param id` |
+| `sqli-oob` | OOB SQL注入 | `python main.py sqli-oob http://example.com/page --param id --domain oob.local` |
+| `xsscheck` | XSS检测 | `python main.py xsscheck http://example.com/search --param q` |
+| `xss-validate` | XSS验证 | `python main.py xss-validate http://example.com/search --param q` |
+| `cmdi` | 命令注入检测 | `python main.py cmdi http://example.com/exec --param cmd` |
+| `ssti` | 模板注入检测 | `python main.py ssti http://example.com/greet --param name` |
+| `ssrf` | SSRF检测 | `python main.py ssrf http://example.com/fetch --param url` |
+| `nosqli` | NoSQL注入检测 | `python main.py nosqli http://example.com/login --param id` |
+| `lfi` | 本地文件包含检测 | `python main.py lfi http://example.com/file --param file` |
 
-特性
+### 认证/授权 (Auth & Access Control)
+| 命令 | 功能 | 示例 |
+|------|------|------|
+| `auth-bypass` | 认证绕过检测 | `python main.py auth-bypass http://example.com/admin` |
+| `jwt` | JWT检测 | `python main.py jwt http://example.com/api` |
+| `jwt-exploit` | JWT利用 (crack/伪造) | `python main.py jwt-exploit http://example.com/api --token eyJ...` |
+| `cors` | CORS检测 | `python main.py cors http://example.com/api` |
 
-支持自定义端口列表
+### 其他检测 (Other Checks)
+| 命令 | 功能 | 示例 |
+|------|------|------|
+| `graphql` | GraphQL扫描 | `python main.py graphql http://example.com/graphql` |
+| `deser` | 反序列化检测 | `python main.py deser http://example.com/api --param data` |
+| `proto-pollution` | 原型链污染检测 | `python main.py proto-pollution http://example.com/api --param data` |
+| `waf` | WAF指纹识别与绕过 | `python main.py waf http://example.com --param id` |
 
-超时可调（默认 2 秒）
+### 武器化 (Weaponization)
+| 命令 | 功能 | 示例 |
+|------|------|------|
+| `sqli-weaponize` | SQL注入数据提取 | `python main.py sqli-weaponize http://example.com/page --param id` |
+| `ssrf-pwn` | SSRF文件读取与云元数据 | `python main.py ssrf-pwn http://example.com/fetch --param url` |
+| `ssrf-lateral` | SSRF横向移动 | `python main.py ssrf-lateral http://example.com/fetch --param url` |
+| `deser-weaponize` | 反序列化payload生成 | `python main.py deser-weaponize` |
+| `reverse-shell` | 反弹Shell生成器 | `python main.py reverse-shell --lhost YOUR_IP --lport 4444` |
 
-非阻塞并发探测
+### 综合流程 (Multi-Phase Scans)
+| 命令 | 功能 | 示例 |
+|------|------|------|
+| `deepscan` | 深度扫描 (爬虫+检测+报告) | `python main.py deepscan http://example.com` |
+| `autohunt` | 自动狩猎 (+参数挖掘+武器化) | `python main.py autohunt http://example.com --threads 10` |
+| `auto` | 全自动渗透 (增强版) | `python main.py auto http://example.com --threads 10 --max-pages 30` |
+| `chain` | 利用链组合攻击 | `python main.py chain http://example.com/page --param id` |
+| `proxy` | MITM代理 (凭据捕获) | `python main.py proxy --port 8080 --capture-time 60` |
+| `workflow` | 工作流执行 | `python main.py workflow login_and_extract --target http://example.com` |
 
-输出示例
+### 工具 (Utilities)
+| 命令 | 功能 | 示例 |
+|------|------|------|
+| `fuzz` | 模糊测试 | `python main.py fuzz --payloads admin,root,test` |
+| `payload-mutate` | Payload变异 | `python main.py payload-mutate --payload "1' OR '1'='1" --param id` |
+| `list` | 列出所有可用工具 | `python main.py list` |
 
-json
-{"target": "scanme.nmap.org", "open_ports": [22, 80, 9929]}
-</details><details> <summary><b>📂 目录枚举</b> (点击展开)</summary>
-字典支持
+### 全局选项
+```
+--timeout SEC      请求超时秒数 (默认: 10.0)
+--delay SEC       请求间延迟秒数 (默认: 0.0)
+--auth-type TYPE  认证类型 (form/api/basic)
+--auth-url URL    认证URL
+--auth-user USER  认证用户名
+--auth-pass PASS  认证密码
+--session-file    会话文件路径 (.pkl)
+-v, --version     显示版本
+```
 
-内置默认字典（兼容 Kali common.txt）
+## 输出示例
 
-用户自定义字典文件（.txt，每行一个路径）
+```bash
+# 端口扫描
+$ python main.py portscan scanme.nmap.org
+{"target": "scanme.nmap.org", "open_ports": [{"port": 22, "state": "open"}, {"port": 80, "state": "open"}], "count": 2}
 
-特性
+# SQL注入检测
+$ python main.py sqlcheck http://testphp.vulnweb.com/artists.php --param id
+{"vulnerable": true, "type": "error", "evidence": ["' OR '1'='1"], "vector": "' OR '1'='1", "dbms": "MySQL"}
 
-自动处理 URL 拼接（忽略重复 /）
+# 全自动扫描
+$ python main.py auto http://testphp.vulnweb.com --max-pages 20
+[*] Phase 1/5: Crawling http://testphp.vulnweb.com ...
+  -> 8 pages, 15 endpoints, 5 params
+[*] Phase 2/5: Parameter mining ...
+  -> 12 params discovered across 3 endpoints
+[*] Phase 3/5: Auth bypass probing ...
+  -> 3 bypass vectors found (2 path, 1 cookie, 0 header)
+[*] Phase 4/5: Vulnerability detection ...
+  -> 2 vulnerabilities found: [SQLI:1] [XSS:1]
+[*] Phase 5/5: Weaponization ...
+  -> 2 exploit paths (1 ready)
 
-记录状态码：200, 403, 401, 500 等
+[... JSON report ...]
+```
 
-可控制是否跟随重定向
+## 认证系统
 
-输出示例
+支持三种认证方式，使用 `--auth-type` 指定:
 
-json
-{
-  "url": "http://example.com",
-  "found": [
-    ["http://example.com/admin", 200],
-    ["http://example.com/backup.zip", 403]
-  ]
-}
-</details><details> <summary><b>💉 SQL 注入检测</b> (点击展开)</summary>
-内置 Payload 集
+```bash
+# 表单登录 (自动提取 CSRF token)
+python main.py sqlcheck http://example.com/admin --auth-type form --auth-url http://example.com/login --auth-user admin --auth-pass secret
 
-错误型：', ", ' OR '1'='1, 1' AND '1'='1
+# API Bearer Token
+python main.py deepscan http://example.com/api --auth-type api --auth-url http://example.com/api/login --auth-user admin --auth-pass secret
 
-时间型：' OR SLEEP(5)--, ' WAITFOR DELAY '0:0:5'--
+# HTTP Basic Auth
+python main.py dirfuzz http://example.com --auth-type basic --auth-user admin --auth-pass secret
+```
 
-检测机制
+## 安装
 
-错误型：响应体中出现 mysql、sql、syntax 等关键字
+```bash
+pip install -r requirements.txt
+# 或
+uv sync
+```
 
-时间型：响应延时 > 3 秒（与正常请求对比）
+## 开发
 
-输出示例
+```bash
+# 安装开发依赖
+pip install -e ".[dev]"
 
-json
-{
-  "url": "http://testphp.vulnweb.com/artists.php",
-  "param": "id",
-  "vulnerabilities": [
-    ["' OR '1'='1", "error-based"],
-    ["' OR SLEEP(5)--", "time-based"]
-  ]
-}
-</details>
-🚀 使用示例
-端口扫描
-bash
-python main.py portscan scanme.nmap.org
-输出：
+# 运行测试
+pytest
 
-json
-{"target": "scanme.nmap.org", "open_ports": [22, 80, 9929]}
-目录枚举
-bash
-python main.py dirfuzz http://testphp.vulnweb.com --wordlist common.txt
-输出：
+# 带覆盖率
+pytest --cov=tools
+```
 
-json
-{
-  "url": "http://testphp.vulnweb.com",
-  "found": [["http://testphp.vulnweb.com/admin", 200]]
-}
-SQL 注入检测
-bash
-python main.py sqlcheck http://testphp.vulnweb.com/artists.php --param id
-输出：
+## 设计架构 (AI-Ready)
 
-json
-{
-  "url": "http://testphp.vulnweb.com/artists.php",
-  "param": "id",
-  "vulnerabilities": [["' OR '1'='1", "error-based"]]
-}
-🧠 设计架构 (AI‑Ready)
-text
+```
 User Input → AI Agent (Claude Code / AutoGPT)
                 ↓
-          aimy-sikll (Skill)
-        ┌─────────┼─────────┐
-        ↓         ↓         ↓
-   portscan   dirfuzz   sqlcheck
-        ↓         ↓         ↓
+          aimy-sikll
+        ┌────┼────┬────┬────┐
+        ↓    ↓    ↓    ↓    ↓
+    portscan dirfuzz sqlcheck xsscheck ...
+        ↓    ↓    ↓    ↓    ↓
    JSON 结构化输出 → 供 AI 进一步推理
-与 AI Agent 集成：将本 Skill 的调用命令写入 Agent 的提示词或工具描述中，Agent 即可自动规划并执行渗透测试步骤。
+```
 
-🛠️ 开发与扩展
-添加新工具：在 tools/ 目录下创建 .py 文件，实现核心逻辑，然后在 main.py 的 argparse 中注册子命令。
+## 架构优势
 
-推荐扩展方向：子域名枚举、XSS 检测、CVE 匹配、弱口令爆破（需增加授权提示）。
+- **模块化**: 35+ 个独立工具，统一 `check(url, param, sess, timeout) -> dict` 签名
+- **可扩展**: 添加新工具只需在 `tools/` 下创建文件，注册到 `tool_registry.py`
+- **AI友好**: 所有输出 JSON 结构化，AI Agent 可直接解析推理
+- **认证引擎**: 内置 form/api/basic 三种认证，支持 session 持久化
+- **全自动流程**: 从爬虫→参数挖掘→漏洞检测→武器化一站式完成
 
-bash
-	模式选择：（rookie菜鸟模式，默认）或veteran（老鸟模式）。也可在对话中用/mode命令实时切换
-# 单独运行某个工具（不通过 main.py）
-python tools/port_scanner.py 127.0.0.1
-⚠️ 法律声明
-本工具仅限在已获得明确授权的环境中进行安全测试、CTF 竞赛或漏洞研究使用。
-未经授权的使用可能违反法律法规。使用者需自行承担所有责任。
+## ⚠️ 法律声明
 
-🤝 贡献
-欢迎提交 Issue 或 Pull Request。
-Star ⭐ 这个仓库，让更多人看到这个轻量级安全研究助手。
+本工具仅限在已获得明确授权的环境中进行安全测试、CTF 竞赛或漏洞研究使用。未经授权的使用可能违反法律法规。使用者需自行承担所有责任。
+
+## 🤝 贡献
+
+欢迎提交 Issue 或 Pull Request。Star ⭐ 这个仓库，让更多人看到这个轻量级安全研究助手。

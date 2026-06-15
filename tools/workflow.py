@@ -1,5 +1,9 @@
-import json, re, time
+import json, re, time, os
 from typing import Dict, List, Optional, Any, Callable
+
+from tools.log_utils import get_logger
+
+logger = get_logger("workflow")
 
 
 class WorkflowStep:
@@ -48,8 +52,8 @@ class WorkflowStep:
                 result = self._do_execute(context, http)
                 if result.get("status", 500) < 500:
                     return result
-            except:
-                pass
+            except Exception as e:
+                logger.debug("step %s attempt %d: %s", self.name, attempt, e)
             if attempt < self.retry and self.retry_delay > 0:
                 time.sleep(self.retry_delay)
         return {"step": self.name, "error": "max retries exceeded"}
@@ -193,7 +197,6 @@ def run(workflow_name: str, context: Dict = None) -> Dict:
     http.headers["User-Agent"] = "Mozilla/5.0"
     if workflow_name in SAMPLE_WORKFLOWS:
         data = SAMPLE_WORKFLOWS[workflow_name]
-        wf = Workflow.from_json.__func__.__self__ if False else None
         steps = []
         for s in data.get("steps", []):
             steps.append(WorkflowStep(
@@ -211,9 +214,6 @@ def run(workflow_name: str, context: Dict = None) -> Dict:
         if os.path.exists(workflow_name):
             w = Workflow.from_json(workflow_name)
             return w.run(context or {})
-    except:
-        pass
+    except Exception as e:
+        logger.debug("workflow file: %s", e)
     return {"error": "workflow '%s' not found" % workflow_name}
-
-
-import os

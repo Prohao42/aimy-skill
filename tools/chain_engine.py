@@ -1,6 +1,10 @@
 from typing import Dict, Optional, List
 import requests
 
+from tools.log_utils import get_logger
+
+logger = get_logger("chain_engine")
+
 CHAIN_PATHS = {
     "sqli_to_rce": ["sqli_detect", "sqli_weaponizer", "reverse_shell"],
     "ssrf_to_pwn": ["ssrf_detect", "ssrf_lateral", "ssrf_pwn"],
@@ -35,8 +39,8 @@ class ChainEngine:
                 r = fn()
                 if isinstance(r, dict) and r.get("vulnerable"):
                     results[name] = r
-            except:
-                pass
+            except Exception as e:
+                logger.debug("detect_all %s: %s", name, e)
         return results
 
     def weaponize_all(self, url: str, param: str, lhost: str = "LHOST",
@@ -46,20 +50,20 @@ class ChainEngine:
         from tools import ssrf_lateral, ssrf_pwn, reverse_shell
         try:
             results["sqli"] = sqli_weaponizer.check(url, param, self.sess, self.timeout)
-        except:
-            pass
+        except Exception as e:
+            logger.debug("weaponize sqli: %s", e)
         try:
             results["ssrf_lateral"] = ssrf_lateral.run(url, param, self.sess, self.timeout)
-        except:
-            pass
+        except Exception as e:
+            logger.debug("weaponize ssrf_lateral: %s", e)
         try:
             results["ssrf_pwn"] = ssrf_pwn.check(url, param, self.sess, self.timeout)
-        except:
-            pass
+        except Exception as e:
+            logger.debug("weaponize ssrf_pwn: %s", e)
         try:
             results["reverse_shells"] = reverse_shell.run(lhost, lport)["shells"]
-        except:
-            pass
+        except Exception as e:
+            logger.debug("weaponize reverse_shell: %s", e)
         return results
 
     def weaponize_ssrf_lateral(self, url: str, param: str,

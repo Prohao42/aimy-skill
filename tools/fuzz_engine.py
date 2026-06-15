@@ -1,6 +1,10 @@
 import itertools, time, concurrent.futures
 from typing import Callable, Dict, Any, List
 
+from tools.log_utils import get_logger
+
+logger = get_logger("fuzz_engine")
+
 class FuzzEngine:
     def __init__(self, threads: int = 5, delay: float = 0):
         self.threads = threads
@@ -12,7 +16,8 @@ class FuzzEngine:
             try:
                 r = target_fn(payload=p, **fixed_kw)
                 return {"payload": p, "result": r}
-            except:
+            except Exception as e:
+                logger.debug("fuzz %s: %s", str(p)[:30], e)
                 return {"payload": p, "error": True}
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.threads) as ex:
             for res in ex.map(_test, payloads):
@@ -27,6 +32,7 @@ class FuzzEngine:
             try:
                 r = target_fn(**dict(zip(["p%d" % i for i in range(len(combo))], combo)))
                 results.append({"params": combo, "result": r})
-            except:
+            except Exception as e:
+                logger.debug("product_fuzz %s: %s", combo, e)
                 results.append({"params": combo, "error": True})
         return results

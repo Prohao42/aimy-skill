@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 
 from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.settings import settings
 
 logger = get_logger("param_miner")
 
@@ -44,6 +45,7 @@ class ParamMiner:
         if self._http is None:
             import requests
             self._http = self._http_raw or requests.Session()
+            self._http.verify = settings.verify_ssl
             self._http.headers["User-Agent"] = "Mozilla/5.0"
         return self._http
 
@@ -51,7 +53,7 @@ class ParamMiner:
         http = self._get_http()
         try:
             start = time.time()
-            r = http.get(url, timeout=self.timeout, verify=False)
+            r = http.get(url, timeout=self.timeout)
             elapsed = time.time() - start
             return {"status": r.status_code, "length": len(r.text),
                     "body": r.text[:500], "time": elapsed, "url": r.url}
@@ -66,12 +68,12 @@ class ParamMiner:
             if method == "GET":
                 test_url = build_url(base_url, param, test_value)
                 start = time.time()
-                r = http.get(test_url, timeout=self.timeout, verify=False)
+                r = http.get(test_url, timeout=self.timeout)
                 elapsed = time.time() - start
             else:
                 start = time.time()
                 r = http.post(base_url, data={param: test_value},
-                              timeout=self.timeout, verify=False)
+                              timeout=self.timeout)
                 elapsed = time.time() - start
             result = {
                 "param": param,
@@ -100,10 +102,12 @@ class ParamMiner:
         baseline = self._baseline(base_url)
         results = []
         lock = threading.Lock()
+        baseline_len = baseline["length"] if baseline["length"] > 0 else 1
 
         def _test(p):
             r = self._test_param(base_url, p, method)
-            if r["status"] != baseline["status"] or abs(r["length"] - baseline["length"]) > 10:
+            diff_ratio = abs(r["length"] - baseline["length"]) / baseline_len
+            if r["status"] != baseline["status"] or diff_ratio > 0.05:
                 r["different"] = True
             else:
                 r["different"] = False

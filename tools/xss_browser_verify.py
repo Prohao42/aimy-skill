@@ -1,6 +1,7 @@
 import re, requests, time, sys
 from typing import Optional, Dict
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("xss_browser_verify")
 
@@ -91,7 +92,7 @@ def _verify_http(url: str, param: str, sess: "requests.Session",
     for payload in CONFIRM_PAYLOADS:
         try:
             r = sess.get(_build_url(url, param, payload),
-                         timeout=timeout, verify=False)
+                         timeout=timeout)
             if payload in r.text.replace("&lt;", "<").replace("&gt;", ">"):
                 result["vulnerable"] = True
                 result["evidence"].append(f"payload reflected: {payload[:25]}")
@@ -105,7 +106,7 @@ def _verify_http(url: str, param: str, sess: "requests.Session",
 def check(url: str, param: str, sess: Optional["requests.Session"] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
 
     logger.info("XSS browser verify: %s?%s (playwright=%s)", url, param, HAS_PLAYWRIGHT)
 

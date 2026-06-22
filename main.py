@@ -3,6 +3,7 @@ import argparse, json, sys, os, time, ssl, urllib.parse as _urlparse
 from requests.adapters import HTTPAdapter
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("main")
 
@@ -17,10 +18,11 @@ class _TLS12Adapter(HTTPAdapter):
         ctx = ssl.create_default_context()
         ctx.minimum_version = ssl.TLSVersion.TLSv1_2
         ctx.maximum_version = ssl.TLSVersion.TLSv1_2
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+        if not settings.verify_ssl:
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            kwargs["assert_hostname"] = False
         kwargs["ssl_context"] = ctx
-        kwargs["assert_hostname"] = False
         return super().init_poolmanager(connections, maxsize=max(100, maxsize), block=block, **kwargs)
 
 
@@ -46,36 +48,19 @@ def _detect_challenge(html):
     return _CHALLENGE_PATTERN.search(html[:2000])
 
 
-def _solve_with_node(match):
-    import subprocess, socket as _sk
+def _solve_with_node(match, base_url):
+    import subprocess
     a, b, c = match.group(1), match.group(2), match.group(3)
     global _AES_JS_CACHE
     if _AES_JS_CACHE is None:
         try:
-            sock = _sk.create_connection(("idcard.kesug.com", 443), timeout=10)
-            sctx = ssl.create_default_context()
-            sctx.check_hostname = False
-            sctx.verify_mode = ssl.CERT_NONE
-            ssock = sctx.wrap_socket(sock, server_hostname="idcard.kesug.com")
-            req = (
-                b"GET /aes.js HTTP/1.1\r\n"
-                b"Host: idcard.kesug.com\r\n"
-                b"User-Agent: Mozilla/5.0\r\n"
-                b"Connection: close\r\n\r\n"
-            )
-            ssock.sendall(req)
-            data = b""
-            while True:
-                try:
-                    chunk = ssock.recv(65536)
-                    if not chunk:
-                        break
-                    data += chunk
-                except Exception:
-                    break
-            ssock.close()
-            body = data.split(b"\r\n\r\n", 1)[1] if b"\r\n\r\n" in data else b""
-            _AES_JS_CACHE = body.decode("utf-8", errors="replace") if len(body) > 1000 else ""
+            import requests as _req
+            resp = _req.get(base_url.rstrip("/") + "/aes.js",
+                            timeout=10, verify=settings.verify_ssl)
+            if resp.status_code == 200 and len(resp.text) > 1000:
+                _AES_JS_CACHE = resp.text
+            else:
+                _AES_JS_CACHE = ""
         except Exception:
             _AES_JS_CACHE = ""
     if not _AES_JS_CACHE:
@@ -99,6 +84,7 @@ def _sess(args):
     from tools.auth_engine import auth_from_args
     sess = auth_from_args(args)
     sess.mount("https://", _tls12_adapter())
+    sess.verify = settings.verify_ssl
     if "User-Agent" not in sess.headers:
         sess.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
@@ -112,7 +98,7 @@ def _sess(args):
             if "slowAES" in body:
                 m = _detect_challenge(body)
                 if m:
-                    cookie_val = _solve_with_node(m)
+                    cookie_val = _solve_with_node(m, req.url)
                     if cookie_val:
                         logger.info("Anti-bot challenge solved, retrying %s %s", req.method, req.url)
                         _challenge_solved[0] = True
@@ -168,7 +154,7 @@ def cmd_dirfuzz(args):
                   "config", ".git", ".env", "robots.txt", "sitemap.xml"]
     for path in paths[:args.max]:
         try:
-            r = http.get("%s/%s" % (url, path), timeout=args.timeout, verify=False)
+            r = http.get("%s/%s" % (url, path), timeout=args.timeout)
             if r.status_code not in (404,):
                 results.append({"path": "/%s" % path, "status": r.status_code,
                                 "size": len(r.text)})
@@ -274,7 +260,7 @@ def cmd_bizlogic(args):
 
 
 def cmd_waf_heavy(args):
-    from tools.waf_heavy_bypass import check as wh_check
+    from tools.waf_bypass import heavy_check as wh_check
     r = wh_check(args.url, args.param, _sess(args), args.timeout)
     print(json.dumps(r))
 
@@ -399,7 +385,7 @@ def cmd_reverse_shell(args):
 
 
 def cmd_ssrf_lateral(args):
-    from tools.ssrf_lateral import run as sslat_run
+    from tools.ssrf_pwn import run as sslat_run
     r = sslat_run(args.url, args.param, _sess(args), args.timeout)
     print(json.dumps(r))
 
@@ -452,6 +438,7 @@ def main():
         description="aimy-sikll v%s - 轻量级渗透测试辅助工具链" % VERSION,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--timeout", type=float, default=10.0, help="请求超时秒数")
+    parser.add_argument("--ssl-verify", action="store_true", help="启用SSL证书验证(默认关闭)")
     parser.add_argument("--auth-type", choices=["form", "api", "basic", ""], default="",
                         help="认证类型")
     parser.add_argument("--auth-url", default="", help="认证URL")
@@ -663,6 +650,9 @@ def main():
     if not args.command:
         parser.print_help()
         sys.exit(1)
+
+    if args.ssl_verify:
+        settings.verify_ssl = True
 
     url_cmds = {"dirfuzz", "sqlcheck", "xsscheck", "cmdi", "ssti", "ssrf",
                 "nosqli", "lfi", "sqli-blind", "sqli-oob", "auth-bypass",

@@ -4,6 +4,7 @@ import requests
 
 from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.settings import settings
 
 logger = get_logger("race_condition")
 
@@ -36,6 +37,7 @@ SUCCESS_KEYWORDS = ["true", "success", "claimed", "applied", "ok", "accepted"]
 class RaceConditionTester:
     def __init__(self, sess: Optional[requests.Session] = None, timeout: float = 10.0):
         self.sess = sess or requests.Session()
+        self.sess.verify = settings.verify_ssl
         self.timeout = timeout
 
     def _run_round(self, url: str, param: str, method: str,
@@ -44,10 +46,10 @@ class RaceConditionTester:
             try:
                 if method == "POST":
                     r = self.sess.post(url, data=data,
-                                       timeout=self.timeout, verify=False)
+                                       timeout=self.timeout)
                 else:
                     r = self.sess.get(build_url(url, param, param),
-                                      timeout=self.timeout, verify=False)
+                                      timeout=self.timeout)
                 return {"i": i, "status": r.status_code, "len": len(r.text),
                         "body": r.text[:500]}
             except Exception as e:
@@ -131,10 +133,10 @@ class RaceConditionTester:
         baseline = None
         try:
             if method == "POST":
-                baseline = self.sess.post(url, data=data, timeout=self.timeout, verify=False)
+                baseline = self.sess.post(url, data=data, timeout=self.timeout)
             else:
                 baseline = self.sess.get(build_url(url, param, "1"),
-                                         timeout=self.timeout, verify=False)
+                                         timeout=self.timeout)
         except Exception as e:
             logger.debug("race baseline: %s", e)
             return result

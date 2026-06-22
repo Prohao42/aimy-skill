@@ -5,6 +5,7 @@ import requests
 from tools.log_utils import get_logger
 from tools.http_client import build_url
 from tools.payload_engine import generate
+from tools.settings import settings
 
 logger = get_logger("ssti_detector")
 
@@ -27,7 +28,7 @@ TEMPLATE_ENGINE_FINGERPRINTS = {
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, waf_name: Optional[str] = None) -> dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "engine": None, "evidence": [], "payload": None}
 
     seeds = generate("ssti", "detect", "all", waf_name)
@@ -36,7 +37,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         indicator = entry["indicator"]
         try:
             r = sess.get(build_url(url, param, payload),
-                         timeout=timeout, verify=False)
+                         timeout=timeout)
             if indicator in r.text:
                 result["vulnerable"] = True
                 result["evidence"].append("ssti: %s => %s" % (payload[:25], indicator))
@@ -57,7 +58,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
             indicator = entry["indicator"]
             try:
                 r = sess.get(build_url(url, param, payload),
-                             timeout=timeout, verify=False)
+                             timeout=timeout)
                 if indicator in r.text:
                     result["vulnerable"] = True
                     result["evidence"].append("ssti: %s" % payload[:30])

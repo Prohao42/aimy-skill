@@ -1,4 +1,4 @@
-import json, re, time, os, uuid
+import json, re, time, os, uuid, shlex
 from typing import Optional, Dict, List
 from tools.log_utils import get_logger
 from tools.kali_executor import get_kali, is_available, has_tool
@@ -22,14 +22,16 @@ def sqlmap_detect(url: str, param: str, dbms: Optional[str] = None) -> Dict:
 
     tag = uuid.uuid4().hex[:8]
     output_dir = f"{SQLMAP_OUTPUT_DIR}/{tag}"
+    quoted_url = shlex.quote(url)
+    quoted_param = shlex.quote(param)
     cmd = (
-        f"sqlmap -u '{url}?{param}=1' "
-        f"--batch --output-dir={output_dir} "
+        f"sqlmap -u {quoted_url}?{quoted_param}=1 "
+        f"--batch --output-dir={shlex.quote(output_dir)} "
         f"--time-sec=3 --level=3 --risk=2 "
         f"--random-agent --flush-session "
     )
     if dbms:
-        cmd += f"--dbms={dbms} "
+        cmd += f"--dbms={shlex.quote(dbms)} "
     cmd += "2>&1"
 
     start = time.time()
@@ -105,16 +107,19 @@ def sqlmap_extract(url: str, param: str, dbms: Optional[str] = None,
     tag = uuid.uuid4().hex[:8]
     output_dir = f"{SQLMAP_OUTPUT_DIR}/{tag}"
     result = {"success": False, "data": {}}
+    quoted_url = shlex.quote(url)
+    quoted_param = shlex.quote(param)
+    quoted_outdir = shlex.quote(output_dir)
 
     if not queries:
         queries = ["--dbs", "--current-db"]
         cmd = (
-            f"sqlmap -u '{url}?{param}=1' --batch "
-            f"--output-dir={output_dir} --time-sec=3 "
+            f"sqlmap -u {quoted_url}?{quoted_param}=1 --batch "
+            f"--output-dir={quoted_outdir} --time-sec=3 "
             f"--random-agent --no-cast "
         )
         if dbms:
-            cmd += f"--dbms={dbms} "
+            cmd += f"--dbms={shlex.quote(dbms)} "
         cmd += "--dbs 2>&1"
         r = kali.run(cmd, timeout=600)
         stdout = r.get("stdout", "")
@@ -124,12 +129,12 @@ def sqlmap_extract(url: str, param: str, dbms: Optional[str] = None,
             result["data"]["databases"] = dbs
 
         cmd = (
-            f"sqlmap -u '{url}?{param}=1' --batch "
-            f"--output-dir={output_dir} --time-sec=3 "
+            f"sqlmap -u {quoted_url}?{quoted_param}=1 --batch "
+            f"--output-dir={quoted_outdir} --time-sec=3 "
             f"--random-agent --no-cast "
         )
         if dbms:
-            cmd += f"--dbms={dbms} "
+            cmd += f"--dbms={shlex.quote(dbms)} "
         cmd += "--current-db --tables 2>&1"
         r = kali.run(cmd, timeout=600)
         stdout = r.get("stdout", "")
@@ -138,13 +143,13 @@ def sqlmap_extract(url: str, param: str, dbms: Optional[str] = None,
             result["data"]["tables"] = tables
 
         cmd = (
-            f"sqlmap -u '{url}?{param}=1' --batch "
-            f"--output-dir={output_dir} --time-sec=3 "
+            f"sqlmap -u {quoted_url}?{quoted_param}=1 --batch "
+            f"--output-dir={quoted_outdir} --time-sec=3 "
             f"--random-agent --no-cast --dump-all "
             f"--threads=4 2>&1"
         )
         if dbms:
-            cmd += f"--dbms={dbms} "
+            cmd += f"--dbms={shlex.quote(dbms)} "
 
         logger.info("sqlmap full dump started (may take minutes)...")
         r = kali.run(cmd, timeout=1800)
@@ -177,10 +182,11 @@ def nmap_scan(target: str, ports: str = "21,22,80,443,3306,6379,8080,8443,9200,2
     if not has_tool("nmap") and not kali.check_tool("nmap"):
         return {"success": False, "error": "nmap not found on Kali"}
 
+    quoted_target = shlex.quote(target)
     if fast:
-        cmd = f"nmap -T4 -F --open -oG - {target} 2>&1"
+        cmd = f"nmap -T4 -F --open -oG - {quoted_target} 2>&1"
     else:
-        cmd = f"nmap -sV -sC -p {ports} --open -oG - {target} 2>&1"
+        cmd = f"nmap -sV -sC -p {shlex.quote(ports)} --open -oG - {quoted_target} 2>&1"
 
     r = kali.run(cmd, timeout=300)
     stdout = r.get("stdout", "")
@@ -223,9 +229,9 @@ def ffuf_discover(url: str, wordlist: str = "/usr/share/wordlists/dirb/common.tx
         return {"success": False, "error": "ffuf not found on Kali"}
 
     target = url.rstrip("/") + "/FUZZ"
-    cmd = f"ffuf -u '{target}' -w {wordlist} -t {threads} -fc 404 -of json -o /tmp/ffuf_out.json 2>/dev/null"
+    cmd = f"ffuf -u {shlex.quote(target)} -w {shlex.quote(wordlist)} -t {threads} -fc 404 -of json -o /tmp/ffuf_out.json 2>/dev/null"
     if extensions:
-        cmd += f" -e {extensions}"
+        cmd += f" -e {shlex.quote(extensions)}"
     cmd += " && cat /tmp/ffuf_out.json 2>/dev/null"
 
     r = kali.run(cmd, timeout=120)
@@ -266,9 +272,10 @@ def nuclei_scan(target: str, severity: str = "medium,high,critical",
     if not has_tool("nuclei") and not kali.check_tool("nuclei"):
         return {"success": False, "error": "nuclei not found on Kali"}
 
-    cmd = f"nuclei -u '{target}' -severity {severity} -json -o /tmp/nuclei_out.json 2>/dev/null"
+    quoted_target = shlex.quote(target)
+    cmd = f"nuclei -u {quoted_target} -severity {shlex.quote(severity)} -json -o /tmp/nuclei_out.json 2>/dev/null"
     if templates:
-        cmd = f"nuclei -u '{target}' -t {templates} -json -o /tmp/nuclei_out.json 2>/dev/null"
+        cmd = f"nuclei -u {quoted_target} -t {shlex.quote(templates)} -json -o /tmp/nuclei_out.json 2>/dev/null"
     cmd += " && cat /tmp/nuclei_out.json 2>/dev/null"
 
     r = kali.run(cmd, timeout=300)
@@ -310,7 +317,7 @@ def whatweb_identify(target: str) -> Dict:
     if not has_tool("whatweb") and not kali.check_tool("whatweb"):
         return {"success": False, "error": "whatweb not found on Kali"}
 
-    cmd = f"whatweb -a 3 --color=never '{target}' 2>/dev/null"
+    cmd = f"whatweb -a 3 --color=never {shlex.quote(target)} 2>/dev/null"
     r = kali.run(cmd, timeout=60)
     stdout = r.get("stdout", "")
 

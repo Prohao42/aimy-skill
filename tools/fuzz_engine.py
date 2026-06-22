@@ -13,6 +13,8 @@ class FuzzEngine:
     def fuzz(self, payloads: List[str], target_fn: Callable, **fixed_kw) -> List[Dict]:
         results = []
         def _test(p):
+            if self.delay > 0:
+                time.sleep(self.delay)
             try:
                 r = target_fn(payload=p, **fixed_kw)
                 return {"payload": p, "result": r}
@@ -22,8 +24,6 @@ class FuzzEngine:
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.threads) as ex:
             for res in ex.map(_test, payloads):
                 results.append(res)
-                if self.delay > 0:
-                    time.sleep(self.delay)
         return results
 
     def product_fuzz(self, param_sets: List[List[str]], target_fn: Callable) -> List[Dict]:

@@ -2,6 +2,7 @@ import json, re, time, os
 from typing import Dict, List, Optional, Any, Callable
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("workflow")
 
@@ -72,18 +73,18 @@ class WorkflowStep:
             for k, v in self.params["data"].items():
                 data[k] = self._interpolate(v, context)
         if method == "GET":
-            r = http.get(url, headers=headers, timeout=10, verify=False)
+            r = http.get(url, headers=headers, timeout=10)
         elif method == "POST":
             if body:
-                r = http.post(url, data=body, headers=headers, timeout=10, verify=False)
+                r = http.post(url, data=body, headers=headers, timeout=10)
             else:
-                r = http.post(url, data=data, headers=headers, timeout=10, verify=False)
+                r = http.post(url, data=data, headers=headers, timeout=10)
         elif method == "PUT":
-            r = http.put(url, data=data, headers=headers, timeout=10, verify=False)
+            r = http.put(url, data=data, headers=headers, timeout=10)
         elif method == "DELETE":
-            r = http.delete(url, headers=headers, timeout=10, verify=False)
+            r = http.delete(url, headers=headers, timeout=10)
         else:
-            r = http.get(url, headers=headers, timeout=10, verify=False)
+            r = http.get(url, headers=headers, timeout=10)
         return {
             "step": self.name,
             "status": r.status_code,
@@ -102,7 +103,7 @@ class Workflow:
 
     def run(self, context: Dict = None) -> Dict:
         import requests
-        http = requests.Session()
+        http = requests.Session(); http.verify = settings.verify_ssl
         http.headers["User-Agent"] = "Mozilla/5.0"
         if context is None:
             context = {}
@@ -193,7 +194,7 @@ SAMPLE_WORKFLOWS = {
 
 def run(workflow_name: str, context: Dict = None) -> Dict:
     import requests
-    http = requests.Session()
+    http = requests.Session(); http.verify = settings.verify_ssl
     http.headers["User-Agent"] = "Mozilla/5.0"
     if workflow_name in SAMPLE_WORKFLOWS:
         data = SAMPLE_WORKFLOWS[workflow_name]

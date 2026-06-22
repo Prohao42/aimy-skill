@@ -1,10 +1,28 @@
-import json
-import os
+import json, os
+from datetime import datetime
 from typing import Dict, Any
 
 from tools.log_utils import get_logger
 
 logger = get_logger("reporter")
+
+
+class SafeJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        if isinstance(o, bytes):
+            return o.decode("utf-8", errors="replace")
+        if hasattr(o, "__dict__"):
+            return repr(o)
+        try:
+            return super().default(o)
+        except TypeError:
+            return str(o)
+
+
+def to_json(data: Any, indent: int = 2) -> str:
+    return json.dumps(data, cls=SafeJSONEncoder, indent=indent, ensure_ascii=False, default=str)
 
 USE_COLOR = os.environ.get("NO_COLOR") is None and os.environ.get("TERM") != "dumb"
 

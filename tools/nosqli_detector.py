@@ -5,6 +5,7 @@ import requests
 from tools.log_utils import get_logger
 from tools.http_client import build_url
 from tools.payload_engine import generate
+from tools.settings import settings
 
 logger = get_logger("nosqli_detector")
 
@@ -25,12 +26,12 @@ NOSQLI_ERROR_PATTERNS = [
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, waf_name: Optional[str] = None) -> dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": [], "payload": None}
 
     try:
         r_base = sess.get(build_url(url, param, "1"),
-                          timeout=timeout, verify=False)
+                          timeout=timeout)
         base_len = len(r_base.text)
         base_status = r_base.status_code
     except Exception as e:
@@ -43,7 +44,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         payload = entry["payload"]
         try:
             r = sess.get(build_url(url, param, payload),
-                         timeout=timeout, verify=False)
+                         timeout=timeout)
             diff = abs(len(r.text) - base_len)
             if diff > 30 or r.status_code != base_status:
                 result["vulnerable"] = True
@@ -71,7 +72,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
             try:
                 start_t = time.time()
                 r = sess.get(build_url(url, param, payload),
-                             timeout=timeout + 2, verify=False)
+                             timeout=timeout + 2)
                 elapsed = time.time() - start_t
                 if elapsed >= threshold:
                     result["vulnerable"] = True
@@ -88,7 +89,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
             payload_raw = entry["payload"]
             try:
                 r = sess.post(url, json={param: _json.loads(payload_raw)},
-                              timeout=timeout, verify=False)
+                              timeout=timeout)
                 if r.status_code == 200 and len(r.text) > base_len + 10:
                     result["vulnerable"] = True
                     result["type"] = "json"

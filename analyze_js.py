@@ -4,7 +4,7 @@ urllib3.disable_warnings()
 s = requests.Session()
 s.cookies.set('__test', 'dde09b5cbd6693a64e2351ca015467fb')
 
-r = s.get('https://idcard.kesug.com/assets/index-CApTIDIg.js', timeout=10, verify=False)
+r = s.get('https://idcard.kesug.com/assets/index-CApTIDIg.js', timeout=10)
 
 # Find all strings that look like API endpoints
 endpoints = set(re.findall(r'["\x27](/(?:api|v1|v2|upload|render|image|photo|card|generate|save|create|preview)[a-zA-Z0-9_/.-]*?)["\x27]', r.text))

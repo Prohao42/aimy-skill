@@ -2,6 +2,7 @@ import re, time, urllib.parse, json
 from typing import Dict, List, Optional, Set
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("crawler")
 
@@ -72,6 +73,7 @@ class Crawler:
         if self._http is None:
             import requests
             self._http = self.sess or requests.Session()
+            self._http.verify = settings.verify_ssl
             self._http.headers.setdefault("User-Agent",
                                           "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
         return self._http
@@ -251,7 +253,7 @@ class Crawler:
             self.visited.add(url)
 
             try:
-                r = http.get(url, timeout=self.timeout, verify=False)
+                r = http.get(url, timeout=self.timeout)
                 self.pages_crawled += 1
                 html = r.text
 
@@ -271,7 +273,7 @@ class Crawler:
                             try:
                                 js_r = http.get(js_url if js_url.startswith("http") else
                                                 "%s/%s" % (self.base_url, js_url.lstrip("/")),
-                                                timeout=self.timeout, verify=False)
+                                                timeout=self.timeout)
                                 if js_r.status_code == 200:
                                     apis = self._analyze_js_for_api(js_r.text)
                                     for a in apis:

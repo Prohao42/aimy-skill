@@ -3,6 +3,7 @@ from typing import Optional, Dict
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("proto_pollution")
 
@@ -24,14 +25,14 @@ PP_JSON_PAYLOADS = {
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": []}
 
     if param:
         for payload in PP_PAYLOADS:
             try:
                 r = sess.get(url, params={param: payload},
-                             timeout=timeout, verify=False)
+                             timeout=timeout)
                 if PP_MARKER in r.text:
                     result["vulnerable"] = True
                     result["type"] = "get"
@@ -44,7 +45,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
         for payload in PP_PAYLOADS:
             try:
                 r = sess.post(url, data={param: payload},
-                              timeout=timeout, verify=False)
+                              timeout=timeout)
                 if r.status_code < 500 and PP_MARKER in r.text:
                     result["vulnerable"] = True
                     result["type"] = "post"
@@ -56,7 +57,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
     if not result["vulnerable"]:
         try:
             r = sess.post(url, json=PP_JSON_PAYLOADS,
-                          timeout=timeout, verify=False)
+                          timeout=timeout)
             if r.status_code < 500:
                 result["vulnerable"] = True
                 result["type"] = "json"
@@ -68,7 +69,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
         try:
             verify_payload = "__proto__[%s]=verified&%s=dummy" % (PP_MARKER, param)
             r2 = sess.get(url, params={param: verify_payload},
-                          timeout=timeout, verify=False)
+                          timeout=timeout)
             if PP_MARKER not in r2.text:
                 result["vulnerable"] = False
                 result["type"] = None

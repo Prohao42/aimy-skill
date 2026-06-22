@@ -33,7 +33,10 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "requests-mock>=1.10.0",
+    "responses>=0.23.0",
     "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "bandit>=1.7.0",
 ]
 
 [project.urls]
@@ -71,6 +74,9 @@ exclude_lines = [
     "def __repr__",
     "if __name__ == .__main__.:",
 ]
+
+[tool.setuptools.packages.find]
+include = ["tools*", "tools.*"]
 
 [build-system]
 requires = ["setuptools>=68.0"]

@@ -5,7 +5,7 @@ s = requests.Session()
 
 # Try fetching with a fresh approach - get challenge, solve, 
 # then make a NEW request to the same endpoint with cookie
-r1 = s.get('https://idcard.kesug.com/', timeout=10, verify=False, headers={'User-Agent': 'Mozilla/5.0'})
+r1 = s.get('https://idcard.kesug.com/', timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
 m = re.search(r'toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\)', r1.text, re.DOTALL)
 a, b, c = m.group(1), m.group(2), m.group(3) if m else (None, None, None)
 print(f"Challenge: a={a} b={b} c={c}")
@@ -32,13 +32,13 @@ print(f"Cookie: {cookie_val}")
 
 # 1. Direct request with cookie
 print("\n--- Approach 1: Direct GET with cookie ---")
-r2 = requests.get('https://idcard.kesug.com/', timeout=10, verify=False, 
+r2 = requests.get('https://idcard.kesug.com/', timeout=10, 
     headers={'User-Agent': 'Mozilla/5.0', 'Cookie': f'__test={cookie_val}'})
 print(f"Status: {r2.status_code}, Blocked: {'slowAES' in r2.text}")
 
 # 2. Approach: fetch /?i=1 directly with cookie
 print("\n--- Approach 2: GET /?i=1 with cookie ---")
-r3 = requests.get('https://idcard.kesug.com/?i=1', timeout=10, verify=False, 
+r3 = requests.get('https://idcard.kesug.com/?i=1', timeout=10, 
     headers={'User-Agent': 'Mozilla/5.0', 'Cookie': f'__test={cookie_val}'})
 print(f"Status: {r3.status_code}, Blocked: {'slowAES' in r3.text}")
 
@@ -46,7 +46,7 @@ print(f"Status: {r3.status_code}, Blocked: {'slowAES' in r3.text}")
 print("\n--- Approach 3: Session with cookie + redirect ---")
 s2 = requests.Session()
 s2.cookies.set('__test', cookie_val)
-r4 = s2.get('https://idcard.kesug.com/', timeout=10, verify=False, 
+r4 = s2.get('https://idcard.kesug.com/', timeout=10, 
     headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=True)
 print(f"Status: {r4.status_code}, Blocked: {'slowAES' in r4.text}")
 print(f"Final URL: {r4.url}")
@@ -59,6 +59,6 @@ print("\n--- Approach 4: Multiple requests with session ---")
 s3 = requests.Session()
 s3.cookies.set('__test', cookie_val, domain='idcard.kesug.com', path='/')
 for i in range(3):
-    r5 = s3.get('https://idcard.kesug.com/', timeout=10, verify=False,
+    r5 = s3.get('https://idcard.kesug.com/', timeout=10,
         headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=True)
     print(f"Attempt {i+1}: Status={r5.status_code} Blocked={'slowAES' in r5.text}")

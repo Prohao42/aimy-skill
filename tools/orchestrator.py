@@ -8,12 +8,18 @@ logger = get_logger("orchestrator")
 from tools import crawler, param_miner
 from tools import sql_injection, xss_detector, ssti_detector, cmdi_detector
 from tools import ssrf_detector, nosqli_detector, lfi_scanner, auth_bypass
-from tools import sqli_weaponizer, jwt_exploiter, ssrf_lateral
+from tools import sqli_weaponizer, jwt_exploiter, ssrf_pwn as ssrf_lateral
 from tools import sqli_blind, sqli_oob, reverse_shell
 from tools import race_condition
 from tools import jwt_detector, graphql_scanner, cors_scanner
 from tools import deserialization_detector, proto_pollution
-from tools import waf_bypass, biz_logic_scanner, waf_heavy_bypass
+from tools import waf_bypass, biz_logic_scanner
+from tools.oob_server import OOBServer
+from tools.response_profiler import ResponseProfiler
+from tools.verification_oracle import VerificationOracle
+from tools.dual_session import DualSessionManager
+from tools.playwright_engine import PlaywrightEngine
+from tools.spa_crawler import crawl_spa
 
 SKIP_PARAMS = {"submit", "button", "reset", "image", "file", "action",
                "_method", "_token", "utf8", "commit", "form_id", "form_build_id",
@@ -25,10 +31,12 @@ SIGNATURE_PLACEHOLDER = "__placeholder__"
 class Orchestrator:
     def __init__(self, target: str,
                  sess: Optional['requests.Session'] = None, timeout: float = 10.0,
-                 threads: int = 10, max_pages: int = 30, max_depth: int = 2):
+                 threads: int = 10, max_pages: int = 30, max_depth: int = 2,
+                 high_priv_sess: Optional['requests.Session'] = None):
         self.target = target.rstrip("/")
         self.timeout = timeout
         self.sess = sess
+        self.high_priv_sess = high_priv_sess
         self.threads = threads
         self.max_pages = max_pages
         self.max_depth = max_depth
@@ -38,6 +46,10 @@ class Orchestrator:
             "exploits": [],
             "summary": {},
         }
+        self.profiler = ResponseProfiler()
+        self.oracle = VerificationOracle(self.profiler)
+        self.dual_session = DualSessionManager(sess, high_priv_sess)
+        self.oob_server = OOBServer.get_instance()
 
     def phase_crawl(self) -> Dict:
         result = crawler.crawl(self.target, max_depth=self.max_depth,
@@ -113,18 +125,26 @@ class Orchestrator:
 
         return points[:250]
 
-    def _test_single_point(self, point: Dict, waf_name: Optional[str] = None) -> List[Dict]:
+    def _test_single_point(self, point: Dict, waf_name: Optional[str] = None,
+                           oob_url: Optional[str] = None,
+                           oob_domain: Optional[str] = None) -> List[Dict]:
         url = point["url"]
         param = point["param"]
         sess = self.sess
         results = []
 
+        oob_kw = {}
+        if oob_url:
+            oob_kw["oob_url"] = oob_url
+        if oob_domain:
+            oob_kw["oob_domain"] = oob_domain
+
         detectors = [
             ("sqli", lambda u, p, s, t: sql_injection.check(u, p, s, t, waf_name=waf_name)),
             ("xss", lambda u, p, s, t: xss_detector.check(u, p, s, t, waf_name=waf_name)),
             ("ssti", lambda u, p, s, t: ssti_detector.check(u, p, s, t, waf_name=waf_name)),
-            ("cmdi", lambda u, p, s, t: cmdi_detector.check(u, p, s, t, waf_name=waf_name)),
-            ("ssrf", lambda u, p, s, t: ssrf_detector.check(u, p, s, t)),
+            ("cmdi", lambda u, p, s, t: cmdi_detector.check(u, p, s, t, waf_name=waf_name, **oob_kw)),
+            ("ssrf", lambda u, p, s, t: ssrf_detector.check(u, p, s, t, oob_server=oob_url)),
             ("nosqli", lambda u, p, s, t: nosqli_detector.check(u, p, s, t, waf_name=waf_name)),
             ("lfi", lambda u, p, s, t: lfi_scanner.check(u, p, s, t, waf_name=waf_name)),
             ("race", lambda u, p, s, t: race_condition.check(u, p, s, t)),
@@ -134,7 +154,7 @@ class Orchestrator:
             ("deser", lambda u, p, s, t: deserialization_detector.check(u, p, s, t)),
             ("proto_pollution", lambda u, p, s, t: proto_pollution.check(u, p, s, t)),
             ("bizlogic", lambda u, p, s, t: biz_logic_scanner.check(u, p, s, t)),
-            ("waf_heavy", lambda u, p, s, t: waf_heavy_bypass.check(u, p, s, t)),
+            ("waf_heavy", lambda u, p, s, t: waf_bypass.heavy_check(u, p, s, t)),
         ]
 
         for vtype, fn in detectors:
@@ -143,11 +163,16 @@ class Orchestrator:
                 if isinstance(r, dict):
                     vuln = r.get("vulnerable") or r.get("total_bypasses", 0) > 0
                     if vuln:
+                        verified = self.oracle.verify(
+                            vtype, r, url, param, sess, self.timeout
+                        )
+                        if verified.get("verified") is False:
+                            continue
                         results.append({
                             "type": vtype,
                             "url": url,
                             "param": param,
-                            "result": r,
+                            "result": verified,
                         })
             except Exception as e:
                 logger.debug("detect %s on %s?%s: %s", vtype, url, param, e)
@@ -168,13 +193,26 @@ class Orchestrator:
 
         points = self._build_test_points()
         print("  -> %d test points across 15 detectors" % (len(points)))
+
+        cb_id = "scan_%d" % id(self)
+        oob_url = self.oob_server.register_callback_id(cb_id)
+        oob_domain = None
+        if self.oob_server.start_dns():
+            oob_domain = self.oob_server.start_dns()
+
+        profiled = self.profiler.profile_batch(points, sess, self.timeout)
+        if profiled:
+            print("  -> %d endpoints profiled for anomaly detection" % profiled)
+
         all_findings = {}
         lock = threading.Lock()
         done = [0]
         total = len(points)
 
         def worker(point):
-            findings = self._test_single_point(point, waf_name)
+            findings = self._test_single_point(
+                point, waf_name, oob_url=oob_url, oob_domain=oob_domain
+            )
             with lock:
                 for f in findings:
                     key = "%s|%s|%s" % (f["type"], f["url"], f["param"])
@@ -198,6 +236,27 @@ class Orchestrator:
             jwt_hint = jwt_finding.get("result", {}).get("tokens_found", [])
             if jwt_hint:
                 print("  [*] JWT tokens found -> running automatic exploit chain")
+
+        oob_callbacks = self.oob_server.pop_callbacks(cb_id)
+        oob_hits = len(oob_callbacks)
+        if oob_hits:
+            print("  [OOB] %d blind callbacks received" % oob_hits)
+            all_findings["__oob_callbacks__"] = {
+                "type": "oob",
+                "url": self.target,
+                "param": "",
+                "result": {
+                    "vulnerable": True,
+                    "type": "oob_callback",
+                    "confidence": "high",
+                    "confirmed": True,
+                    "evidence": ["%d OOB callbacks" % oob_hits],
+                    "callbacks": [
+                        {"path": c.path, "client": str(c.client)}
+                        for c in oob_callbacks[:10]
+                    ],
+                },
+            }
 
         self.state["phases"]["detect"] = {
             "test_points": total,
@@ -241,6 +300,47 @@ class Orchestrator:
                 }
             self.state["nuclei_findings"] = nuclei_result["findings"]
 
+    def phase_dual_session(self) -> Dict:
+        if self.high_priv_sess is None:
+            return {"skipped": True, "reason": "no high_priv session"}
+        points = self._build_test_points()
+        result = self.dual_session.test_batch(points, self.timeout)
+        bola_count = result.get("bola_count", 0)
+        info_count = result.get("info_disclosure_count", 0)
+        if bola_count or info_count:
+            print("  -> %d BOLA, %d info disclosure across %d endpoints" % (
+                bola_count, info_count, result.get("tested", 0)))
+            bola_key = "bola|%s" % self.target
+            findings = self.state["phases"].get("detect", {}).get("findings", {})
+            for f in result.get("bola_findings", []):
+                key = "bola|%s|%s" % (f.get("url", ""), f.get("param", "id"))
+                findings[key] = {
+                    "type": "bola",
+                    "url": f.get("url", ""),
+                    "param": f.get("param", "id"),
+                    "result": {
+                        "vulnerable": True,
+                        "type": "bola",
+                        "confidence": "high",
+                        "evidence": f.get("evidence", []),
+                    },
+                }
+            for f in result.get("info_disclosure_findings", []):
+                key = "info_disclosure|%s|%s" % (f.get("url", ""), f.get("param", "id"))
+                findings[key] = {
+                    "type": "info_disclosure",
+                    "url": f.get("url", ""),
+                    "param": f.get("param", "id"),
+                    "result": {
+                        "vulnerable": True,
+                        "type": "info_disclosure",
+                        "confidence": "high",
+                        "evidence": f.get("evidence", []),
+                    },
+                }
+        self.state["phases"]["dual_session"] = result
+        return result
+
     def phase_weaponize(self) -> Dict:
         findings = self.state["phases"].get("detect", {}).get("findings", {})
         jwt_result = self.state["phases"].get("auth_bypass", {})
@@ -283,18 +383,11 @@ class Orchestrator:
                         logger.debug("sqlmap weaponize: %s", e)
 
             if vtype == "ssrf":
-                for mod_name, mod in [("ssrf_lateral", ssrf_lateral),
-                                       ("ssrf_pwn", None)]:
-                    try:
-                        if mod:
-                            result[mod_name] = mod.run(url, param, sess=raw_sess, timeout=self.timeout)
-                    except Exception as e:
-                        logger.debug("ssrf weaponize %s: %s", mod_name, e)
                 try:
-                    from tools import ssrf_pwn
-                    result["ssrf_pwn"] = ssrf_pwn.read_metadata(url, param, raw_sess, timeout=self.timeout)
+                    result["ssrf_lateral"] = ssrf_lateral.run(url, param, sess=raw_sess, timeout=self.timeout)
+                    result["ssrf_pwn"] = ssrf_lateral.check(url, param, sess=raw_sess, timeout=self.timeout)
                 except Exception as e:
-                    logger.debug("ssrf pwn: %s", e)
+                    logger.debug("ssrf weaponize: %s", e)
 
             if vtype == "lfi":
                 v = finding.get("result", {})
@@ -439,6 +532,7 @@ class Orchestrator:
 
     def run(self) -> Dict:
         start = time.time()
+        self.oob_server.start()
         print("[*] Phase 1/5: Crawling %s ..." % self.target)
         crawl_result = self.phase_crawl()
         cs = crawl_result.get("summary", {})
@@ -449,6 +543,28 @@ class Orchestrator:
         print("  -> %d pages, %d endpoints%s, %d params%s" % (
             cs.get("pages_crawled", 0), cs.get("endpoints_found", 0),
             extra, cs.get("unique_params", 0), spa_tag))
+
+        if cs.get("is_spa") and PlaywrightEngine.is_available():
+            print("[*] SPA detected, launching browser-based crawler ...")
+            try:
+                spa_result = crawl_spa(self.target)
+                if spa_result.get("api_routes"):
+                    print("  -> %d API routes, %d JS routes discovered via browser" % (
+                        len(spa_result.get("api_routes", [])),
+                        len(spa_result.get("js_api_routes", [])),
+                    ))
+                    crawl_result["spa_crawl"] = spa_result
+                    self.state["phases"]["crawl"] = crawl_result
+                    for ep in spa_result.get("api_routes", []):
+                        if ep not in crawl_result.get("endpoints", {}):
+                            crawl_result["endpoints"][ep] = {
+                                "url": "%s%s" % (self.target, ep),
+                                "methods": ["GET"],
+                                "params": [],
+                                "spa_api": True,
+                            }
+            except Exception as e:
+                logger.debug("spa crawl: %s", e)
 
         print("[*] Phase 2/5: Parameter mining ...")
         mine_result = self.phase_mine(crawl_result)
@@ -482,18 +598,25 @@ class Orchestrator:
         print("  -> %d vulnerabilities found: %s" % (len(findings), by_type_str))
 
         if findings or ab_total > 0:
-            print("[*] Phase 5/5: Weaponization (%d threads) ..." % self.threads)
+            if self.high_priv_sess:
+                print("[*] Phase 5/6: Dual-session BOLA detection ...")
+                self.phase_dual_session()
+            phase_label = "6/6" if self.high_priv_sess else "5/5"
+            print("[*] Phase %s: Weaponization (%d threads) ..." % (phase_label, self.threads))
             exploits = self.phase_weaponize()
             ex_ready = len([e for e in exploits.values() if e.get("exploit_ready")])
             print("  -> %d exploit paths (%d ready)" % (len(exploits), ex_ready))
 
         report = self.phase_report()
+        self.oob_server.stop()
         report["elapsed_seconds"] = round(time.time() - start, 1)
         self.state["report"] = report
         return report
 
 
 def run(target: str, sess: Optional['requests.Session'] = None,
-        timeout: float = 10.0, threads: int = 10) -> Dict:
-    o = Orchestrator(target, sess, timeout, threads)
+        timeout: float = 10.0, threads: int = 10,
+        high_priv_sess: Optional['requests.Session'] = None) -> Dict:
+    o = Orchestrator(target, sess, timeout, threads,
+                     high_priv_sess=high_priv_sess)
     return o.run()

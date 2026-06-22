@@ -3,6 +3,7 @@ from typing import Optional, Dict
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("jwt_detector")
 
@@ -50,7 +51,7 @@ def check_jwt_none(sess: requests.Session, url: str = None,
         try:
             r = sess.get(url,
                          headers={"Authorization": "Bearer %s" % token},
-                         timeout=10, verify=False)
+                         timeout=10)
             if r.status_code in (200, 201, 204):
                 result["vulnerable"] = True
                 result["type"] = "alg_none"
@@ -90,12 +91,12 @@ def check_jwt_weak_secret(token: str, wordlist: list = None) -> Dict:
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "tokens_found": [], "findings": []}
 
     if url:
         try:
-            r = sess.get(url, timeout=timeout, verify=False)
+            r = sess.get(url, timeout=timeout)
             for m in re.finditer(JWT_REGEX, r.text):
                 token = m.group(0)
                 if len(token.split(".")) == 3:

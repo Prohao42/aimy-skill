@@ -3,6 +3,7 @@ from typing import Optional
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 from tools.http_client import build_url
 from tools.payload_engine import (
     generate_sqli_error, generate_sqli_boolean,
@@ -53,7 +54,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, post_body: bool = False, post_data: dict = None,
           waf_name: Optional[str] = None) -> dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "dbms": None}
 
     ctx = "numeric" if param and param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string"
@@ -67,10 +68,10 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         if post_data:
             d = base_data.copy() if base_data else {}
             d[param] = payload
-            return sess.post(url, data=d, timeout=timeout, verify=False)
+            return sess.post(url, data=d, timeout=timeout)
         else:
             return sess.get(build_url(url, param, payload),
-                           timeout=timeout, verify=False)
+                           timeout=timeout)
 
     error_payloads = generate_sqli_error(ctx, waf_name)
     for payload in error_payloads:
@@ -130,14 +131,14 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                 if post_data:
                     d = base_data.copy() if base_data else {}
                     d[param] = true_p
-                    r_true = sess.post(url, data=d, timeout=timeout, verify=False)
+                    r_true = sess.post(url, data=d, timeout=timeout)
                     d[param] = false_p
-                    r_false = sess.post(url, data=d, timeout=timeout, verify=False)
+                    r_false = sess.post(url, data=d, timeout=timeout)
                 else:
                     r_true = sess.get(build_url(url, param, true_p),
-                                      timeout=timeout, verify=False)
+                                      timeout=timeout)
                     r_false = sess.get(build_url(url, param, false_p),
-                                       timeout=timeout, verify=False)
+                                       timeout=timeout)
                 diff = abs(len(r_true.text) - len(r_false.text))
                 max_len = max(len(r_true.text), len(r_false.text), 1)
                 ratio = diff / max_len
@@ -182,10 +183,10 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                 if post_data:
                     d = base_data.copy() if base_data else {}
                     d[param] = payload
-                    r = sess.post(url, data=d, timeout=timeout + 3, verify=False)
+                    r = sess.post(url, data=d, timeout=timeout + 3)
                 else:
                     r = sess.get(build_url(url, param, payload),
-                                timeout=timeout + 3, verify=False)
+                                timeout=timeout + 3)
                 elapsed = time.time() - start_t
                 if elapsed >= 2.0:
                     result["vulnerable"] = True

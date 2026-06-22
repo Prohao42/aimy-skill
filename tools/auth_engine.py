@@ -3,6 +3,7 @@ from typing import Optional, Dict
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("auth_engine")
 
@@ -55,7 +56,7 @@ class AuthSession:
     def login_form(self, login_url: str, username: str, password: str,
                    user_field: str = "username", pass_field: str = "password") -> bool:
         try:
-            html = self.sess.get(login_url, timeout=10, verify=False).text
+            html = self.sess.get(login_url, timeout=10).text
             fields = detect_form_fields(html)
             data = {user_field: username, pass_field: password}
             if "csrf_token" in fields:
@@ -64,7 +65,7 @@ class AuthSession:
                 if k not in data:
                     data[k] = v
             action_url = fields.get("action") or login_url
-            r = self.sess.post(action_url, data=data, timeout=10, verify=False)
+            r = self.sess.post(action_url, data=data, timeout=10)
             return r.status_code == 200 and len(r.text) > 100
         except Exception as e:
             logger.debug("login_form: %s", e)
@@ -74,7 +75,7 @@ class AuthSession:
                   user_field: str = "username", pass_field: str = "password") -> bool:
         try:
             r = self.sess.post(url, json={user_field: username, pass_field: password},
-                               timeout=10, verify=False)
+                               timeout=10)
             if r.status_code == 200:
                 body = r.text.lower()
                 if "token" in body:
@@ -95,7 +96,7 @@ class AuthSession:
         from requests.auth import HTTPBasicAuth
         try:
             r = self.sess.get(url, auth=HTTPBasicAuth(username, password),
-                              timeout=10, verify=False)
+                              timeout=10)
             return r.status_code < 400
         except Exception as e:
             logger.debug("login_basic: %s", e)
@@ -107,6 +108,70 @@ class AuthSession:
 
     def set_header_token(self, token: str, scheme: str = "Bearer") -> None:
         self.sess.headers["Authorization"] = "%s %s" % (scheme, token)
+
+    def login_browser(self, login_url: str, username: str, password: str,
+                      auth_type: str = "auto",
+                      user_field: str = "username",
+                      pass_field: str = "password") -> bool:
+        from tools.playwright_auth import PlaywrightAuth
+        from tools.playwright_engine import PlaywrightEngine
+        if not PlaywrightAuth.is_available():
+            logger.warning("Playwright not available for browser login")
+            return False
+        engine = PlaywrightEngine()
+        try:
+            engine.start()
+            auth = PlaywrightAuth(engine)
+            result = auth.login(
+                login_url, username, password,
+                auth_type=auth_type,
+                user_field=user_field,
+                pass_field=pass_field,
+            )
+            if result.get("success"):
+                cookies = result.get("cookies", {})
+                headers = result.get("headers", {})
+                for k, v in cookies.items():
+                    self.sess.cookies.set(k, v)
+                for k, v in headers.items():
+                    self.sess.headers[k] = v
+                return True
+            return False
+        except Exception as e:
+            logger.debug("browser login: %s", e)
+            return False
+        finally:
+            try:
+                engine.stop()
+            except Exception:
+                pass
+
+    @staticmethod
+    def login_with_browser(login_url: str, username: str, password: str,
+                           auth_type: str = "auto") -> Optional[requests.Session]:
+        from tools.playwright_auth import PlaywrightAuth
+        from tools.playwright_engine import PlaywrightEngine
+        sess = requests.Session(); sess.verify = settings.verify_ssl
+        engine = PlaywrightEngine()
+        try:
+            engine.start()
+            auth = PlaywrightAuth(engine)
+            result = auth.login(login_url, username, password, auth_type=auth_type)
+            if result.get("success"):
+                for k, v in result.get("cookies", {}).items():
+                    sess.cookies.set(k, v)
+                for k, v in result.get("headers", {}).items():
+                    sess.headers[k] = v
+                return sess
+            return None
+        except Exception as e:
+            logger.debug("login_with_browser: %s", e)
+            return None
+        finally:
+            try:
+                engine.stop()
+            except Exception:
+                pass
 
     def save_session(self, path: str) -> None:
         data = {
@@ -131,7 +196,7 @@ class AuthSession:
 
 
 def auth_from_args(args) -> requests.Session:
-    sess = requests.Session()
+    sess = requests.Session(); sess.verify = settings.verify_ssl
     sess.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
     from tools.kali_executor import init_kali, init_kali_local

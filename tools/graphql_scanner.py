@@ -3,6 +3,7 @@ from typing import Optional, Dict
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("graphql_scanner")
 
@@ -40,7 +41,7 @@ def has_graphql_schema(body: str) -> bool:
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "endpoints": [], "introspection": False, "evidence": []}
 
     base = url.rstrip("/")
@@ -58,7 +59,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
     for endpoint in set(endpoints_to_test):
         try:
             r = sess.post(endpoint, json=json.loads(INTROSPECTION_QUERY),
-                          timeout=timeout, verify=False)
+                          timeout=timeout)
             if r.status_code == 200 and has_graphql_schema(r.text):
                 result["endpoints"].append(endpoint)
                 result["introspection"] = True
@@ -76,7 +77,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
     if not result["vulnerable"]:
         for endpoint in endpoints_to_test[:3]:
             try:
-                r = sess.get(endpoint, timeout=timeout, verify=False)
+                r = sess.get(endpoint, timeout=timeout)
                 if r.status_code == 200 and has_graphql_schema(r.text):
                     result["endpoints"].append(endpoint)
                     result["vulnerable"] = True
@@ -89,7 +90,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
         for mutation in COMMON_MUTATIONS:
             try:
                 r = sess.post(graphql_url, json=json.loads(mutation),
-                              timeout=timeout, verify=False)
+                              timeout=timeout)
                 if r.status_code == 200:
                     try:
                         j = r.json()

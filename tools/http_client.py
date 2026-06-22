@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from http.client import HTTPResponse
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("http_client")
 
@@ -71,8 +72,9 @@ def _build_ssl_context() -> ssl.SSLContext:
     ctx = ssl.create_default_context()
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.maximum_version = ssl.TLSVersion.TLSv1_2
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    if not settings.verify_ssl:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
     return ctx
 
 

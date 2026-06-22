@@ -5,7 +5,7 @@ import sys, traceback
 sys.path.insert(0, ".")
 
 from tools.orchestrator import run
-from tools.http_client import _build_ssl_context
+from tools.settings import settings
 import requests
 from requests.adapters import HTTPAdapter
 import ssl
@@ -15,10 +15,11 @@ class _TLS12Adapter(HTTPAdapter):
         ctx = ssl.create_default_context()
         ctx.minimum_version = ssl.TLSVersion.TLSv1_2
         ctx.maximum_version = ssl.TLSVersion.TLSv1_2
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+        if not settings.verify_ssl:
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            kwargs["assert_hostname"] = False
         kwargs["ssl_context"] = ctx
-        kwargs["assert_hostname"] = False
         return super().init_poolmanager(connections, maxsize=max(100, maxsize), block=block, **kwargs)
     def send(self, request, **kwargs):
         request.headers["User-Agent"] = (
@@ -31,6 +32,7 @@ class _TLS12Adapter(HTTPAdapter):
 sess = requests.Session()
 sess.mount("https://", _TLS12Adapter())
 sess.mount("http://", _TLS12Adapter())
+sess.verify = settings.verify_ssl
 
 import tools.http_client
 _original_send = sess.send
@@ -45,7 +47,7 @@ def _patched_send(req, **kwargs):
         if "slowAES" in body and "toNumbers" in body:
             import re
             from tools.http_client import _solve_challenge
-            cookie_val = _solve_challenge(body, req.url or "https://idcard.kesug.com/")
+            cookie_val = _solve_challenge(body, req.url)
             if cookie_val:
                 _challenge_solved[0] = True
                 req.headers["Cookie"] = f"__test={cookie_val}"
@@ -54,8 +56,14 @@ def _patched_send(req, **kwargs):
 
 sess.send = _patched_send
 
+if len(sys.argv) > 1:
+    target = sys.argv[1]
+else:
+    print("Usage: python run_scan.py <target_url>", file=sys.stderr)
+    sys.exit(1)
+
 try:
-    result = run("https://idcard.kesug.com/", sess=sess, timeout=15, threads=10)
+    result = run(target, sess=sess, timeout=15, threads=10)
     print("\n=== RESULT ===")
     import json
     print(json.dumps(result, indent=2, default=str))

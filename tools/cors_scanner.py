@@ -2,6 +2,7 @@ from typing import Optional, Dict, List
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("cors_scanner")
 
@@ -31,7 +32,7 @@ def check_single_origin(url: str, origin: str, sess: requests.Session,
                         timeout: float) -> Dict:
     finding = {"origin": origin, "acao": "", "credentialed": False}
     try:
-        r = sess.get(url, headers={"Origin": origin}, timeout=timeout, verify=False)
+        r = sess.get(url, headers={"Origin": origin}, timeout=timeout)
         acao = r.headers.get("Access-Control-Allow-Origin", "")
         acc = r.headers.get("Access-Control-Allow-Credentials", "")
         if acao == origin or acao == "*":
@@ -48,7 +49,7 @@ def check_options_preflight(url: str, sess: requests.Session,
                             timeout: float) -> Dict:
     finding = {"method": "OPTIONS", "acao": "", "allow_methods": "", "expose_headers": ""}
     try:
-        r = sess.options(url, timeout=timeout, verify=False)
+        r = sess.options(url, timeout=timeout)
         finding["acao"] = r.headers.get("Access-Control-Allow-Origin", "")
         finding["allow_methods"] = r.headers.get("Access-Control-Allow-Methods", "")
         finding["expose_headers"] = r.headers.get("Access-Control-Expose-Headers", "")
@@ -60,7 +61,7 @@ def check_options_preflight(url: str, sess: requests.Session,
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "findings": [], "sensitive_headers_exposed": []}
 
     if not url.startswith("http"):
@@ -82,7 +83,7 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
         result["sensitive_headers_exposed"].append(pref["expose_headers"])
 
     try:
-        r = sess.get(url, timeout=timeout, verify=False)
+        r = sess.get(url, timeout=timeout)
         vary = r.headers.get("Vary", "")
         if vary and "origin" not in vary.lower():
             result["findings"].append({

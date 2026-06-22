@@ -3,7 +3,7 @@ urllib3.disable_warnings()
 
 # Step 1: Get the challenge
 s = requests.Session()
-r = s.get('https://idcard.kesug.com/', timeout=10, verify=False, headers={'User-Agent': 'Mozilla/5.0'})
+r = s.get('https://idcard.kesug.com/', timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
 
 # Extract the toNumbers values
 m = re.search(r'toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\)', r.text, re.DOTALL)
@@ -36,7 +36,7 @@ print(f"Cookie: {cookie_val}")
 # Step 3: Set cookie and request the actual page
 s.cookies.clear()
 s.cookies.set('__test', cookie_val)
-r = s.get('https://idcard.kesug.com/?i=1', timeout=10, verify=False, headers={'User-Agent': 'Mozilla/5.0'})
+r = s.get('https://idcard.kesug.com/?i=1', timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
 print(f"Status: {r.status_code}")
 print(f"Challenge present: {'slowAES' in r.text or 'aes.js' in r.text}")
 

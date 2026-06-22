@@ -3,6 +3,7 @@ from typing import Optional, Dict
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("sqli_weaponizer")
 
@@ -27,13 +28,13 @@ ERROR_EXTRACT = [
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session()
+        sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "data": [], "type": None}
 
     for payload, _ in EXTRACT_PAYLOADS:
         try:
             sep = "&" if "?" in url else "?"
-            r = sess.get("%s%s%s=%s" % (url, sep, param, payload), timeout=timeout, verify=False)
+            r = sess.get("%s%s%s=%s" % (url, sep, param, payload), timeout=timeout)
             body = r.text
             for potential in re.findall(r'\b(\d[\w@\.\-]{4,})\b', body):
                 if any(c in potential for c in ['@', '.', ':', '/']):
@@ -50,7 +51,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         for payload in ERROR_EXTRACT:
             try:
                 sep = "&" if "?" in url else "?"
-                r = sess.get("%s%s%s=%s" % (url, sep, param, payload), timeout=timeout, verify=False)
+                r = sess.get("%s%s%s=%s" % (url, sep, param, payload), timeout=timeout)
                 m = re.search(r'~(.+?)[\'"]', r.text)
                 if m:
                     result["vulnerable"] = True

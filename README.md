@@ -9,6 +9,8 @@
 ---
 
 # aimy-sikll v2.1.0 — 能力全景评估
+## 项目宣传网站
+https://aimy-sikll.netlify.app/
 
 ## 一、项目概览
 

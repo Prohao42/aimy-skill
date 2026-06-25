@@ -70,7 +70,9 @@ python main.py sqlcheck -u "http://target.com/page?id=1"
 ```bash
 pip install -r requirements.txt && playwright install chromium
 ```
-
+```bash智能体安装提示词
+https://github.com/Prohao42/aimy-sikll  安装这个
+```
 ### 2. 跑一个全自动扫描
 
 ```bash

@@ -17,9 +17,9 @@ INTROSPECTION_QUERY = json.dumps({
 })
 
 COMMON_MUTATIONS = [
-    'mutation { login(username: "test", password: "test") { token } }',
-    'mutation { createUser(username: "admin", password: "admin") { id } }',
-    '{ __typename }',
+    '{"query":"mutation { login(username: \\\"test\\\", password: \\\"test\\\") { token } }"}',
+    '{"query":"mutation { createUser(username: \\\"admin\\\", password: \\\"admin\\\") { id } }"}',
+    '{"query":"{ __typename }"}',
 ]
 
 

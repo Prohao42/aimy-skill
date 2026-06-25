@@ -2,8 +2,9 @@ import re
 import pytest
 import requests
 import responses
-from tools.sql_injection import check, guess_dbms
+from tools.sql_injection import check, _extract_dbms as guess_dbms
 from tools.http_client import build_url
+from tools.response_profiler import ResponseProfiler, CLEAN_VALUE
 
 
 class TestBuildUrl:
@@ -24,7 +25,7 @@ class TestBuildUrl:
 
 class TestGuessDbms:
     def test_mysql(self):
-        assert guess_dbms("MySQLSyntaxErrorException") == "MySQL/MariaDB"
+        assert guess_dbms("MySQLSyntaxErrorException") == "MySQL"
 
     def test_postgres(self):
         assert guess_dbms("PSQLException") == "PostgreSQL"

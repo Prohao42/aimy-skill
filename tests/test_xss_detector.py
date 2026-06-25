@@ -33,12 +33,16 @@ class TestXSSDetector:
 class TestXSSDetectorPost:
     @responses.activate
     def test_post_xss(self):
-        body = "XSS_TEST_100<img src=x onerror=alert(1)>"
-        responses.add(
+        def callback(request):
+            import urllib.parse
+            body = urllib.parse.parse_qs(request.body)
+            payload = body.get("content", [""])[0]
+            return (200, {}, f"<html>{payload}</html>")
+
+        responses.add_callback(
             responses.POST,
             url="http://test.com/comment",
-            body=body,
-            status=200,
+            callback=callback,
         )
 
         result = check(

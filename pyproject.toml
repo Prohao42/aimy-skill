@@ -50,7 +50,7 @@ aimy = "main:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=tools/ --cov-report=term-missing"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "online: marks tests that require network access",
@@ -63,6 +63,9 @@ target-version = "py38"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N"]
 ignore = ["E501", "N812"]
+
+[tool.ruff.format]
+quote-style = "double"
 
 [tool.coverage.run]
 source = ["tools"]

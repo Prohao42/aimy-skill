@@ -14,3 +14,10 @@ logging.basicConfig(
 
 def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
+
+def mode_echo(mode: str, msg: str, rookie_msg: str = None):
+    from tools.settings import settings
+    prefix = "[Rookie]" if settings.is_rookie() else "[Veteran]"
+    if settings.is_veteran() and rookie_msg:
+        return
+    print("%s %s" % (prefix, msg if settings.is_rookie() else (rookie_msg or msg)))

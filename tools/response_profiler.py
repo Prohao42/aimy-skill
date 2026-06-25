@@ -59,7 +59,6 @@ class ResponseProfiler:
                 resp = sess.get(
                     build_url(url, param, CLEAN_VALUE),
                     timeout=timeout,
-                    verify=False,
                 )
             elapsed = time.time() - start
 

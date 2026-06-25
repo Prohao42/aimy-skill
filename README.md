@@ -16,7 +16,6 @@
 
 ---
 
-<<<<<<<<< Temporary merge branch 1
 # aimy-sikll v2.1.0 — 能力全景评估
 ## 项目宣传网站
 https://aimy-sikll.netlify.app/
@@ -57,6 +56,7 @@ python main.py --mode veteran sqlcheck --url http://target.com --param id
 
 <<<<<<<<< Temporary merge branch 1
 ### 4.2 集成评估
+>>>>>>> d67cba42592db2644681fbcd92fe04e63ab5dca8
 
 | 维度 | 评分 | 说明 |
 |------|------|------|
@@ -252,11 +252,6 @@ tests/
 ├── test_sqli_blind.py         # 14 测试
 └── test_sqli_basic.py         # 基础 SQL 注入测试
 ```
-
-- 测试文件：7 个
-- 预估总用例：~80
-- 质量：功能验证为主，无性能/安全边界测试
-
 ---
 
 ## 十、综合评价
@@ -284,11 +279,26 @@ tests/
 5. **WAF 绕过引擎** — 14 种 WAF 指纹 + 11 编码器 + HTTP 层绕过
 6. **SessionMatrix 多身份矩阵** — 真正的业务逻辑检测基础架构
 
+### 未来规划
+
+- [ ] 增加更多深度检测模块（RCE、XXE、LDAP注入等）
+- [ ] 提升测试覆盖率至 60%+
+- [ ] 添加 YAML 工作流自定义编排
+- [ ] Web 可视化报告面板
+- [ ] 插件系统支持第三方扩展
+- [ ] 更多云服务商的元数据路径支持
+- [ ] AI Agent 自动决策引擎
 
 ---
 
+## 项目宣传网站
+
+https://aimy-sikll.netlify.app/
+
 ---
 
+<<<<<<< HEAD
+=======
 ## 七、命令速查
 =========
 ## 命令速查
@@ -424,6 +434,7 @@ pytest
 pytest --cov=tools
 ```
 
+>>>>>>> d67cba42592db2644681fbcd92fe04e63ab5dca8
 ## 法律声明
 
 本工具仅限在已获得明确授权的环境中进行安全测试、CTF 竞赛或漏洞研究使用。未经授权的使用可能违反法律法规。使用者需自行承担所有责任。

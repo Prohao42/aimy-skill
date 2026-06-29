@@ -72,7 +72,7 @@ pip install -r requirements.txt && playwright install chromium
 ```
 ### 1. 智能体提示词安装
 ```bash智能体安装提示词
-https://github.com/Prohao42/aimy-sikll  安装这个
+https://github.com/Prohao42/aimy-skill  安装这个
 ```
 ### 2. 跑一个全自动扫描
 

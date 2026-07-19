@@ -401,6 +401,7 @@ def check(url: str, sess: Optional[requests.Session] = None,
     }
     if not url.startswith("http"):
         url = "http://" + url
+
     r["admin_endpoints"] = check_admin_endpoints(url, sess, timeout)
     r["path_bypasses"] = check_path_bypass(url, sess, timeout)
     r["cookie_bypasses"] = check_cookie_tamper(url, sess, timeout)
@@ -408,9 +409,21 @@ def check(url: str, sess: Optional[requests.Session] = None,
     r["method_bypasses"] = check_method_bypass(url, sess, timeout)
     r["default_creds"] = check_default_creds(url, sess, timeout)
     r["mass_assignment"] = check_mass_assignment(url, sess, timeout)
-    total = len(r["path_bypasses"]) + len(r["cookie_bypasses"]) + \
-            len(r["header_bypasses"]) + len(r["method_bypasses"]) + \
-            len(r["default_creds"]) + len(r["mass_assignment"])
-    r["vulnerable"] = total > 0
-    r["total_bypasses"] = total
+
+    bypass_evidence = []
+    if r["path_bypasses"]:
+        bypass_evidence.extend(r["path_bypasses"])
+    if r["cookie_bypasses"]:
+        bypass_evidence.extend(r["cookie_bypasses"])
+    if r["header_bypasses"]:
+        bypass_evidence.extend(r["header_bypasses"])
+    if r["method_bypasses"]:
+        bypass_evidence.extend(r["method_bypasses"])
+    if r["default_creds"]:
+        bypass_evidence.extend(r["default_creds"])
+    if r["mass_assignment"]:
+        bypass_evidence.extend(r["mass_assignment"])
+
+    r["vulnerable"] = len(bypass_evidence) > 0
+    r["total_bypasses"] = len(bypass_evidence)
     return r

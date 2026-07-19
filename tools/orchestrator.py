@@ -28,6 +28,14 @@ from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
 from tools.reasoning_engine import ReasoningEngine
 from tools.adaptive_fuzzer import AdaptiveFuzzer
 
+# New enhanced modules
+from tools.second_order_verifier import SecondOrderVerifier
+from tools.attack_graph import AttackGraph, build_attack_graph
+from tools.xxe_detector import check as xxe_check
+from tools.context_memory import get_memory
+from tools.graphql_abuser import check as graphql_abuse_check
+from tools.jwt_attacker import check as jwt_attack_check
+
 SKIP_PARAMS = {
     "submit", "button", "reset", "image", "file", "action",
     "_method", "_token", "utf8", "commit", "form_id", "form_build_id",
@@ -51,13 +59,16 @@ ALL_DETECTORS = {
     "proto_pollution": lambda u, p, s, t, w, o: proto_pollution.check(u, p, s, t),
     "bizlogic": lambda u, p, s, t, w, o: biz_logic_scanner.check(u, p, s, t),
     "waf_heavy": lambda u, p, s, t, w, o: waf_bypass.heavy_check(u, p, s, t),
+    "xxe": lambda u, p, s, t, w, o: xxe_check(u, p, sess=s, timeout=t),
+    "graphql_abuse": lambda u, p, s, t, w, o: graphql_abuse_check(u, sess=s, timeout=t),
+    "jwt_attack": lambda u, p, s, t, w, o: jwt_attack_check(u, sess=s, timeout=t),
 }
 
 DETECTOR_RISK_ORDER = {
-    "sql_injection": 0, "cmdi": 0, "deser": 0,
+    "sql_injection": 0, "cmdi": 0, "deser": 0, "xxe": 0,
     "ssrf": 1, "lfi": 1, "ssti": 1,
     "xss": 2, "nosqli": 2, "bizlogic": 2,
-    "jwt": 3, "graphql": 3, "cors": 3,
+    "jwt": 3, "graphql": 3, "graphql_abuse": 3, "jwt_attack": 3, "cors": 3,
     "proto_pollution": 3, "race": 4, "waf_heavy": 5,
 }
 
@@ -94,7 +105,13 @@ class Orchestrator:
         self.last_hypotheses = []
         self._chain_cache = {}
         self.attack_tree = None
+        self.attack_graph = None
         self._backtrack_findings = []
+        self._lock = threading.Lock()
+
+        # New enhanced systems
+        self.context_memory = get_memory()
+        self.verifier = SecondOrderVerifier(sess, timeout)
 
     def phase_recon(self) -> Dict:
         print("[Recon] Phase 1/7: Reconnaissance ...")
@@ -233,6 +250,18 @@ class Orchestrator:
             "hypotheses": hypo_dicts, "count": len(self.last_hypotheses),
             "attack_tree": attack_tree.summary(),
         }
+
+        # Build attack graph (enhanced attack tree with cycle support)
+        print("[Reason] Building attack graph ...")
+        self.attack_graph = build_attack_graph(context, self.target)
+        graph_summary = self.attack_graph.summary()
+        print("  -> Attack graph: %d nodes, %d edges, %d goals" % (
+            graph_summary["total_nodes"], graph_summary["total_edges"],
+            len(graph_summary["goals"])))
+        for path in graph_summary.get("best_paths", [])[:3]:
+            print("    %.0f%% %s" % (path["confidence"] * 100, path["path_string"]))
+
+        self.state["phases"]["reason"]["attack_graph"] = graph_summary
         return hypo_dicts
 
     def phase_crawl(self) -> Dict:
@@ -436,34 +465,24 @@ class Orchestrator:
 
     def _cross_verify(self, vtype: str, url: str, param: str,
                        waf_name: str, oob: dict, first_result: dict) -> dict:
-        """Multi-angle verification: confirm with at least 2 different methods."""
-        cross_checks = {
-            "ssrf": [("lfi", "file:///etc/passwd"), ("cmdi", "curl localhost")],
-            "lfi": [("ssrf", "file:///etc/passwd")],
-            "sqli": [("ssrf", None), ("nosqli", None)],
-            "xss": [("ssti", "{{7*7}}")],
-            "nosqli": [("sqli", None)],
-            "cmdi": [("ssrf", None)],
-        }
-
-        checks = cross_checks.get(vtype, [])
+        """Multi-angle verification: re-run same detector with different payloads."""
         cross_findings = []
 
-        for alt_type, alt_payload in checks:
-            if not self._budget_ok(3):
-                break
-            fn = ALL_DETECTORS.get(alt_type)
-            if not fn:
-                continue
-            try:
-                test_param = param if alt_payload is None else None
-                r = fn(url, test_param or param, self.sess, self.timeout, waf_name, oob)
-                if isinstance(r, dict) and (r.get("vulnerable") or r.get("total_bypasses", 0) > 0):
-                    cv = self.oracle.verify(alt_type, r, url, param, self.sess, self.timeout)
-                    if cv.get("verified") is not False:
-                        cross_findings.append(alt_type)
-            except Exception:
-                pass
+        fn = ALL_DETECTORS.get(vtype)
+        if not fn:
+            first_result["cross_verified"] = []
+            first_result["cross_count"] = 0
+            first_result["confirmed"] = first_result.get("vulnerable", False)
+            return first_result
+
+        try:
+            r2 = fn(url, param, self.sess, self.timeout, waf_name, oob)
+            if isinstance(r2, dict) and r2.get("vulnerable"):
+                cv = self.oracle.verify(vtype, r2, url, param, self.sess, self.timeout)
+                if cv.get("verified") is not False:
+                    cross_findings.append(vtype)
+        except Exception:
+            pass
 
         first_result["cross_verified"] = cross_findings
         first_result["cross_count"] = len(cross_findings)
@@ -530,6 +549,10 @@ class Orchestrator:
             try:
                 r = fn(url, param, self.sess, self.timeout, waf_name, oob)
                 if isinstance(r, dict):
+                    native_confidence = r.get("confidence_score", 0.0)
+                    native_votes = r.get("confidence_votes", [])
+                    native_evidence = r.get("evidence", [])
+
                     vuln = r.get("vulnerable") or r.get("total_bypasses", 0) > 0
                     if vuln and self._budget_ok(5):
                         r = self._cross_verify(vtype, url, param, waf_name, oob, r)
@@ -537,24 +560,119 @@ class Orchestrator:
                     if vuln:
                         verified = self.oracle.verify(vtype, r, url, param, self.sess, self.timeout)
                         if verified.get("verified") is not False:
+                            oracle_confidence = verified.get("confidence_score", 0.0)
+
                             finding = {
                                 "type": vtype,
                                 "url": url,
                                 "param": param,
                                 "result": verified,
+                                "vulnerable": True,
+                                "detector_confidence": round(native_confidence, 2),
+                                "confidence_score": round(max(native_confidence, oracle_confidence), 2),
+                                "confidence_votes": verified.get("confidence_votes", []) or native_votes,
+                                "evidence": verified.get("evidence", native_evidence),
+                                "timestamp": time.time(),
+                                "response_text": verified.get("response_text", r.get("response_text", "")),
                             }
-                            results.append(finding)
 
-                            with self._lock if hasattr(self, '_lock') else threading.Lock():
-                                self._backtrack_findings.append(finding)
+                            from tools.false_positive_filter import FalsePositiveFilter
+                            fpf = FalsePositiveFilter(self.profiler)
+                            finding = fpf.filter_single(finding)
 
-                            chain_result = self._maybe_backtrack_chain(finding)
-                            if chain_result:
-                                finding["_chain_result"] = chain_result
-                                self._backtrack_loop_closure(chain_result, finding)
+                            if not finding.get("filtered", False):
+                                results.append(finding)
+
+                                with self._lock:
+                                    self._backtrack_findings.append(finding)
+
+                                chain_result = self._maybe_backtrack_chain(finding)
+                                if chain_result:
+                                    finding["_chain_result"] = chain_result
+                                    self._backtrack_loop_closure(chain_result, finding)
+                            else:
+                                with self._lock:
+                                    self.state.setdefault("filtered_findings", []).append(finding)
             except Exception as e:
                 logger.debug("detect %s on %s?%s: %s", vtype, url, param, e)
         return results
+
+    def _update_context_memory(self, findings: Dict) -> None:
+        """Update context memory with discovered information for cross-module intelligence."""
+        recon = self.state["phases"].get("recon", {})
+
+        # Store technology info
+        techs = recon.get("technologies", {}).get("technologies", [])
+        for tech in techs:
+            name = tech.get("name", "").lower()
+            if "spring" in name:
+                self.context_memory.set("framework", "Spring Boot", "recon", 0.85)
+            elif "django" in name:
+                self.context_memory.set("framework", "Django", "recon", 0.85)
+            elif "flask" in name:
+                self.context_memory.set("framework", "Flask", "recon", 0.85)
+            elif "laravel" in name:
+                self.context_memory.set("framework", "Laravel", "recon", 0.85)
+            elif "thinkphp" in name:
+                self.context_memory.set("framework", "ThinkPHP", "recon", 0.85)
+            elif "express" in name or "node" in name:
+                self.context_memory.set("framework", "Express", "recon", 0.80)
+            elif "wordpress" in name:
+                self.context_memory.set("framework", "WordPress", "recon", 0.85)
+
+        # Store WAF info
+        waf_info = self.state.get("waf", {})
+        if waf_info.get("name"):
+            self.context_memory.set("waf", waf_info["name"], "waf_bypass", 0.80)
+
+        # Store cloud provider info
+        cloud_indicators = {
+            "aws": ["amazon", "aws", "ec2", "s3"],
+            "gcp": ["google", "gcp", "gcloud"],
+            "azure": ["azure", "microsoft"],
+            "alibaba": ["aliyun", "alibaba"],
+        }
+        for tech in techs:
+            name = tech.get("name", "").lower()
+            for provider, indicators in cloud_indicators.items():
+                if any(ind in name for ind in indicators):
+                    self.context_memory.set("cloud_provider", provider, "recon", 0.75)
+                    break
+
+        # Store findings-based intelligence
+        for key, finding in findings.items():
+            if key.startswith("__"):
+                continue
+            vtype = finding.get("type", "")
+            result = finding.get("result", {})
+
+            if vtype == "sqli" and result.get("dbms"):
+                self.context_memory.set("dbms", result["dbms"], "sqli_detector", 0.90)
+
+            if vtype == "ssrf" and result.get("cloud"):
+                self.context_memory.set("cloud_provider", result["cloud"], "ssrf_detector", 0.85)
+
+            if vtype == "lfi" and result.get("os_type"):
+                self.context_memory.set("os_type", result["os_type"], "lfi_scanner", 0.75)
+
+            if vtype == "cmdi" and result.get("os_type"):
+                self.context_memory.set("os_type", result["os_type"], "cmdi_detector", 0.75)
+
+            if vtype == "auth_bypass" and result.get("credentials"):
+                self.context_memory.set("creds", result["credentials"], "auth_bypass", 0.80)
+
+            if vtype == "jwt" and result.get("tokens_found"):
+                for token_info in result["tokens_found"][:1]:
+                    if token_info.get("token"):
+                        self.context_memory.set("session_token", token_info["token"], "jwt_detector", 0.70)
+
+        # Store OS type from port scan
+        ports = recon.get("open_ports", {})
+        open_ports = [p.get("port", 0) for p in ports.get("open_ports", [])]
+        if 3389 in open_ports:
+            self.context_memory.set("os_type", "windows", "port_scan", 0.70)
+        elif 22 in open_ports:
+            self.context_memory.set("os_type", "linux", "port_scan", 0.60)
 
     def phase_auth_bypass(self) -> Dict:
         result = auth_bypass.check(self.target, self.sess, self.timeout)
@@ -632,6 +750,38 @@ class Orchestrator:
         self.state["phases"]["detect"] = {"test_points": total, "findings": all_findings}
         self.all_findings = all_findings
         self._run_kali_recon()
+
+        # Second-order verification for high-confidence findings
+        print("  [Verify] Second-order cross-validation ...")
+        verified_count = 0
+        for key, finding in list(all_findings.items()):
+            if key.startswith("__"):
+                continue
+            if finding.get("confidence_score", 0) < 0.5:
+                continue
+            vtype = finding.get("type", "")
+            url = finding.get("url", "")
+            param = finding.get("param", "")
+            try:
+                vresult = self.verifier.verify(url, param, vtype, finding.get("result", {}))
+                if vresult.get("confirmed"):
+                    finding["second_order_verified"] = True
+                    finding["verification_confidence"] = vresult.get("confidence", 0)
+                    finding["verification_methods"] = vresult.get("methods_succeeded", [])
+                    verified_count += 1
+                    # Update attack graph
+                    if self.attack_graph:
+                        node_id = "%s_found" % vtype
+                        if node_id in self.attack_graph.nodes:
+                            self.attack_graph.integrate_evidence(node_id, True, vresult.get("confidence", 0.8))
+            except Exception as e:
+                logger.debug("Second-order verification failed: %s", e)
+
+        if verified_count:
+            print("    -> %d findings cross-verified" % verified_count)
+
+        # Context memory updates
+        self._update_context_memory(all_findings)
 
         if self._backtrack_findings:
             print("  [Bayes] Updating hypotheses with %d findings ..." % len(self._backtrack_findings))
@@ -1024,6 +1174,14 @@ class Orchestrator:
             "waf": waf_info.get("name"),
             "risk_score": self.attack_plan.get("risk_score", 0) if self.attack_plan else 0,
         }
+
+        # Enhanced report sections
+        report["attack_graph"] = self.attack_graph.summary() if self.attack_graph else {}
+        report["context_memory"] = self.context_memory.get_stats()
+        report["second_order_verified"] = sum(
+            1 for f in findings.values()
+            if f.get("second_order_verified")
+        )
 
         self.state["phases"]["report"] = report
         return report

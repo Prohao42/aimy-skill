@@ -1,4 +1,4 @@
-import re, time, random, string, threading, socket, struct
+import re, time, random, string, threading, socket, struct, statistics
 from typing import Optional
 import requests
 
@@ -6,6 +6,7 @@ from tools.log_utils import get_logger
 from tools.http_client import build_url
 from tools.payload_engine import generate
 from tools.settings import settings
+from tools.verification_oracle import ConfidenceVoter
 
 logger = get_logger("cmdi_detector")
 
@@ -88,7 +89,7 @@ class _OobServer:
 
 def _measure_baseline_timing(url, param, sess, timeout):
     samples = []
-    for _ in range(2):
+    for _ in range(3):
         try:
             start = time.time()
             sess.get(build_url(url, param, CLEAN_VALUE), timeout=timeout)
@@ -97,7 +98,7 @@ def _measure_baseline_timing(url, param, sess, timeout):
             pass
     if not samples:
         return 0.3
-    return sum(samples) / len(samples)
+    return statistics.median(samples) if len(samples) >= 3 else sum(samples) / len(samples)
 
 
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
@@ -110,52 +111,71 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
     result = {"vulnerable": False, "type": None, "evidence": [], "payload": None,
               "oob_tested": False}
 
+    voter = ConfidenceVoter()
+
     output_seeds = generate("cmdi", "output", "all", waf_name)
+    output_hits = 0
     for entry in output_seeds:
         payload = entry["payload"]
         indicator = entry.get("indicator")
         try:
             r = sess.get(build_url(url, param, payload), timeout=timeout)
             if indicator and indicator in r.text:
-                result["vulnerable"] = True
-                result["type"] = "output"
+                output_hits += 1
                 result["evidence"].append("cmdi: %s => %s" % (payload[:15], indicator))
                 result["payload"] = payload
-                return result
+                voter.add_vote("output_indicator", 0.7)
             for pat, label in OUTPUT_INDICATORS:
                 if re.search(pat, r.text):
-                    result["vulnerable"] = True
-                    result["type"] = "output"
+                    output_hits += 1
                     result["evidence"].append("cmdi: %s matched <%s>" % (payload[:15], label))
                     result["payload"] = payload
-                    return result
+                    voter.add_vote("output_pattern_%s" % label, 0.65)
+                    break
         except Exception as e:
             logger.debug("cmdi payload %s: %s", payload[:15], e)
 
+    if output_hits >= 2:
+        voter.add_vote("multi_output", 0.8)
+        result["vulnerable"] = True
+        result["type"] = "output"
+    elif output_hits == 1:
+        voter.add_vote("single_output", 0.5)
+        result["vulnerable"] = True
+        result["type"] = "output"
+
     if not result["vulnerable"]:
         baseline_sec = _measure_baseline_timing(url, param, sess, timeout)
-        if baseline_sec >= timeout * 0.8:
-            return result
-        threshold = max(2.5, baseline_sec * 1.5 + 2.0)
-
-        time_seeds = generate("cmdi", "time", "all", waf_name)
-        for entry in time_seeds:
-            payload = entry["payload"]
-            try:
-                start = time.time()
-                sess.get(build_url(url, param, payload), timeout=timeout + 3)
-                elapsed = time.time() - start
-                if elapsed >= threshold:
-                    result["vulnerable"] = True
-                    result["type"] = "time"
-                    result["evidence"].append("cmdi time: %s => %.1fs (baseline=%.1fs)" % (
-                        payload[:15], elapsed, baseline_sec))
-                    result["payload"] = payload
-                    return result
-            except requests.Timeout:
-                pass
-            except Exception as e:
-                logger.debug("cmdi time %s: %s", payload[:15], e)
+        if baseline_sec < timeout * 0.8:
+            threshold = max(2.5, baseline_sec * 1.5 + 2.0)
+            time_hits = 0
+            time_seeds = generate("cmdi", "time", "all", waf_name)
+            for entry in time_seeds:
+                payload = entry["payload"]
+                try:
+                    start = time.time()
+                    sess.get(build_url(url, param, payload), timeout=timeout + 3)
+                    elapsed = time.time() - start
+                    if elapsed >= threshold:
+                        time_hits += 1
+                        result["evidence"].append("cmdi time: %s => %.1fs (baseline=%.1fs)" % (
+                            payload[:15], elapsed, baseline_sec))
+                        result["payload"] = payload
+                        voter.add_vote("time_delay", ConfidenceVoter.vote_time_elapsed(
+                            elapsed, baseline_sec, threshold))
+                except requests.Timeout:
+                    time_hits += 1
+                    voter.add_vote("timeout", 0.7)
+                except Exception as e:
+                    logger.debug("cmdi time %s: %s", payload[:15], e)
+            if time_hits >= 2:
+                voter.add_vote("multi_time", 0.85)
+                result["vulnerable"] = True
+                result["type"] = "time"
+            elif time_hits == 1:
+                voter.add_vote("single_time", 0.5)
+                result["vulnerable"] = True
+                result["type"] = "time"
 
     if not result["vulnerable"]:
         oob_server = _OobServer(timeout=min(timeout, 6.0))
@@ -181,6 +201,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                     pass
 
             if oob_server.caught.wait(timeout=min(timeout, 6.0)):
+                voter.add_vote("oob_callback", ConfidenceVoter.vote_oob_callback(True))
                 result["vulnerable"] = True
                 result["type"] = "oob_callback"
                 result["evidence"].append("cmdi OOB: DNS/HTTP callback received")
@@ -188,4 +209,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
 
         oob_server.stop()
 
+    result["confidence_score"] = round(voter.score, 2)
+    result["confidence"] = voter.level.value
+    result["confidence_votes"] = voter.evidence()
     return result

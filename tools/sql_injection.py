@@ -1,5 +1,5 @@
-import re, time
-from typing import Optional
+import re, time, statistics
+from typing import Optional, List, Tuple
 import requests
 
 from tools.log_utils import get_logger
@@ -10,6 +10,12 @@ from tools.payload_engine import (
     generate_sqli_error, generate_sqli_boolean,
     generate_sqli_time, generate_sqli_union, generate_sqli_stacked,
 )
+
+try:
+    from tools.waf_bypass import fingerprint_waf, generate_sqli_payloads as waf_gen_payloads
+    HAS_WAF = True
+except Exception:
+    HAS_WAF = False
 
 logger = get_logger("sql_injection")
 
@@ -59,7 +65,7 @@ PROFILER = ResponseProfiler()
 def _measure_baseline_timing(url: str, param: str, sess: requests.Session,
                               timeout: float, post_data: dict = None) -> float:
     samples = []
-    for _ in range(2):
+    for _ in range(3):
         try:
             start = time.time()
             if post_data:
@@ -67,13 +73,23 @@ def _measure_baseline_timing(url: str, param: str, sess: requests.Session,
                 d[param] = CLEAN_VALUE
                 sess.post(url, data=d, timeout=timeout)
             else:
-                sess.get(build_url(url, param, "1"), timeout=timeout)
+                sess.get(build_url(url, param, CLEAN_VALUE), timeout=timeout)
             samples.append(time.time() - start)
         except Exception:
             pass
     if not samples:
         return 0.3
-    return sum(samples) / len(samples)
+    return statistics.median(samples) if len(samples) >= 3 else sum(samples) / len(samples)
+
+
+def _resolve_waf_name(url: str, sess: requests.Session, timeout: float) -> Optional[str]:
+    if HAS_WAF:
+        try:
+            waf_info = fingerprint_waf(url, sess, timeout)
+            return waf_info.get("name")
+        except Exception:
+            pass
+    return None
 
 
 def _extract_dbms(text: str) -> Optional[str]:
@@ -83,10 +99,19 @@ def _extract_dbms(text: str) -> Optional[str]:
     return None
 
 
-def _detect_error_sqli(url, param, sess, timeout, post_data, base_data):
+def _gen_payloads_for_param(param: str, waf_name: Optional[str] = None) -> Tuple[str, List[str]]:
+    ctx = "numeric" if param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string"
+    return ctx, generate_sqli_error(ctx, waf_name)
+
+
+def _detect_error_sqli(url, param, sess, timeout, post_data, base_data, waf_name=None):
     result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "dbms": None}
-    error_payloads = generate_sqli_error("numeric" if param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string")
+    ctx = "numeric" if param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string"
+    error_payloads = generate_sqli_error(ctx, waf_name)
+    confirmed_count = 0
+    total_tested = 0
     for payload in error_payloads:
+        total_tested += 1
         try:
             if post_data is not None:
                 d = base_data.copy() if base_data else {}
@@ -96,22 +121,32 @@ def _detect_error_sqli(url, param, sess, timeout, post_data, base_data):
                 r = sess.get(build_url(url, param, payload), timeout=timeout)
             for pat, dbms in SQLI_ERROR_PATTERNS:
                 if re.search(pat, r.text, re.IGNORECASE):
+                    confirmed_count += 1
                     result["vulnerable"] = True
                     result["type"] = "error"
                     result["evidence"].append(payload[:40])
                     result["vector"] = payload
                     result["dbms"] = dbms or _extract_dbms(r.text)
-                    return result
+                    if confirmed_count >= 2:
+                        return result
+                    break
         except Exception as e:
             logger.debug("sqli error payload %s: %s", payload[:20], e)
+    if confirmed_count < 2:
+        result["vulnerable"] = False
+        result["evidence"] = []
+        result["vector"] = None
     return result
 
 
-def _detect_union_sqli(url, param, sess, timeout, post_data, base_data):
+def _detect_union_sqli(url, param, sess, timeout, post_data, base_data, waf_name=None):
     result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "dbms": None}
     ctx = "numeric" if param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string"
-    union_payloads = generate_sqli_union(ctx)
+    union_payloads = generate_sqli_union(ctx, waf_name)
+    confirmed_count = 0
+    total_tested = 0
     for payload in union_payloads:
+        total_tested += 1
         try:
             if post_data is not None:
                 d = base_data.copy() if base_data else {}
@@ -121,29 +156,38 @@ def _detect_union_sqli(url, param, sess, timeout, post_data, base_data):
                 r = sess.get(build_url(url, param, payload), timeout=timeout)
             for pat, dbms in SQLI_ERROR_PATTERNS:
                 if re.search(pat, r.text, re.IGNORECASE):
+                    confirmed_count += 1
                     result["vulnerable"] = True
                     result["type"] = "error_union"
                     result["evidence"].append("union: %s" % payload[:30])
                     result["vector"] = payload
                     result["dbms"] = dbms or _extract_dbms(r.text)
-                    return result
+                    if confirmed_count >= 2:
+                        return result
+                    break
             if r.status_code == 200 and r.text and "Column" not in r.text and "Unknown column" not in r.text:
                 pass
         except Exception as e:
             logger.debug("sqli union %s: %s", payload[:20], e)
+    if confirmed_count < 2:
+        result["vulnerable"] = False
+        result["evidence"] = []
+        result["vector"] = None
     return result
 
 
-def _detect_boolean_sqli(url, param, sess, timeout, post_data, base_data):
-    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None}
+def _detect_boolean_sqli(url, param, sess, timeout, post_data, base_data, waf_name=None):
+    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "confidence_score": 0.0, "confidence_votes": []}
     ctx = "numeric" if param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string"
 
     baseline = PROFILER.profile_endpoint(url, param, sess, timeout)
     if baseline is None:
         return result
 
-    bool_pairs = generate_sqli_boolean(ctx)
-    for true_p, false_p in bool_pairs:
+    bool_pairs = generate_sqli_boolean(ctx, waf_name)
+    pair_confirmed = 0
+    total_pairs = min(len(bool_pairs), 5)
+    for true_p, false_p in bool_pairs[:total_pairs]:
         try:
             if post_data is not None:
                 d = base_data.copy() if base_data else {}
@@ -158,9 +202,9 @@ def _detect_boolean_sqli(url, param, sess, timeout, post_data, base_data):
             report_true = PROFILER.analyze(url, param, r_true)
             report_false = PROFILER.analyze(url, param, r_false)
 
+            pair_hit = False
             if report_true.is_anomalous != report_false.is_anomalous:
-                result["vulnerable"] = True
-                result["type"] = "boolean"
+                pair_hit = True
                 reason = ""
                 if report_true.delta_status or report_false.delta_status:
                     reason = "status_diff"
@@ -170,26 +214,39 @@ def _detect_boolean_sqli(url, param, sess, timeout, post_data, base_data):
                     reason = "body_diff"
                 result["evidence"].append("bool: %s (true=%s false=%s)" % (true_p[:20], report_true.reasons, report_false.reasons))
                 result["vector"] = true_p
-                return result
 
             diff = abs(len(r_true.text) - len(r_false.text))
             max_len = max(len(r_true.text), len(r_false.text), 1)
             ratio = diff / max_len
-            if ratio > 0.03 and diff > 30:
-                result["vulnerable"] = True
-                result["type"] = "boolean"
+            if ratio > 0.05 and diff > 50:
+                pair_hit = True
                 result["evidence"].append("bool: %s (diff=%d, ratio=%.2f%%)" % (true_p[:20], diff, ratio * 100))
                 result["vector"] = true_p
-                return result
+
+            if pair_hit:
+                pair_confirmed += 1
+                result["vulnerable"] = True
+                result["type"] = "boolean"
         except Exception as e:
             logger.debug("sqli boolean %s: %s", true_p[:20], e)
+
+    if result["vulnerable"] and total_pairs > 0:
+        vote = pair_confirmed / total_pairs
+        result["confidence_score"] = round(min(0.95, vote * 0.9), 2)
+        if vote >= 0.6:
+            result["confidence"] = "high"
+        elif vote >= 0.3:
+            result["confidence"] = "medium"
+        else:
+            result["confidence"] = "low"
+
     return result
 
 
-def _detect_stacked_sqli(url, param, sess, timeout, post_data, base_data):
+def _detect_stacked_sqli(url, param, sess, timeout, post_data, base_data, waf_name=None):
     result = {"vulnerable": False, "type": None, "evidence": [], "vector": None}
     ctx = "numeric" if param.lower() in ("id", "uid", "pid", "page", "limit", "offset") else "string"
-    stacked_payloads = generate_sqli_stacked(ctx)
+    stacked_payloads = generate_sqli_stacked(ctx, waf_name)
     for payload in stacked_payloads:
         try:
             if post_data is not None:
@@ -210,16 +267,20 @@ def _detect_stacked_sqli(url, param, sess, timeout, post_data, base_data):
     return result
 
 
-def _detect_time_sqli(url, param, sess, timeout, post_data, base_data):
-    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "dbms": None}
+def _detect_time_sqli(url, param, sess, timeout, post_data, base_data, waf_name=None):
+    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "dbms": None,
+              "confidence_score": 0.0, "confidence_votes": []}
     baseline_sec = _measure_baseline_timing(url, param, sess, timeout, post_data)
     if baseline_sec >= timeout * 0.8:
         return result
     threshold = max(2.0, baseline_sec * 1.5 + 1.5)
     logger.debug("time baseline=%.2fs threshold=%.2fs", baseline_sec, threshold)
 
-    time_payloads = generate_sqli_time()
+    time_payloads = generate_sqli_time(waf_name)
+    confirmed_count = 0
+    total_attempts = 0
     for payload in time_payloads:
+        total_attempts += 1
         try:
             start_t = time.time()
             if post_data is not None:
@@ -230,6 +291,7 @@ def _detect_time_sqli(url, param, sess, timeout, post_data, base_data):
                 r = sess.get(build_url(url, param, payload), timeout=timeout + 3)
             elapsed = time.time() - start_t
             if elapsed >= threshold:
+                confirmed_count += 1
                 result["vulnerable"] = True
                 result["type"] = "time"
                 result["evidence"].append("time: %.1fs (baseline=%.1fs)" % (elapsed, baseline_sec))
@@ -240,21 +302,42 @@ def _detect_time_sqli(url, param, sess, timeout, post_data, base_data):
                     result["dbms"] = "PostgreSQL"
                 elif "WAITFOR" in payload:
                     result["dbms"] = "MSSQL"
-                return result
+                if confirmed_count >= 2:
+                    break
         except requests.Timeout:
-            pass
+            confirmed_count += 1
         except Exception as e:
             logger.debug("sqli time %s: %s", payload[:20], e)
+
+    if result["vulnerable"] and total_attempts > 0:
+        vote = confirmed_count / total_attempts
+        result["confidence_score"] = round(min(0.95, vote), 2)
+        if confirmed_count >= 2:
+            result["confidence"] = "high"
+        elif confirmed_count >= 1:
+            result["confidence"] = "medium"
+        else:
+            result["confidence"] = "low"
+
     return result
 
 
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, post_body: bool = False, post_data: dict = None,
-          waf_name: Optional[str] = None) -> dict:
+          waf_name: Optional[str] = None,
+          auto_detect_waf: bool = True) -> dict:
     if sess is None:
         sess = requests.Session()
         sess.verify = settings.verify_ssl
-    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None, "dbms": None}
+
+    if waf_name is None and auto_detect_waf:
+        waf_name = _resolve_waf_name(url, sess, timeout)
+        if waf_name:
+            logger.info("detected WAF: %s", waf_name)
+
+    result = {"vulnerable": False, "type": None, "evidence": [], "vector": None,
+              "dbms": None, "waf_detected": waf_name, "confidence": "low",
+              "confidence_score": 0.0, "confidence_votes": []}
 
     base_data = post_data.copy() if post_body and post_data else None
 
@@ -267,9 +350,18 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
     ]
 
     for det_name, det_func in detectors:
-        r = det_func(url, param, sess, timeout, post_data if post_body else None, base_data)
+        r = det_func(url, param, sess, timeout, post_data if post_body else None, base_data, waf_name)
         if r["vulnerable"]:
             result.update(r)
+            if "confidence_score" in r and r["confidence_score"]:
+                if r["confidence_score"] > result.get("confidence_score", 0):
+                    result["confidence_score"] = r["confidence_score"]
+                    result["confidence"] = r.get("confidence", "medium")
             break
+
+    if not result["vulnerable"]:
+        result["confidence_score"] = 0.0
+        result["confidence_votes"] = []
+    return result
 
     return result

@@ -5,8 +5,8 @@ from tools.log_utils import get_logger
 logger = get_logger("biz_logic_v2")
 
 from tools.session_matrix import SessionMatrix
-from tools.workflow_tracer import WorkflowTracer, trace_workflow
-from tools.constraint_graph import ConstraintGraph
+from tools.workflow_tracer import WorkflowTracer, trace_workflow, WorkflowDeviator
+from tools.constraint_graph import ConstraintGraph, ConstraintBreaker
 from tools.deviation_oracle import DeviationOracle
 from tools.race_profiler import RaceProfiler
 from tools.settings import settings
@@ -15,7 +15,6 @@ from tools.settings import settings
 def run_authz_scan(url: str, identities: List[Dict],
                    auth_url: str = None, sess=None,
                    timeout: float = 10.0) -> Dict:
-    from tools.session_matrix import SessionMatrix
     if auth_url is None:
         auth_url = f"{url.rstrip('/')}/login"
     matrix = SessionMatrix(url)
@@ -41,7 +40,6 @@ def run_workflow_scan(url: str, workflow_steps: List[Dict],
     if sess is None:
         sess = requests.Session(); sess.verify = settings.verify_ssl
     trace = trace_workflow(sess, url, workflow_steps)
-    from tools.workflow_tracer import WorkflowDeviator
     deviator = WorkflowDeviator(trace)
     findings = []
     skip_tests = deviator.generate_skip_steps(len(trace.steps) - 1)
@@ -123,7 +121,6 @@ def run_constraint_scan(url: str, param: str = None,
     import requests
     if sess is None:
         sess = requests.Session(); sess.verify = settings.verify_ssl
-    from tools.constraint_graph import ConstraintGraph, ConstraintBreaker
     graph = ConstraintGraph()
     try:
         r = sess.get(url, timeout=timeout)

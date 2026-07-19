@@ -1,4 +1,4 @@
-import re, time, json as _json
+import re, time, json as _json, statistics
 from typing import Optional
 import requests
 
@@ -6,6 +6,7 @@ from tools.log_utils import get_logger
 from tools.http_client import build_url
 from tools.payload_engine import generate
 from tools.settings import settings
+from tools.verification_oracle import ConfidenceVoter
 
 logger = get_logger("nosqli_detector")
 
@@ -29,6 +30,8 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         sess = requests.Session(); sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": [], "payload": None}
 
+    voter = ConfidenceVoter()
+
     try:
         r_base = sess.get(build_url(url, param, "1"),
                           timeout=timeout)
@@ -39,6 +42,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         base_len = 0
         base_status = 0
 
+    bool_hits = 0
     seeds = generate("nosqli", "boolean", "string", waf_name)
     for entry in seeds:
         payload = entry["payload"]
@@ -47,24 +51,31 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                          timeout=timeout)
             diff = abs(len(r.text) - base_len)
             if diff > 30 or r.status_code != base_status:
-                result["vulnerable"] = True
-                result["type"] = "boolean"
+                bool_hits += 1
                 result["evidence"].append("nosqli: %s (%d diff)" % (payload[:25], diff))
                 result["payload"] = payload
-                break
+                voter.add_vote("bool_diff", ConfidenceVoter.vote_length_diff(len(r.text), base_len))
             for pat in NOSQLI_ERROR_PATTERNS:
                 if re.search(pat, r.text, re.IGNORECASE):
-                    result["vulnerable"] = True
-                    result["type"] = "error"
                     result["evidence"].append("nosqli error: %s" % pat[:25])
                     result["payload"] = payload
+                    voter.add_vote("error_%s" % pat[:20], 0.6)
+                    bool_hits += 1
                     break
         except Exception as e:
             logger.debug("nosqli payload %s: %s", payload[:20], e)
-        if result["vulnerable"]:
-            break
+
+    if bool_hits >= 2:
+        voter.add_vote("multi_bool", 0.8)
+        result["vulnerable"] = True
+        result["type"] = "boolean"
+    elif bool_hits == 1:
+        voter.add_vote("single_bool", 0.5)
+        result["vulnerable"] = True
+        result["type"] = "boolean"
 
     if not result["vulnerable"]:
+        time_hits = 0
         time_seeds = generate("nosqli", "where_time", "string", waf_name)
         for entry in time_seeds:
             payload = entry["payload"]
@@ -75,15 +86,23 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                              timeout=timeout + 2)
                 elapsed = time.time() - start_t
                 if elapsed >= threshold:
-                    result["vulnerable"] = True
-                    result["type"] = "time"
+                    time_hits += 1
                     result["evidence"].append("nosqli time: %s (%.1fs)" % (payload[:25], elapsed))
                     result["payload"] = payload
-                    break
+                    voter.add_vote("time_delay", 0.6)
             except Exception as e:
                 logger.debug("nosqli time %s: %s", payload[:20], e)
+        if time_hits >= 2:
+            voter.add_vote("multi_time", 0.8)
+            result["vulnerable"] = True
+            result["type"] = "time"
+        elif time_hits == 1:
+            voter.add_vote("single_time", 0.5)
+            result["vulnerable"] = True
+            result["type"] = "time"
 
     if not result["vulnerable"]:
+        json_hits = 0
         json_seeds = generate("nosqli", "json", "json", waf_name)
         for entry in json_seeds:
             payload_raw = entry["payload"]
@@ -91,12 +110,17 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                 r = sess.post(url, json={param: _json.loads(payload_raw)},
                               timeout=timeout)
                 if r.status_code == 200 and len(r.text) > base_len + 10:
-                    result["vulnerable"] = True
-                    result["type"] = "json"
+                    json_hits += 1
                     result["evidence"].append("nosqli json: %s" % payload_raw[:25])
                     result["payload"] = payload_raw
-                    break
+                    voter.add_vote("json_diff", 0.5)
             except Exception as e:
                 logger.debug("nosqli json: %s", e)
+        if json_hits >= 1:
+            result["vulnerable"] = True
+            result["type"] = "json"
 
+    result["confidence_score"] = round(voter.score, 2)
+    result["confidence"] = voter.level.value
+    result["confidence_votes"] = voter.evidence()
     return result

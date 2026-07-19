@@ -17,11 +17,8 @@ CSRF_PATTERNS = [
 ]
 
 FORM_CRED_PATTERNS = [
-    r'<input[^>]*type=["\'](?:text|email|hidden)["\'][^>]*name=["\']([^"\']+)["\'][^>]*(?:value=["\']([^"\']*)["\'])?',
-    r'<input[^>]*name=["\']([^"\']+)["\'][^>]*type=["\'](?:text|email|hidden)["\'][^>]*(?:value=["\']([^"\']*)["\'])?',
-    r'<input[^>]*type=["\']password["\']',
-    r'<input[^>]*type=["\']submit["\']',
-    r'<form[^>]*action=["\']([^"\']+)["\']',
+    r'<input[^>]*type=["\'](?:text|email|hidden)["\'][^>]*name=["\']([^"\']+)["\'](?:[^>]*?(?:value=["\']([^"\']*)["\']))?[^>]*>',
+    r'<input[^>]*name=["\']([^"\']+)["\'][^>]*type=["\'](?:text|email|hidden)["\'](?:[^>]*?(?:value=["\']([^"\']*)["\']))?[^>]*>',
 ]
 
 

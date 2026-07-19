@@ -248,6 +248,31 @@ def cmd_proto(args):
     _output(r)
 
 
+def cmd_xxe(args):
+    from tools.xxe_detector import check as xxe_check
+    r = xxe_check(args.url, getattr(args, "param", None), _sess(args), args.timeout)
+    _output(r)
+
+
+def cmd_graphql_abuse(args):
+    from tools.graphql_abuser import check as graphql_abuse_check
+    r = graphql_abuse_check(args.url, sess=_sess(args), timeout=args.timeout)
+    _output(r)
+
+
+def cmd_jwt_attack(args):
+    from tools.jwt_attacker import check as jwt_attack_check
+    r = jwt_attack_check(args.url, sess=_sess(args), timeout=args.timeout,
+                         token=getattr(args, "token", None))
+    _output(r)
+
+
+def cmd_verify(args):
+    from tools.second_order_verifier import check as verify_check
+    r = verify_check(args.url, args.param, args.vuln_type, _sess(args), args.timeout)
+    _output(r)
+
+
 def cmd_cors(args):
     from tools.cors_scanner import check as cors_check
     r = cors_check(args.url, None, _sess(args), args.timeout)
@@ -711,6 +736,24 @@ def main():
     p.add_argument("url"); p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_bizlogic)
 
+    p = sub.add_parser("xxe", help="XXE XML外部实体检测")
+    p.add_argument("url"); p.add_argument("--param", default=None)
+    p.set_defaults(func=cmd_xxe)
+
+    p = sub.add_parser("graphql-abuse", help="GraphQL高级利用(内省/批量/深度)")
+    p.add_argument("url")
+    p.set_defaults(func=cmd_graphql_abuse)
+
+    p = sub.add_parser("jwt-attack", help="JWT攻击(算法混淆/弱密钥/注入)")
+    p.add_argument("url"); p.add_argument("--token", default=None)
+    p.set_defaults(func=cmd_jwt_attack)
+
+    p = sub.add_parser("verify", help="第二序交叉验证(多方法确认)")
+    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("--vuln-type", default="sqli",
+                   choices=["sqli", "ssrf", "xss", "ssti", "cmdi", "lfi", "nosqli", "xxe"])
+    p.set_defaults(func=cmd_verify)
+
     p = sub.add_parser("recon", help="全面信息收集(指纹/端口/git/目录)")
     p.add_argument("target")
     p.add_argument("--deep", action="store_true", help="深度git泄露检测(所有文件)")
@@ -903,7 +946,8 @@ def main():
                 "jwt", "graphql", "deser", "proto-pollution", "cors",
                 "xss-validate", "waf", "waf-heavy", "bizlogic",
                 "chain", "sqli-weaponize",
-                "jwt-exploit", "ssrf-pwn", "ssrf-lateral", "deser-weaponize"}
+                "jwt-exploit", "ssrf-pwn", "ssrf-lateral", "deser-weaponize",
+                "xxe", "graphql-abuse", "jwt-attack", "verify"}
     if args.command in url_cmds:
         u = getattr(args, "url", "") or ""
         if u:

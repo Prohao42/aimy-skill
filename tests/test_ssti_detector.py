@@ -40,13 +40,20 @@ class TestSSTIDetector:
     @responses.activate
     def test_time_based_fallback(self):
         import time
+        # Fast catch-all for baseline + detect payloads
+        responses.add(
+            responses.GET,
+            re.compile(r'http://test\.com/page\?.*'),
+            body='no ssti match', status=200,
+        )
+        # Slow callback only for the sleep() payload URL
         def delayed(request):
             time.sleep(3)
             return (200, {}, 'ok')
         responses.add_callback(
             responses.GET,
-            re.compile(r'http://test\.com/page\?.*'),
+            re.compile(r'.*sleep.*'),
             callback=delayed,
         )
-        result = check('http://test.com/page', 'name', timeout=2)
-        assert result['vulnerable'] is not None
+        result = check('http://test.com/page', 'name', timeout=5)
+        assert result['vulnerable'] is True

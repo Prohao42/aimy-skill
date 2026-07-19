@@ -6,6 +6,7 @@ from tools.log_utils import get_logger
 from tools.http_client import build_url
 from tools.payload_engine import generate
 from tools.settings import settings
+from tools.verification_oracle import ConfidenceVoter
 
 logger = get_logger("lfi_scanner")
 
@@ -161,12 +162,38 @@ class LFIScanner:
         result["findings"].extend(self.check_log_poison(url, param))
         result["findings"].extend(self.check_proc_fd_bruteforce(url, param))
         result["findings"].extend(self.check_session_poison(url, param))
+
+        voter = ConfidenceVoter()
+        for f in result["findings"]:
+            label = f.get("label", "") or f.get("type", "")
+            ftype = f.get("type", "")
+            if label == "/etc/passwd" or "root:" in str(f):
+                voter.add_vote("etc_passwd", 0.85)
+            elif label in ("cmd_exec",):
+                voter.add_vote("cmd_exec", 0.75)
+            elif ftype == "log_poison_rce":
+                voter.add_vote("log_poison_rce", 0.9)
+                result["rce_available"] = True
+            elif ftype == "rce_data":
+                voter.add_vote("wrapper_rce", 0.7)
+                result["rce_available"] = True
+            elif "rce" in ftype or f.get("label") == "cmd_exec":
+                voter.add_vote("rce_other", 0.7)
+                result["rce_available"] = True
+            elif ftype == "base64":
+                voter.add_vote("base64_wrapper", 0.5)
+            elif label == "/windows/win.ini" or "[fonts]" in str(f):
+                voter.add_vote("win_ini", 0.8)
+            elif f.get("size", 0) > 200:
+                voter.add_vote("large_response", 0.3)
+
         if result["findings"]:
             result["vulnerable"] = True
-        for f in result["findings"]:
-            if "rce" in f.get("type", "") or f.get("label") == "cmd_exec":
-                result["rce_available"] = True
-                break
+            voter.add_vote("has_findings", 0.3)
+
+        result["confidence_score"] = round(voter.score, 2)
+        result["confidence"] = voter.level.value
+        result["confidence_votes"] = voter.evidence()
         return result
 
     def run(self, url: str, param: str) -> Dict:

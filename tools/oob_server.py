@@ -27,7 +27,7 @@ class OOBServer:
     _instance = None
     _lock = threading.Lock()
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 0):
+    def __init__(self, host: str = "127.0.0.1", port: int = 0):
         self.host = host
         self.port = port
         self._httpd = None
@@ -39,7 +39,7 @@ class OOBServer:
         self._cb_lock = threading.Lock()
 
     @classmethod
-    def get_instance(cls, host: str = "0.0.0.0", port: int = 0):
+    def get_instance(cls, host: str = "127.0.0.1", port: int = 0):
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -68,7 +68,7 @@ class OOBServer:
     def start_dns(self) -> Optional[str]:
         try:
             self._dns_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._dns_sock.bind(("0.0.0.0", 0))
+            self._dns_sock.bind(("127.0.0.1", 0))
             self._dns_sock.settimeout(1.0)
             dns_port = self._dns_sock.getsockname()[1]
             self._dns_thread = threading.Thread(target=self._dns_loop, daemon=True)

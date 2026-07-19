@@ -527,11 +527,10 @@ def check_idor_chain(url: str, sess: "requests.Session",
     result = {"vulnerable": False, "findings": []}
 
     idor_uuid_patterns = [
-        r'/user/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})',
+        r'/user/(\d+)',
         r'/order/(\d+)',
         r'/account/(\d+)',
         r'/api/v1/users/(\d+)',
-        r'/document/([a-f0-9]+)',
     ]
 
     try:
@@ -539,22 +538,23 @@ def check_idor_chain(url: str, sess: "requests.Session",
         for pat in idor_uuid_patterns:
             matches = re.findall(pat, r.text, re.IGNORECASE)
             for match in matches[:5]:
-                test_urls = [
-                    re.sub(r'(/user/|/order/|/account/)' + re.escape(str(match)),
-                           r'\g<1>' + str(int(match) + 1) if match.isdigit() else match + "x",
-                           url),
-                ]
-                for tu in test_urls:
+                if match.isdigit():
+                    test_id = str(int(match) + 1)
+                    test_url = re.sub(
+                        r'(/user/|/order/|/account/|/api/v1/users/)' + re.escape(match),
+                        r'\g<1>' + test_id,
+                        url)
                     try:
-                        r2 = sess.get(tu, timeout=timeout)
+                        r2 = sess.get(test_url, timeout=timeout)
                         if r2.status_code in (200, 201) and len(r2.text) > 50:
-                            result["vulnerable"] = True
-                            result["findings"].append({
-                                "technique": "idor_chain",
-                                "detail": f"Object ID enumeration possible: {match} -> seq+1 also accessible",
-                                "original": match,
-                                "test_url": tu[:80],
-                            })
+                            if r2.text != r.text:
+                                result["vulnerable"] = True
+                                result["findings"].append({
+                                    "technique": "idor_chain",
+                                    "detail": f"Object ID enumeration possible: {match} -> {test_id} also accessible with different content",
+                                    "original": match,
+                                    "test_url": test_url[:80],
+                                })
                     except Exception:
                         pass
     except Exception:

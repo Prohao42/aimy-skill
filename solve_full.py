@@ -1,4 +1,9 @@
-import requests, urllib3, subprocess, json, re
+import re
+import subprocess
+
+import requests
+import urllib3
+
 urllib3.disable_warnings()
 
 # Step 1: Get the challenge

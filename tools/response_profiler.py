@@ -1,10 +1,11 @@
 import hashlib
-from typing import Optional, Dict, List
 from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 
 logger = get_logger("response_profiler")
 
@@ -82,12 +83,26 @@ class ResponseProfiler:
         sess: requests.Session,
         timeout: float = 10.0,
     ) -> int:
+        import concurrent.futures
         count = 0
-        for p in points:
-            if self.profile_endpoint(
-                p["url"], p["param"], sess, timeout, p.get("method", "GET")
-            ):
-                count += 1
+        if len(points) <= 5:
+            for p in points:
+                if self.profile_endpoint(p["url"], p["param"], sess, timeout, p.get("method", "GET")):
+                    count += 1
+            return count
+
+        workers = min(8, len(points))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+            futures = {
+                ex.submit(self.profile_endpoint, p["url"], p["param"], sess, timeout, p.get("method", "GET")): p
+                for p in points
+            }
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    if future.result(timeout=timeout + 3):
+                        count += 1
+                except Exception:
+                    pass
         return count
 
     def analyze(

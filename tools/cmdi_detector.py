@@ -1,9 +1,16 @@
-import re, time, random, string, threading, socket, struct, statistics
+import random
+import re
+import socket
+import statistics
+import string
+import threading
+import time
 from typing import Optional
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.payload_engine import generate
 from tools.settings import settings
 from tools.verification_oracle import ConfidenceVoter
@@ -30,6 +37,11 @@ OUTPUT_INDICATORS = [
     (r"DIR |dir.*Volume", "directory"),
     (r"total \d+", "directory"),
     (r"drwxr|xr-x", "directory"),
+    (r"Name\s+---", "windows_process"),
+    (r"TotalVirtualMemorySize", "windows_wmic"),
+    (r"FreePhysicalMemory", "windows_wmic"),
+    (r"ProcessorId", "windows_wmic"),
+    (r"HostName|Domain|UserName", "windows_env"),
 ]
 
 CLEAN_VALUE = "CMDI_NOMINAL_000"
@@ -57,7 +69,7 @@ class _OobServer:
     def start(self):
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._sock.bind(("0.0.0.0", 0))
+            self._sock.bind(("127.0.0.1", 0))
             self._sock.settimeout(self.timeout)
             self.port = self._sock.getsockname()[1]
         except OSError:
@@ -185,16 +197,15 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
 
         if cb_domain:
             result["oob_tested"] = True
-            templates = [
-                "nslookup %s" if cb_domain else "",
-                "ping -c 1 %s" if cb_domain else "",
-                "curl %s" if cb_url else "",
-                "wget %s" if cb_url else "",
-            ]
-            for tpl in templates:
-                if not tpl:
-                    continue
-                payload = tpl % (cb_domain or cb_url)
+            templates = []
+            if cb_domain:
+                templates.append("nslookup %s" % cb_domain)
+                templates.append("ping -c 1 %s" % cb_domain)
+                templates.append("dig +short %s" % cb_domain)
+            if cb_url:
+                templates.append("curl %s" % cb_url)
+                templates.append("wget %s" % cb_url)
+            for payload in templates:
                 try:
                     sess.get(build_url(url, param, payload), timeout=timeout)
                 except Exception:
@@ -205,7 +216,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                 result["vulnerable"] = True
                 result["type"] = "oob_callback"
                 result["evidence"].append("cmdi OOB: DNS/HTTP callback received")
-                result["payload"] = templates[0] % (cb_domain or cb_url)
+                result["payload"] = templates[0] if templates else ""
 
         oob_server.stop()
 

@@ -1,5 +1,5 @@
-import pytest
 import responses
+
 from tools.xss_detector import check
 
 

@@ -1,9 +1,12 @@
-import re, time, json as _json, statistics
+import json as _json
+import re
+import time
 from typing import Optional
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.payload_engine import generate
 from tools.settings import settings
 from tools.verification_oracle import ConfidenceVoter
@@ -21,6 +24,15 @@ NOSQLI_ERROR_PATTERNS = [
     r"RethinkDB",
     r"Firebase",
     r"Invalid BSON",
+    r"ConditionalCheckFailed",
+    r"Cosmos\s*DB",
+    r"FaunaDB",
+    r"N1QL",
+    r"query\s*parser",
+    r"ValidationError",
+    r"CastError",
+    r"BSONObj\s*size",
+    r"E11000\s*duplicate",
 ]
 
 
@@ -119,6 +131,30 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         if json_hits >= 1:
             result["vulnerable"] = True
             result["type"] = "json"
+
+    if not result["vulnerable"]:
+        regex_hits = 0
+        regex_seeds = generate("nosqli", "regex", "string", waf_name)
+        for entry in regex_seeds:
+            payload = entry["payload"]
+            try:
+                r = sess.get(build_url(url, param, payload), timeout=timeout)
+                diff = abs(len(r.text) - base_len)
+                if diff > 20 or r.status_code != base_status:
+                    regex_hits += 1
+                    result["evidence"].append("nosqli $regex: %s (%d diff)" % (payload[:25], diff))
+                    result["payload"] = payload
+                    voter.add_vote("regex_diff", 0.5)
+            except Exception as e:
+                logger.debug("nosqli regex %s: %s", payload[:20], e)
+        if regex_hits >= 2:
+            voter.add_vote("multi_regex", 0.75)
+            result["vulnerable"] = True
+            result["type"] = "regex"
+        elif regex_hits == 1:
+            voter.add_vote("single_regex", 0.45)
+            result["vulnerable"] = True
+            result["type"] = "regex"
 
     result["confidence_score"] = round(voter.score, 2)
     result["confidence"] = voter.level.value

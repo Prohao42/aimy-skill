@@ -1,9 +1,17 @@
-import re, threading, http.server, socket, json, time, os, struct, random, string, urllib.parse
+import http.server
+import random
+import re
+import socket
+import string
+import struct
+import threading
+import urllib.parse
 from typing import Optional
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.settings import settings
 
 logger = get_logger("ssrf_detector")
@@ -76,6 +84,11 @@ SSRF_URLS = [
     "file:///home/ubuntu/.ssh/authorized_keys",
     "file:///var/run/secrets/kubernetes.io/serviceaccount/token",
     "http://169.254.169.254/metadata/instance?api-version=2021-02-01",
+    "http://169.254.169.254/metadata/v1.json",
+    "http://169.254.169.254/metadata/v1/user-data",
+    "http://169.254.169.254/2009-04-04/meta-data/",
+    "http://metadata.tencentyun.com/latest/meta-data/",
+    "http://100.100.100.200/latest/meta-data/",
 ]
 
 INTERNAL_PROBES = [
@@ -139,7 +152,7 @@ class OOBListener:
         if self.custom_callback:
             return self.custom_callback
         try:
-            self._server = http.server.HTTPServer(("0.0.0.0", self.port), self._make_handler(self))
+            self._server = http.server.HTTPServer(("127.0.0.1", self.port), self._make_handler(self))
             self.port = self._server.server_address[1]
         except OSError as e:
             logger.debug("OOB listener failed to bind: %s", e)
@@ -181,7 +194,7 @@ class DnsOobListener:
     def start(self):
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._sock.bind(("0.0.0.0", self.port or 0))
+            self._sock.bind(("127.0.0.1", self.port or 0))
             self._sock.settimeout(self.oob_timeout)
             self.port = self._sock.getsockname()[1]
         except OSError as e:

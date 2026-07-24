@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-import argparse, json, sys, os, time, ssl, urllib.parse as _urlparse
+import argparse
+import json
+import os
+import ssl
+import sys
+import urllib.parse as _urlparse
+
 from requests.adapters import HTTPAdapter
 
+from tools.kali_executor import get_kali, init_kali, init_kali_local
+from tools.kali_executor import is_available as kali_avail
 from tools.log_utils import get_logger
 from tools.settings import settings
-from tools.kali_executor import init_kali, init_kali_local, is_available as kali_avail, get_kali
 
 logger = get_logger("main")
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 
 
 URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
@@ -260,6 +267,42 @@ def cmd_graphql_abuse(args):
     _output(r)
 
 
+def cmd_smuggler(args):
+    from tools.smuggler import check as smuggle_check
+    r = smuggle_check(args.url, sess=_sess(args), timeout=args.timeout)
+    _output(r)
+    if r.get("vulnerable") and args.exploit:
+        from tools.smuggler import exploit as smuggle_exploit
+        attack_body = args.attack_body or "GET /admin HTTP/1.1\r\nHost: localhost\r\n\r\n"
+        e = smuggle_exploit(args.url, attack_type=r["smuggling_type"],
+                           attack_body=attack_body, timeout=args.timeout)
+        _output({"smuggling_exploit": e})
+
+
+def cmd_cloud_pwn(args):
+    raw_text = args.raw
+    if args.file:
+        try:
+            with open(args.file, "r") as f:
+                raw_text = f.read()
+        except Exception as e:
+            _output({"success": False, "error": str(e)})
+            return
+    from tools.cloud_pwn import check as cloud_check
+    r = cloud_check(raw_text, cloud_hint=args.cloud)
+    _output(r)
+
+
+def cmd_webshell(args):
+    from tools.reverse_shell import deploy_webshell, generate_webshell
+    if args.deploy:
+        r = deploy_webshell(args.url, webshell_type=args.type,
+                           path=args.path, sess=_sess(args), timeout=args.timeout)
+    else:
+        r = generate_webshell(args.type, args.encode)
+    _output(r)
+
+
 def cmd_jwt_attack(args):
     from tools.jwt_attacker import check as jwt_attack_check
     r = jwt_attack_check(args.url, sess=_sess(args), timeout=args.timeout,
@@ -270,6 +313,21 @@ def cmd_jwt_attack(args):
 def cmd_verify(args):
     from tools.second_order_verifier import check as verify_check
     r = verify_check(args.url, args.param, args.vuln_type, _sess(args), args.timeout)
+    _output(r)
+
+
+def cmd_csrf(args):
+    from tools.csrf_scanner import check as csrf_check
+    if args.bypass:
+        import urllib.parse
+
+        from tools.csrf_scanner import bypass_check as csrf_bypass
+        parsed = urllib.parse.urlparse(args.url)
+        import json
+        data = json.loads(args.data) if args.data else {"test": "value"}
+        r = csrf_bypass(args.url, args.action or "/", data, _sess(args), args.timeout)
+    else:
+        r = csrf_check(args.url, _sess(args), args.timeout)
     _output(r)
 
 
@@ -306,13 +364,43 @@ def cmd_waf(args):
 def cmd_deepscan(args):
     from tools.orchestrator import Orchestrator
     engine = Orchestrator(args.target, _sess(args), args.timeout)
+    engine.init_storage(resume=getattr(args, "resume", False),
+                        name=getattr(args, "session", "default"))
     report = engine.run()
+    _output(report)
+
+
+def cmd_quickscan(args):
+    from tools.orchestrator import Orchestrator
+    engine = Orchestrator(
+        args.target, _sess(args), args.timeout,
+        threads=args.threads, max_pages=20, max_depth=2,
+        fast_recon=True, high_value=True, turbo=True
+    )
+    engine.init_storage(resume=False, name=getattr(args, "session", "quick"))
+    report = engine.run()
+    s = report.get("summary", {})
+    print()
+    print("=" * 60)
+    print("[QUICK SCAN] %s" % args.target)
+    print("  Vulnerabilities: %d" % s.get("vulnerabilities", 0))
+    by_type = s.get("by_type", {})
+    for vt, count in sorted(by_type.items(), key=lambda x: -x[1]):
+        print("    %s: %d" % (vt.upper(), count))
+    print("  Critical: %s" % s.get("critical", False))
+    print("  Time: %.1fs" % report.get("elapsed_seconds", 0))
+    print()
     _output(report)
 
 
 def cmd_autohunt(args):
     from tools.orchestrator import Orchestrator
-    engine = Orchestrator(args.target, _sess(args), args.timeout, args.threads)
+    engine = Orchestrator(args.target, _sess(args), args.timeout, args.threads,
+                           high_value=getattr(args, "high_value", False),
+                           turbo=getattr(args, "turbo", False),
+                           skip_verify=getattr(args, "skip_verify", False))
+    engine.init_storage(resume=getattr(args, "resume", False),
+                        name=getattr(args, "session", "default"))
     report = engine.run()
     _output(report)
 
@@ -321,7 +409,12 @@ def cmd_auto(args):
     from tools.orchestrator import Orchestrator
     engine = Orchestrator(args.target, _sess(args), args.timeout,
                            args.threads, args.max_pages, args.max_depth,
-                           fast_recon=args.fast_recon)
+                           fast_recon=args.fast_recon,
+                           high_value=getattr(args, "high_value", False),
+                           turbo=getattr(args, "turbo", False),
+                           skip_verify=getattr(args, "skip_verify", False))
+    engine.init_storage(resume=getattr(args, "resume", False),
+                        name=getattr(args, "session", "default"))
     report = engine.run()
     s = report.get("summary", {})
     if settings.is_rookie():
@@ -357,7 +450,12 @@ def cmd_auto(args):
 
 
 def cmd_recon(args):
-    from tools.recon import enum_subdomains, scan_ports, fingerprint_tech, check_git_leak, fuzz_directories
+    from tools.recon import (
+        check_git_leak,
+        fingerprint_tech,
+        fuzz_directories,
+        scan_ports,
+    )
     target = args.target
     result = {"target": target, "phases": {}}
 
@@ -386,6 +484,27 @@ def cmd_chain(args):
 def cmd_proxy(args):
     from tools.packet_capture import run_capture
     r = run_capture(args)
+    _output(r)
+
+
+def cmd_domain(args):
+    from tools.domain_hunt import run as domain_hunt
+    userlist = []
+    if args.userlist:
+        try:
+            with open(args.userlist, "r") as f:
+                userlist = [l.strip() for l in f if l.strip()]
+        except Exception as e:
+            logger.error("userlist: %s", e)
+    r = domain_hunt(
+        target=args.target,
+        dc_ip=args.dc_ip or None,
+        domain=args.domain or None,
+        username=args.username or None,
+        password=args.password or None,
+        userlist=userlist or None,
+    )
+    from tools.reporter import _output
     _output(r)
 
 
@@ -474,8 +593,79 @@ def cmd_fuzz(args):
     _output({"payloads_tested": len(result)})
 
 
+def cmd_fuzz_engine(args):
+    import requests
+
+    from tools.fuzz_engine import FuzzEngine
+    sess = requests.Session()
+    fe = FuzzEngine(sess, args.timeout)
+    vt = args.vuln_type or "sql"
+    payloads = fe.generate(vt, count=args.count)
+    results = fe.test_payloads(args.url, args.param, payloads)
+    interesting = [r for r in results if r.get("interesting")]
+    print("  Payloads tested: %d" % len(results))
+    print("  Interesting: %d" % len(interesting))
+    for r in interesting[:5]:
+        print("    [%d] %s (%.1fs, ratio=%.1f)" % (
+            r["status"], r["payload"][:50], r["time"], r["size_ratio"]))
+    _output({"payloads_tested": len(results), "interesting": len(interesting), "results": results[:20]})
+
+
+def cmd_code_audit(args):
+    from tools.code_audit import run_audit
+    result = run_audit([args.path], threads=args.threads)
+    print("  Files scanned: %d" % result.get("files_scanned", 0))
+    print("  Total findings: %d" % result.get("total_findings", 0))
+    for sev, cnt in result.get("by_severity", {}).items():
+        print("    %s: %d" % (sev, cnt))
+    for f in result.get("findings", [])[:10]:
+        print("  [%s] %s:%d %s" % (f["severity"], f["file"], f["line"], f["rule"]))
+        print("    %s" % f["snippet"][:100])
+        print("    -> %s" % f["rec"][:80])
+    _output(result)
+
+
+def cmd_binary_scan(args):
+    from tools.binary_analyzer import run_binary_scan
+    result = run_binary_scan([args.path], threads=args.threads)
+    print("  Binaries scanned: %d" % result.get("files_scanned", 0))
+    print("  Analyzed: %d" % result.get("binaries_analyzed", 0))
+    print("  Suspicious: %d" % result.get("suspicious_count", 0))
+    s = result.get("summary", {})
+    if s.get("packed"):
+        print("  Packed: %d" % s["packed"])
+    if s.get("has_suspicious_imports"):
+        print("  Suspicious imports: %d" % s["has_suspicious_imports"])
+    for b in result.get("suspicious", [])[:5]:
+        print("    %s (entropy=%.2f, packed=%s)" % (
+            b.get("filepath", "?"), b.get("entropy", 0), b.get("packed")))
+    _output(result)
+
+
+def cmd_mobile_scan(args):
+    path = args.path.lower()
+    if path.endswith(".apk"):
+        from tools.mobile_scanner import scan_android
+        result = scan_android(args.path)
+        print("  Android scan: %d findings" % result.get("total_findings", 0))
+    elif path.endswith(".ipa"):
+        from tools.mobile_scanner import scan_ios
+        result = scan_ios(args.path)
+        print("  iOS scan: %d findings" % result.get("total_findings", 0))
+    else:
+        result = {"error": "Unsupported format: %s (use .apk or .ipa)" % args.path}
+        print(result["error"])
+        _output(result)
+        return
+    for sev, cnt in result.get("by_severity", {}).items():
+        print("    %s: %d" % (sev, cnt))
+    for f in result.get("findings", [])[:10]:
+        print("  [%s] %s: %s" % (f["severity"], f["category"], f["title"]))
+    _output(result)
+
+
 def cmd_payload_mutate(args):
-    from tools.payload_mutator import encode_payload, mutate_value, mutate_param_name
+    from tools.payload_mutator import encode_payload, mutate_param_name, mutate_value
     result = {"originals": [], "encoded": [], "mutations": []}
     if args.payload:
         result["encoded"] = [
@@ -601,7 +791,6 @@ def cmd_kali(args):
 
 def cmd_list(args):
     from tools.tool_registry import list_tools
-    from tools.mode import filter_vulnerabilities
     tools = list_tools()
     if settings.is_rookie():
         print(json.dumps(tools, indent=2, ensure_ascii=False))
@@ -611,7 +800,7 @@ def cmd_list(args):
 
 
 def _output(result):
-    from tools.mode import filter_vulnerabilities, enrich_result
+    from tools.mode import enrich_result, filter_vulnerabilities
     if isinstance(result, dict) and "vulnerabilities" in result:
         result["vulnerabilities"] = filter_vulnerabilities(result["vulnerabilities"])
         result["vulnerabilities"] = [enrich_result(v) for v in result["vulnerabilities"]]
@@ -740,6 +929,34 @@ def main():
     p.add_argument("url"); p.add_argument("--param", default=None)
     p.set_defaults(func=cmd_xxe)
 
+    p = sub.add_parser("smuggler", help="HTTP请求走私检测 (CL.TE/TE.CL/TE.TE/h2c)")
+    p.add_argument("url")
+    p.add_argument("--exploit", action="store_true", help="检测到后自动利用")
+    p.add_argument("--attack-body", default="", help="走私请求体内容")
+    p.set_defaults(func=cmd_smuggler)
+
+    p = sub.add_parser("cloud-pwn", help="云凭据利用 (AWS/GCP/Azure)")
+    p.add_argument("--raw", default="", help="原始凭据文本")
+    p.add_argument("--file", default="", help="从文件读取凭据文本")
+    p.add_argument("--cloud", default="", choices=["aws", "gcp", "azure"], help="云平台提示")
+    p.set_defaults(func=cmd_cloud_pwn)
+
+    p = sub.add_parser("csrf", help="CSRF检测与绕过")
+    p.add_argument("url")
+    p.add_argument("--bypass", action="store_true", help="尝试绕过CSRF保护")
+    p.add_argument("--action", default="", help="目标action路径")
+    p.add_argument("--data", default="", help="JSON格式的POST数据")
+    p.add_argument("--param", default=None)
+    p.set_defaults(func=cmd_csrf)
+
+    p = sub.add_parser("webshell", help="Webshell生成与部署")
+    p.add_argument("--type", default="php_cmd", choices=["php_cmd", "php_exec", "php_b64", "asp_cmd", "aspx_cmd", "jsp_cmd", "python_flask", "node_express"], help="Webshell类型")
+    p.add_argument("--encode", default="raw", choices=["raw", "b64", "url"])
+    p.add_argument("--deploy", action="store_true", help="尝试部署到目标")
+    p.add_argument("url", nargs="?", default="", help="目标URL (部署时需要)")
+    p.add_argument("--path", default="", help="部署路径")
+    p.set_defaults(func=cmd_webshell)
+
     p = sub.add_parser("graphql-abuse", help="GraphQL高级利用(内省/批量/深度)")
     p.add_argument("url")
     p.set_defaults(func=cmd_graphql_abuse)
@@ -762,20 +979,39 @@ def main():
 
     p = sub.add_parser("deepscan", help="深度扫描(爬虫+检测+报告)")
     p.add_argument("target")
+    p.add_argument("--session", default="default", help="持久化会话名(可恢复)")
+    p.add_argument("--resume", action="store_true", help="恢复上一次会话状态")
     p.set_defaults(func=cmd_deepscan)
+
+    p = sub.add_parser("quickscan", help="快速扫描(极速发现高危漏洞)")
+    p.add_argument("target")
+    p.add_argument("--threads", type=int, default=30)
+    p.add_argument("--timeout", type=float, default=5.0)
+    p.add_argument("--session", default="quick", help="持久化会话名")
+    p.set_defaults(func=cmd_quickscan)
 
     p = sub.add_parser("autohunt", help="自动狩猎(爬虫+参数挖掘+检测+武器化)")
     p.add_argument("target")
-    p.add_argument("--threads", type=int, default=10)
+    p.add_argument("--threads", type=int, default=20)
+    p.add_argument("--high-value", action="store_true", help="高价值模式:跳过低危,聚焦高影响漏洞")
+    p.add_argument("--turbo", action="store_true", help="极速模式:最大并发+智能终止")
+    p.add_argument("--skip-verify", action="store_true", help="跳过交叉验证/Oracle/误报过滤")
+    p.add_argument("--session", default="default", help="持久化会话名(可恢复)")
+    p.add_argument("--resume", action="store_true", help="恢复上一次会话状态")
     p.set_defaults(func=cmd_autohunt)
 
     p = sub.add_parser("auto", help="全自动渗透(信息收集+攻击面+检测+链式利用)")
     p.add_argument("target")
-    p.add_argument("--threads", type=int, default=10)
-    p.add_argument("--max-pages", type=int, default=30)
-    p.add_argument("--max-depth", type=int, default=2)
+    p.add_argument("--threads", type=int, default=20)
+    p.add_argument("--max-pages", type=int, default=50)
+    p.add_argument("--max-depth", type=int, default=3)
     p.add_argument("--fast-recon", action="store_true", default=True, help="快速侦察模式(默认)")
     p.add_argument("--no-chain", action="store_true", help="跳过链式利用阶段")
+    p.add_argument("--high-value", action="store_true", help="高价值模式:跳过低危(XSS/CORS等),聚焦RCE/SQLi/SSRF/认证绕过")
+    p.add_argument("--turbo", action="store_true", help="极速模式:最大并发+智能终止+自适应策略")
+    p.add_argument("--skip-verify", action="store_true", help="跳过交叉验证/Oracle/误报过滤(极速模式)")
+    p.add_argument("--session", default="default", help="持久化会话名(可恢复)")
+    p.add_argument("--resume", action="store_true", help="恢复上一次会话状态")
     p.set_defaults(func=cmd_auto)
 
     p = sub.add_parser("chain", help="利用链组合攻击")
@@ -799,6 +1035,15 @@ def main():
     p.add_argument("--capture-tls", action="store_true", help="仅TLS(443)")
     p.add_argument("--realtime", action="store_true", help="实时HTTP流模式(tshark -T fields)")
     p.set_defaults(func=cmd_capture)
+
+    p = sub.add_parser("domain", help="域渗透审计 (LDAP/Kerberos/SMB/ADCS)")
+    p.add_argument("target", help="域名或DC IP")
+    p.add_argument("--dc-ip", default="", help="域控IP")
+    p.add_argument("--domain", default="", help="域名")
+    p.add_argument("--username", default="", help="域用户名")
+    p.add_argument("--password", default="", help="域密码")
+    p.add_argument("--userlist", default="", help="用户列表文件(AS-REP Roast用)")
+    p.set_defaults(func=cmd_domain)
 
     p = sub.add_parser("workflow", help="工作流执行")
     p.add_argument("workflow", help="工作流名称或JSON文件路径")
@@ -857,6 +1102,26 @@ def main():
     p.add_argument("--payload", default="")
     p.add_argument("--param", default="")
     p.set_defaults(func=cmd_payload_mutate)
+
+    p = sub.add_parser("fuzz-engine", help="高级语法模糊测试(grammar-based)")
+    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("--vuln-type", default="", help="sql/ssrf/lfi/xss/ssti/cmdi")
+    p.add_argument("--count", type=int, default=20, help="payload数量")
+    p.set_defaults(func=cmd_fuzz_engine)
+
+    p = sub.add_parser("code-audit", help="源代码审计(静态分析)")
+    p.add_argument("path", help="源码目录或文件路径")
+    p.add_argument("--threads", type=int, default=4)
+    p.set_defaults(func=cmd_code_audit)
+
+    p = sub.add_parser("binary-scan", help="二进制文件分析(PE/ELF)")
+    p.add_argument("path", help="文件或目录路径")
+    p.add_argument("--threads", type=int, default=4)
+    p.set_defaults(func=cmd_binary_scan)
+
+    p = sub.add_parser("mobile-scan", help="移动应用安全扫描(APK/IPA)")
+    p.add_argument("path", help="APK或IPA文件路径")
+    p.set_defaults(func=cmd_mobile_scan)
 
     p = sub.add_parser("list", help="列出所有可用工具")
     p.set_defaults(func=cmd_list)
@@ -947,7 +1212,8 @@ def main():
                 "xss-validate", "waf", "waf-heavy", "bizlogic",
                 "chain", "sqli-weaponize",
                 "jwt-exploit", "ssrf-pwn", "ssrf-lateral", "deser-weaponize",
-                "xxe", "graphql-abuse", "jwt-attack", "verify"}
+                "xxe", "graphql-abuse", "jwt-attack", "verify",
+                "smuggler", "webshell", "csrf"}
     if args.command in url_cmds:
         u = getattr(args, "url", "") or ""
         if u:
@@ -956,7 +1222,7 @@ def main():
             except ValueError as e:
                 logger.error("URL validation failed: %s", e)
                 sys.exit(1)
-    if args.command in ("portscan", "param-mine", "crawl", "deepscan", "autohunt", "auto", "recon"):
+    if args.command in ("portscan", "param-mine", "crawl", "deepscan", "autohunt", "auto", "recon", "quickscan"):
         t = getattr(args, "target", "") or ""
         try:
             _validate_url(t, "target")

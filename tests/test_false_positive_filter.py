@@ -1,4 +1,3 @@
-import pytest
 from tools.false_positive_filter import FalsePositiveFilter, filter_results, filter_single_result
 
 
@@ -121,7 +120,7 @@ class TestConfidenceVoter:
         assert v.level.value in ("high", "confirmed")
 
     def test_vote_status_code(self):
-        from tools.verification_oracle import ConfidenceVoter, ConfidenceLevel
+        from tools.verification_oracle import ConfidenceVoter
         mock_resp = type("MockResp", (), {"status_code": 500})()
         w = ConfidenceVoter.vote_status_code(mock_resp, 200)
         assert w == 0.5

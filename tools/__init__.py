@@ -1,43 +1,46 @@
-from tools.http_client import HttpClient, FakeResponse, build_url
-from tools.settings import settings
-from tools.log_utils import get_logger, mode_echo
-from tools.mode import show_banner, filter_vulnerabilities, enrich_result
-from tools.oob_server import OOBServer
-from tools.response_profiler import ResponseProfiler
-from tools.verification_oracle import VerificationOracle
-from tools.payload_engine import generate, generate_sqli_error
-from tools.payload_mutator import mutate_value, encode_payload
-from tools.param_miner import mine
-from tools.crawler import crawl
-
-from tools.sql_injection import check as check_sqli
-from tools.xss_detector import check as check_xss
-from tools.ssti_detector import check as check_ssti
-from tools.cmdi_detector import check as check_cmdi
-from tools.ssrf_detector import check as check_ssrf
-from tools.nosqli_detector import check as check_nosqli
-from tools.lfi_scanner import check as check_lfi
-from tools.auth_bypass import check as check_auth_bypass
-from tools.race_condition import check as check_race
-from tools.jwt_detector import check as check_jwt
-from tools.graphql_scanner import check as check_graphql
-from tools.cors_scanner import check as check_cors
-from tools.deserialization_detector import check as check_deser
-from tools.proto_pollution import check as check_proto
-from tools.waf_bypass import check as check_waf, fingerprint_waf
-from tools.biz_logic_scanner import check as check_biz_logic
-
-from tools.chain_engine import ChainEngine
-from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
-from tools.reasoning_engine import ReasoningEngine, Hypothesis
-from tools.adaptive_fuzzer import AdaptiveFuzzer, PayloadGroup
-from tools.knowledge_graph import KnowledgeGraph, kg as knowledge_graph
-from tools.attack_tree import AttackTree, AttackTreeNode
 from tools.active_prober import ActiveProber
+from tools.adaptive_fuzzer import AdaptiveFuzzer, PayloadGroup
+from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
+from tools.attack_tree import AttackTree, AttackTreeNode
+from tools.auth_bypass import check as check_auth_bypass
+from tools.biz_logic_scanner import check as check_biz_logic
+from tools.chain_engine import ChainEngine
+from tools.cmdi_detector import check as check_cmdi
+from tools.cors_scanner import check as check_cors
+from tools.crawler import crawl
+from tools.deserialization_detector import check as check_deser
+from tools.graphql_scanner import check as check_graphql
+from tools.http_client import FakeResponse, HttpClient, build_url
+from tools.jwt_detector import check as check_jwt
+from tools.knowledge_graph import KnowledgeGraph
+from tools.knowledge_graph import kg as knowledge_graph
+from tools.lfi_scanner import check as check_lfi
+from tools.log_utils import get_logger, mode_echo
+from tools.mode import enrich_result, filter_vulnerabilities, show_banner
+from tools.nosqli_detector import check as check_nosqli
+from tools.oob_server import OOBServer
+from tools.param_miner import mine
+from tools.payload_engine import generate, generate_sqli_error
+from tools.payload_mutator import encode_payload, mutate_value
+from tools.proto_pollution import check as check_proto
+from tools.race_condition import check as check_race
+from tools.reasoning_engine import Hypothesis, ReasoningEngine
 from tools.recon import (
-    enum_subdomains, scan_ports, fingerprint_tech,
-    check_git_leak, fuzz_directories,
+    check_git_leak,
+    enum_subdomains,
+    fingerprint_tech,
+    fuzz_directories,
+    scan_ports,
 )
+from tools.response_profiler import ResponseProfiler
+from tools.settings import settings
+from tools.sql_injection import check as check_sqli
+from tools.ssrf_detector import check as check_ssrf
+from tools.ssti_detector import check as check_ssti
+from tools.verification_oracle import VerificationOracle
+from tools.waf_bypass import check as check_waf
+from tools.waf_bypass import fingerprint_waf
+from tools.xss_detector import check as check_xss
 
 __all__ = [
     "HttpClient", "FakeResponse", "build_url",

@@ -1,9 +1,9 @@
-import re, json, copy, time, hashlib, urllib.parse
-from typing import Optional, Dict, List, Tuple, Callable
-from collections import Counter
+import re
+import urllib.parse
+from typing import Dict, List, Optional
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.settings import settings
 
 logger = get_logger("biz_logic_scanner")
@@ -348,7 +348,8 @@ def check_jwt_kid_injection(sess: "requests.Session", url: str,
     if not token:
         return result
 
-    import base64, json as _json
+    import base64
+    import json as _json
 
     def b64url_encode(data: bytes) -> str:
         return base64.urlsafe_b64encode(data).decode().rstrip("=")

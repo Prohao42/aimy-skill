@@ -1,9 +1,7 @@
-import os
 import json
 import time
-import base64
-from typing import Optional, Dict, List, Any, Callable, TYPE_CHECKING
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 from tools.log_utils import get_logger
@@ -12,7 +10,7 @@ logger = get_logger("playwright_engine")
 
 HAS_PLAYWRIGHT = False
 try:
-    from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
+    from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
     HAS_PLAYWRIGHT = True
 except ImportError:
     Page = Any

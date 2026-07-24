@@ -1,7 +1,13 @@
-import json, os, ssl, sys, tempfile, threading, time, uuid, re
+import os
+import re
+import ssl
+import threading
+import time
+import uuid
 from datetime import datetime
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Optional, Dict, List
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Dict, List, Optional
+
 from tools.log_utils import get_logger
 
 logger = get_logger("mitm_proxy")

@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional
+from typing import Dict
+
 from tools.log_utils import get_logger
 
 logger = get_logger("attack_surface")

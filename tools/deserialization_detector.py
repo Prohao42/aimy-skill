@@ -1,9 +1,12 @@
-import re, base64, struct, pickle, io
-from typing import Optional, Dict
+import base64
+import io
+import pickle
+import re
+from typing import Dict, Optional
+
 import requests
 
 from tools.log_utils import get_logger
-from tools.http_client import build_url
 from tools.settings import settings
 
 logger = get_logger("deserialization_detector")

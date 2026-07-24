@@ -1,9 +1,13 @@
-import pytest
 import responses
+
 from tools.biz_logic_scanner import (
-    check, check_mfa_bypass, check_price_manipulation,
-    check_mass_assignment, check_coupon_abuse,
-    check_workflow_bypass, check_idor_chain, check_rate_limit_bypass,
+    check,
+    check_coupon_abuse,
+    check_idor_chain,
+    check_mass_assignment,
+    check_mfa_bypass,
+    check_price_manipulation,
+    check_workflow_bypass,
 )
 
 

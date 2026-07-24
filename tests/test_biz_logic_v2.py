@@ -1,11 +1,11 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from tools.biz_logic_v2 import (
-    run_authz_scan,
-    run_workflow_scan,
-    run_race_scan,
-    run_constraint_scan,
     check,
+    run_authz_scan,
+    run_constraint_scan,
+    run_race_scan,
+    run_workflow_scan,
 )
 
 

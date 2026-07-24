@@ -1,10 +1,9 @@
-import re, json
-from typing import Dict, List, Optional, Tuple, Callable
 from dataclasses import dataclass, field
+from typing import Callable, Dict, List, Optional, Tuple
 
-from tools.log_utils import get_logger
+from tools.attack_tree import AttackTree
 from tools.knowledge_graph import kg as _kg
-from tools.attack_tree import AttackTree, AttackTreeNode
+from tools.log_utils import get_logger
 
 logger = get_logger("reasoning")
 

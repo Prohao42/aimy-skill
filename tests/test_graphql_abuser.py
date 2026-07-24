@@ -1,7 +1,8 @@
 import re
-import pytest
+
 import requests
 import responses
+
 from tools.graphql_abuser import GraphQLAbuser
 
 

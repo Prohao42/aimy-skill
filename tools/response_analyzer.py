@@ -1,7 +1,7 @@
-import re
 import json
-from typing import Dict, List, Optional, Any, Set
+import re
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 from tools.log_utils import get_logger

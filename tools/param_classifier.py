@@ -1,7 +1,6 @@
 import re
-from typing import Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
-from urllib.parse import urlparse
+from typing import Dict, List, Optional, Set, Tuple
 
 from tools.log_utils import get_logger
 

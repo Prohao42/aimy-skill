@@ -17,10 +17,10 @@ Confidence Propagation:
   - Bayesian update on evidence
   - Negative evidence prunes entire subgraph
 """
-import json, heapq
-from typing import Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, field
+import heapq
 from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Set
 
 from tools.log_utils import get_logger
 

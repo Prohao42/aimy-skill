@@ -1,8 +1,7 @@
 import socket
 import ssl
-from typing import Dict, List, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from typing import Dict, List, Optional
 
 from tools.log_utils import get_logger
 

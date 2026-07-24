@@ -1,8 +1,6 @@
-import re
 import json
 import time
-from typing import Optional, Dict, List
-from urllib.parse import urlparse, urljoin
+from typing import Dict, List, Optional
 
 import requests
 

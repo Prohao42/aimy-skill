@@ -1,5 +1,5 @@
-from typing import Dict, List, Optional
 import re
+from typing import Dict, List, Optional
 
 from tools.log_utils import get_logger
 from tools.response_profiler import ResponseProfiler

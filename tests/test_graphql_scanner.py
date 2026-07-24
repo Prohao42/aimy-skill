@@ -1,6 +1,7 @@
 import re
-import pytest
+
 import responses
+
 from tools.graphql_scanner import check, has_graphql_schema
 
 

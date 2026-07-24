@@ -1,8 +1,9 @@
-from typing import Optional, Dict, List, Tuple
+from typing import Dict, List, Optional
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.settings import settings
 
 logger = get_logger("dual_session")

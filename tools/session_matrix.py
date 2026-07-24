@@ -1,7 +1,10 @@
-import json, os, pickle, time, threading
-from typing import Dict, List, Optional, Any
+import json
+import os
+import pickle
+import threading
 from dataclasses import dataclass, field
-from urllib.parse import urlparse
+from typing import Any, Dict, Optional
+
 from tools.log_utils import get_logger
 from tools.settings import settings
 

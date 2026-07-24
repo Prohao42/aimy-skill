@@ -1,8 +1,10 @@
-import pytest
 import responses
+
 from tools.waf_bypass import (
-    fingerprint_waf, check, generate_sqli_payloads,
     ENCODER_CHAINS,
+    check,
+    fingerprint_waf,
+    generate_sqli_payloads,
 )
 
 

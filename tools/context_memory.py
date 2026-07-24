@@ -10,10 +10,11 @@ Remembers discovered information and reuses it across detection modules:
 
 Memory is session-scoped and thread-safe.
 """
-import json, threading, time
-from typing import Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, field
+import threading
+import time
 from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
 
 from tools.log_utils import get_logger
 
@@ -85,6 +86,29 @@ class ContextMemory:
         self._history: List[Dict] = []
         self._lock = threading.RLock()
         self._learnt_rules: Dict[str, List[Dict]] = defaultdict(list)
+        self._storage = None
+        self._auto_save = True
+
+    def set_storage(self, storage, auto_save: bool = True):
+        self._storage = storage
+        self._auto_save = auto_save
+
+    def restore(self, entries: Dict[str, dict]):
+        with self._lock:
+            for key, data in entries.items():
+                entry = MemoryEntry(
+                    key=key,
+                    value=data["value"],
+                    source=data.get("source", "restored"),
+                    confidence=data.get("confidence", 0.8),
+                    timestamp=data.get("timestamp", time.time()),
+                    ttl=data.get("ttl", 3600.0),
+                    tags=data.get("tags", []),
+                )
+                existing = self._store.get(key)
+                if existing and existing.confidence > entry.confidence:
+                    continue
+                self._store[key] = entry
 
     def set(self, key: str, value: any, source: str = "unknown",
             confidence: float = 0.80, ttl: float = 3600.0,
@@ -106,6 +130,12 @@ class ContextMemory:
                 "confidence": confidence, "time": time.time(),
             })
             self._auto_learn(key, value, source, confidence)
+            if self._storage and self._auto_save:
+                try:
+                    tags = entry.tags if hasattr(entry, 'tags') else None
+                    self._storage.save_context(key, value, source, confidence, tags)
+                except Exception as e:
+                    logger.debug("storage save: %s", e)
             logger.debug("Memory: set %s = %s (source=%s, conf=%.2f)", key, str(value)[:80], source, confidence)
 
     def get(self, key: str, default: any = None) -> any:

@@ -1,9 +1,11 @@
-import concurrent.futures, time, json, copy
-from typing import Optional, Dict, List, Callable
+import concurrent.futures
+import time
+from typing import Dict, List, Optional
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.settings import settings
 
 logger = get_logger("race_condition")
@@ -48,7 +50,7 @@ class RaceConditionTester:
                     r = self.sess.post(url, data=data,
                                        timeout=self.timeout)
                 else:
-                    r = self.sess.get(build_url(url, param, param),
+                    r = self.sess.get(build_url(url, param, data.get(param, "1")),
                                       timeout=self.timeout)
                 return {"i": i, "status": r.status_code, "len": len(r.text),
                         "body": r.text[:500]}

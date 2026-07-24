@@ -1,7 +1,10 @@
-import json, os, time, uuid, subprocess
-from typing import Optional, Dict, List
+import json
+import subprocess
+import uuid
+from typing import Dict, List
+
+from tools.kali_executor import get_kali
 from tools.log_utils import get_logger
-from tools.kali_executor import get_kali, is_available, has_tool
 
 logger = get_logger("kali_capture")
 

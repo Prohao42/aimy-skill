@@ -1,5 +1,8 @@
-import re, requests, time, sys
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
+import requests
+
 from tools.log_utils import get_logger
 from tools.settings import settings
 

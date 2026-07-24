@@ -1,5 +1,6 @@
-import json, re
-from typing import Optional, Dict
+import json
+from typing import Dict, Optional
+
 import requests
 
 from tools.log_utils import get_logger

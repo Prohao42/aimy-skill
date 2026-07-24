@@ -1,4 +1,8 @@
-import re, time, urllib.parse, json
+import concurrent.futures
+import re
+import threading
+import time
+import urllib.parse
 from typing import Dict, List, Optional, Set
 
 from tools.log_utils import get_logger
@@ -242,78 +246,130 @@ class Crawler:
                 if len(name) > 1 and name.isidentifier():
                     self.all_params.add(name)
 
+    def _fetch_page(self, url: str) -> Optional[tuple]:
+        http = self._get_http()
+        try:
+            r = http.get(url, timeout=self.timeout)
+            return (url, r)
+        except Exception as e:
+            logger.debug("crawl %s: %s", url, e)
+            return None
+
+    def _process_page(self, url: str, r) -> List[tuple]:
+        html = r.text
+        new_urls = []
+
+        self._extract_forms(html, url)
+        self._extract_endpoints(html, url)
+        self._extract_embedded_params(html)
+
+        if r.url != url and self._should_crawl(r.url):
+            new_urls.append((r.url, 0))
+
+        if HAS_BS4:
+            try:
+                soup = BeautifulSoup(html, "html.parser")
+                for tag in soup.find_all("a"):
+                    href = tag.get("href")
+                    if href:
+                        next_url = self._normalize(href, url)
+                        if next_url and self._should_crawl(next_url):
+                            new_urls.append((next_url, 0))
+            except Exception:
+                pass
+        else:
+            for m in re.finditer(r'<a[^>]*href=["\']([^"\'>]+)["\']', html, re.IGNORECASE):
+                href = m.group(1)
+                next_url = self._normalize(href, url)
+                if next_url and self._should_crawl(next_url):
+                    new_urls.append((next_url, 0))
+
+        return new_urls
+
     def crawl(self) -> Dict:
         http = self._get_http()
         queue = [(self.base_url, 0)]
+        visited_lock = threading.Lock()
+        state_lock = threading.Lock()
+        crawl_workers = min(8, self.max_pages) if self.max_pages > 1 else 1
 
         while queue and self.pages_crawled < self.max_pages:
-            url, depth = queue.pop(0)
-            if url in self.visited:
-                continue
-            self.visited.add(url)
+            batch = []
+            while queue and len(batch) < crawl_workers * 2:
+                url, depth = queue.pop(0)
+                with visited_lock:
+                    if url in self.visited:
+                        continue
+                    self.visited.add(url)
+                batch.append((url, depth))
 
+            if not batch:
+                break
+
+            if crawl_workers > 1 and len(batch) > 1:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=crawl_workers) as ex:
+                    futures = {ex.submit(self._fetch_page, url): (url, depth) for url, depth in batch}
+                    for future in concurrent.futures.as_completed(futures):
+                        result = future.result()
+                        if not result:
+                            continue
+                        url, r = result
+                        with state_lock:
+                            self.pages_crawled += 1
+                            cur_depth = futures[future][1]
+                        new_urls = self._process_page(url, r)
+                        with state_lock:
+                            if cur_depth < self.max_depth:
+                                for nu, nd in new_urls:
+                                    queue.append((nu, cur_depth + 1))
+            else:
+                for url, depth in batch:
+                    result = self._fetch_page(url)
+                    if not result:
+                        continue
+                    url, r = result
+                    self.pages_crawled += 1
+                    new_urls = self._process_page(url, r)
+                    if depth < self.max_depth:
+                        for nu, nd in new_urls:
+                            queue.append((nu, depth + 1))
+
+            if self.delay > 0:
+                time.sleep(self.delay)
+
+        if self.pages_crawled >= 1 and not self.is_spa:
             try:
-                r = http.get(url, timeout=self.timeout)
-                self.pages_crawled += 1
-                html = r.text
+                r = http.get(self.base_url, timeout=self.timeout)
+                self.is_spa = self._detect_spa(r.text)
+            except Exception:
+                pass
 
-                normalized = url
-                if r.url != url and self._should_crawl(r.url):
-                    queue.append((r.url, depth + 1))
-
-                self._extract_forms(html, normalized)
-                self._extract_endpoints(html, normalized)
-                self._extract_embedded_params(html)
-
-                if depth == 0:
-                    self.is_spa = self._detect_spa(html)
-                    if self.is_spa:
-                        bundles = self._extract_js_bundles(html)
-                        for js_url in bundles[:5]:
-                            try:
-                                js_r = http.get(js_url if js_url.startswith("http") else
-                                                "%s/%s" % (self.base_url, js_url.lstrip("/")),
-                                                timeout=self.timeout)
-                                if js_r.status_code == 200:
-                                    apis = self._analyze_js_for_api(js_r.text)
-                                    for a in apis:
-                                        self.api_endpoints.add(a)
-                                        self.js_api_endpoints.add(a)
-                            except Exception as e:
-                                logger.debug("js bundle %s: %s", js_url, e)
-                        fallback = self._hit_common_api()
-                        for path, status, ct, preview in fallback:
-                            p = "/" + path.lstrip("/")
-                            if p not in self.endpoints:
-                                self.endpoints[p] = {"url": "%s%s" % (self.base_url, p),
-                                                     "methods": ["GET"], "params": [],
-                                                     "status": status, "content_type": ct,
-                                                     "preview": preview[:100]}
-
-                if depth < self.max_depth:
-                    if HAS_BS4:
-                        try:
-                            soup = BeautifulSoup(html, "html.parser")
-                            for tag in soup.find_all("a"):
-                                href = tag.get("href")
-                                if href:
-                                    next_url = self._normalize(href, normalized)
-                                    if next_url and self._should_crawl(next_url):
-                                        queue.append((next_url, depth + 1))
-                        except Exception as e:
-                            logger.debug("bs4 crawl: %s", e)
-                    else:
-                        for m in re.finditer(r'<a[^>]*href=["\']([^"\'>]+)["\']', html, re.IGNORECASE):
-                            href = m.group(1)
-                            next_url = self._normalize(href, normalized)
-                            if next_url and self._should_crawl(next_url):
-                                queue.append((next_url, depth + 1))
-
-                    if self.delay > 0:
-                        time.sleep(self.delay)
-
-            except Exception as e:
-                logger.debug("crawl %s: %s", url, e)
+        if self.is_spa:
+            try:
+                r = http.get(self.base_url, timeout=self.timeout)
+                bundles = self._extract_js_bundles(r.text)
+                for js_url in bundles[:5]:
+                    try:
+                        js_r = http.get(js_url if js_url.startswith("http") else
+                                        "%s/%s" % (self.base_url, js_url.lstrip("/")),
+                                        timeout=self.timeout)
+                        if js_r.status_code == 200:
+                            apis = self._analyze_js_for_api(js_r.text)
+                            for a in apis:
+                                self.api_endpoints.add(a)
+                                self.js_api_endpoints.add(a)
+                    except Exception as e:
+                        logger.debug("js bundle %s: %s", js_url, e)
+                fallback = self._hit_common_api()
+                for path, status, ct, preview in fallback:
+                    p = "/" + path.lstrip("/")
+                    if p not in self.endpoints:
+                        self.endpoints[p] = {"url": "%s%s" % (self.base_url, p),
+                                             "methods": ["GET"], "params": [],
+                                             "status": status, "content_type": ct,
+                                             "preview": preview[:100]}
+            except Exception:
+                pass
 
         return {
             "urls": list(self.visited),

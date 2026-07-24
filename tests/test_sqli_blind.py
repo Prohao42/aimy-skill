@@ -1,8 +1,9 @@
 import re
+
 import requests
-import pytest
 import responses
-from tools.sqli_blind import ResponseClassifier, BlindInjector, check
+
+from tools.sqli_blind import BlindInjector, ResponseClassifier, check
 
 
 def _make_session():

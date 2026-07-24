@@ -1,7 +1,8 @@
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 from tools.log_utils import get_logger
-from tools.xss_browser_verify import check as browser_verify
 from tools.settings import settings
+from tools.xss_browser_verify import check as browser_verify
 
 logger = get_logger("xss_validator")
 

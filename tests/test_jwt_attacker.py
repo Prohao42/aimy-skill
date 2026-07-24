@@ -1,5 +1,5 @@
-import pytest
 import responses
+
 from tools.jwt_attacker import check
 
 

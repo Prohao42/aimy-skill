@@ -1,9 +1,10 @@
-import os, signal, sys, time
-from typing import Optional, Dict
-from tools.log_utils import get_logger
+import time
+from typing import Dict
+
 from tools.kali_capture import KaliCapture
-from tools.kali_executor import get_kali, is_available, has_tool
-from tools.mitm_proxy import start_proxy, stop_proxy, get_proxy
+from tools.kali_executor import is_available
+from tools.log_utils import get_logger
+from tools.mitm_proxy import start_proxy, stop_proxy
 
 logger = get_logger("packet_capture")
 
@@ -54,7 +55,7 @@ def _run_proxy(args) -> Dict:
     print(f"\n{'='*60}")
     print(f"  MITM Proxy running on {host}:{port}")
     print(f"  CA cert: {ca['ca_cert']}")
-    print(f"  Install CA into browser for HTTPS inspection")
+    print("  Install CA into browser for HTTPS inspection")
     print(f"{'='*60}\n")
     print(proxy.install_ca_instruction())
 

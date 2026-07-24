@@ -1,6 +1,7 @@
 import re
-import pytest
+
 import responses
+
 from tools.ssti_detector import check
 
 

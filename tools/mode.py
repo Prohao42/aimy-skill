@@ -1,6 +1,5 @@
 from tools.settings import settings
 
-
 MODE_BANNER = {
     "rookie": """
   ╔══════════════════════════════════════════════╗

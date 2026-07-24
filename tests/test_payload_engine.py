@@ -1,4 +1,3 @@
-import pytest
 from tools.payload_engine import generate, generate_sqli_error
 
 

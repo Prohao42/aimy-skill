@@ -1,5 +1,7 @@
-import re, pickle, json
-from typing import Optional, Dict
+import pickle
+import re
+from typing import Dict, Optional
+
 import requests
 
 from tools.log_utils import get_logger

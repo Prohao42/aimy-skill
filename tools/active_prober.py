@@ -10,10 +10,10 @@ probing sends targeted requests to extract version information via:
   - Protocol-level negotiation (HTTP/2 settings, TLS cipher preferences)
 """
 
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass, field
-import re
 import hashlib
+import re
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
 
 
 @dataclass

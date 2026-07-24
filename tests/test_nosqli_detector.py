@@ -1,6 +1,7 @@
 import re
-import pytest
+
 import responses
+
 from tools.nosqli_detector import check
 
 

@@ -1,12 +1,11 @@
-import json, re, time, copy
-from typing import Dict, List, Optional, Any, Set, Tuple
-from urllib.parse import urlparse, parse_qs, urlencode
+from typing import Dict, List
+from urllib.parse import parse_qs, urlencode, urlparse
 
+from tools.constraint_graph import ConstraintBreaker, ConstraintGraph
 from tools.log_utils import get_logger
-from tools.session_matrix import SessionMatrix, SessionComparator
-from tools.workflow_tracer import WorkflowTracer, WorkflowDeviator, WorkflowTrace, StepRole
-from tools.constraint_graph import ConstraintGraph, ConstraintBreaker
+from tools.session_matrix import SessionMatrix
 from tools.settings import settings
+from tools.workflow_tracer import WorkflowDeviator, WorkflowTracer
 
 logger = get_logger("deviation_oracle")
 
@@ -231,7 +230,6 @@ class DeviationOracle:
         identity = self.matrix.get(label)
         if not identity:
             return urls
-        from urllib.parse import urlparse
         if label in self.tracer.traces:
             trace = self.tracer.traces[label]
             for step in trace.steps:

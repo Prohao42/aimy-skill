@@ -1,7 +1,8 @@
-import concurrent.futures, time, json, threading, copy, random
-from typing import Dict, List, Optional, Any, Callable, Tuple
+import concurrent.futures
+import json
+import time
 from dataclasses import dataclass, field
-from urllib.parse import urlparse, parse_qs
+from typing import Dict, List, Optional
 
 from tools.log_utils import get_logger
 from tools.settings import settings

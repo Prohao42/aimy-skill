@@ -1,5 +1,5 @@
-import pytest
 import responses
+
 from tools.cors_scanner import check, check_single_origin
 
 

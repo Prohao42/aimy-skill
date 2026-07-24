@@ -1,10 +1,10 @@
 import re
-import pytest
-import requests
+
 import responses
-from tools.sql_injection import check, _extract_dbms as guess_dbms
+
 from tools.http_client import build_url
-from tools.response_profiler import ResponseProfiler, CLEAN_VALUE
+from tools.sql_injection import _extract_dbms as guess_dbms
+from tools.sql_injection import check
 
 
 class TestBuildUrl:

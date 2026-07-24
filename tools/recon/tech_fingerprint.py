@@ -1,5 +1,6 @@
 import re
-from typing import Dict, List, Optional
+from typing import Dict, Optional
+
 import requests
 
 from tools.log_utils import get_logger

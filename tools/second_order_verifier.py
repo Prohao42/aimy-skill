@@ -12,13 +12,16 @@ Verification Strategy:
   - CMDI: time-based → output-based → blind (3 methods)
   - LFI: path traversal → wrapper → log poisoning (3 methods)
 """
-import time, random, string, hashlib, re
-from typing import Dict, List, Optional, Tuple
+import random
+import re
+import string
+import time
 from dataclasses import dataclass, field
-from urllib.parse import urljoin, urlparse, parse_qs, urlencode, urlunparse
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-from tools.log_utils import get_logger
 from tools.http_client import HttpClient
+from tools.log_utils import get_logger
 
 logger = get_logger("second_order")
 

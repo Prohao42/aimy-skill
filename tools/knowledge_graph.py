@@ -1,5 +1,6 @@
-from typing import Dict, List, Optional, Tuple, Set
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+
 from tools.log_utils import get_logger
 
 logger = get_logger("knowledge_graph")

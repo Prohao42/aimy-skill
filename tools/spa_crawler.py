@@ -1,12 +1,11 @@
-import re
 import json
+import re
 import time
-import urllib.parse
 from typing import Dict, List, Optional, Set
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin, urlparse
 
 from tools.log_utils import get_logger
-from tools.playwright_engine import PlaywrightEngine, CapturedRequest
+from tools.playwright_engine import PlaywrightEngine
 
 logger = get_logger("spa_crawler")
 

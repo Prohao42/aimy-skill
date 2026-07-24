@@ -1,8 +1,7 @@
 import re
-from typing import Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
-from urllib.parse import urlparse, parse_qs
-from collections import defaultdict
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from tools.log_utils import get_logger
 

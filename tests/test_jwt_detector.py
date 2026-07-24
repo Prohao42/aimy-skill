@@ -1,11 +1,15 @@
-import re
-import json
 import base64
-import pytest
+import json
+import re
+
 import responses
+
 from tools.jwt_detector import (
-    check, decode_jwt_payload, decode_jwt_header,
-    check_jwt_none, check_jwt_weak_secret,
+    check,
+    check_jwt_none,
+    check_jwt_weak_secret,
+    decode_jwt_header,
+    decode_jwt_payload,
 )
 
 
@@ -49,7 +53,8 @@ class TestCheckJwtWeakSecret:
         test_secret = "supersecret"
         hdr = _make_b64({"alg": "HS256"})
         pld = _make_b64({"sub": "user"})
-        import hmac, hashlib
+        import hashlib
+        import hmac
         sig = hmac.new(test_secret.encode(), f"{hdr}.{pld}".encode(), hashlib.sha256).digest()
         sig_b64 = base64.urlsafe_b64encode(sig).decode().rstrip('=')
         token = f"{hdr}.{pld}.{sig_b64}"
@@ -60,7 +65,8 @@ class TestCheckJwtWeakSecret:
     def test_no_weak_secret(self):
         hdr = _make_b64({"alg": "HS256"})
         pld = _make_b64({"sub": "user"})
-        import hmac, hashlib
+        import hashlib
+        import hmac
         sig = hmac.new(b"unknown_secret_12345", f"{hdr}.{pld}".encode(), hashlib.sha256).digest()
         sig_b64 = base64.urlsafe_b64encode(sig).decode().rstrip('=')
         token = f"{hdr}.{pld}.{sig_b64}"

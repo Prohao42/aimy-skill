@@ -1,4 +1,3 @@
-import pytest
 from tools.attack_graph import AttackGraph
 
 

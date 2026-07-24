@@ -1,8 +1,9 @@
 import re
-import pytest
+from unittest.mock import patch
+
 import requests
 import responses
-from unittest.mock import patch
+
 from tools.xxe_detector import XXEDetector
 
 

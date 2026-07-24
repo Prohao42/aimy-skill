@@ -1,5 +1,5 @@
-import pytest
 import responses
+
 from tools.race_condition import check
 
 

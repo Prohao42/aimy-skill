@@ -1,4 +1,7 @@
-import random, string, base64, urllib.parse
+import base64
+import random
+import string
+import urllib.parse
 
 PAYLOAD_ENCODERS = {
     "raw": lambda s: s,

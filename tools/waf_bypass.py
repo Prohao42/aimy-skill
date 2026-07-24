@@ -1,10 +1,12 @@
-import re, copy, random, urllib.parse, time, itertools
-from typing import Optional, Dict, List, Tuple, Callable
-from enum import Enum
+import random
+import re
+import urllib.parse
+from typing import Callable, Dict, List, Optional, Tuple
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
+from tools.log_utils import get_logger
 from tools.settings import settings
 
 logger = get_logger("waf_bypass")

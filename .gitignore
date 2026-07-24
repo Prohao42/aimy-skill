@@ -3,9 +3,12 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pyc~
+*.pyo~
 *.egg-info/
 dist/
 build/
+*.egg
 
 # Virtual env
 .env
@@ -17,17 +20,27 @@ venv/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Project
 *.pkl
 *.log
 output/
 reports/
+.cache/
+.coverage
+htmlcov/
+.pytest_cache/
 
 # Environment
 .env.local
 .env.production
+
+# Data
+data/*.json
+data/*.log

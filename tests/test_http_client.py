@@ -1,4 +1,3 @@
-import pytest
 from tools.http_client import build_url
 
 

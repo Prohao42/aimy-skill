@@ -1,6 +1,8 @@
 import time
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, Mock, PropertyMock
+
 from tools.false_positive_filter import FalsePositiveFilter
 
 
@@ -24,7 +26,7 @@ class TestTestSinglePoint:
         ALL_DETECTORS.update(saved)
 
     def _make_orchestrator(self):
-        from tools.orchestrator import Orchestrator, ALL_DETECTORS
+        from tools.orchestrator import Orchestrator
         o = Orchestrator("http://target.test")
         o._lock = __import__("threading").Lock()
         o.state["filtered_findings"] = []
@@ -580,7 +582,7 @@ class TestOrchestratorIntegration:
         assert "phases" in result
 
     def test_select_detectors_default_order(self):
-        from tools.orchestrator import Orchestrator, ALL_DETECTORS
+        from tools.orchestrator import ALL_DETECTORS, Orchestrator
         o = Orchestrator("http://target.test", time_budget=600)
         o.last_hypotheses = []
         result = o._select_detectors()
@@ -726,7 +728,7 @@ class TestBenchmarkHelpers:
         assert "button" in SKIP_PARAMS
 
     def test_detector_risk_order_has_all(self):
-        from tools.orchestrator import DETECTOR_RISK_ORDER, ALL_DETECTORS
+        from tools.orchestrator import ALL_DETECTORS, DETECTOR_RISK_ORDER
         for d in ALL_DETECTORS:
             assert d in DETECTOR_RISK_ORDER, "%s missing from DETECTOR_RISK_ORDER" % d
 

@@ -1,7 +1,8 @@
-import os, glob as _glob
-from typing import List, Dict, Optional, Tuple
+import glob as _glob
+import os
 import random
 import urllib.parse
+from typing import Dict, List, Optional, Tuple
 
 try:
     import yaml as _yaml

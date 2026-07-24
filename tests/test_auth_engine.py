@@ -1,6 +1,6 @@
-import pytest
 import responses
-from tools.auth_engine import detect_form_fields, AuthSession
+
+from tools.auth_engine import AuthSession, detect_form_fields
 
 
 class TestDetectFormFields:

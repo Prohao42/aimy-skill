@@ -1,0 +1,112 @@
+name: aimy-sikll CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests packaging
+          # Optional: pip install impacket ldap3  # for AD modules
+          pip install -r requirements.txt 2>/dev/null || true
+
+      - name: Syntax check
+        run: |
+          python -c "
+          import ast, os, glob
+          files = glob.glob('tools/*.py') + ['main.py']
+          errors = []
+          for f in files:
+              try:
+                  with open(f) as fh:
+                      ast.parse(fh.read())
+                  print(f'OK {f}')
+              except SyntaxError as e:
+                  errors.append(f'{f}: {e}')
+          if errors:
+              print('SYNTAX ERRORS:')
+              for e in errors:
+                  print(e)
+              exit(1)
+          print(f'{len(files)} files syntax OK')
+          "
+
+      - name: Import check
+        run: |
+          python -c "
+          import sys, os
+          sys.path.insert(0, '.')
+          modules = [
+              'tools.storage', 'tools.ai_vuln_hunter', 'tools.fuzz_engine',
+              'tools.code_audit', 'tools.binary_analyzer', 'tools.mobile_scanner',
+              'tools.reporter', 'tools.domain_hunt', 'tools.context_memory',
+              'tools.vuln_context', 'tools.orchestrator',
+              'tools.weaponize_engine', 'tools.post_exploit',
+              'tools.evasion_engine', 'tools.tunnel_agent',
+              'tools.interactive_shell', 'tools.c2_beacon', 'tools.lateral_move',
+              'tools.semantic_analyzer', 'tools.cross_validator',
+              'tools.adaptive_payload', 'tools.binary_search', 'tools.robust_verifier',
+          ]
+          failed = []
+          for m in modules:
+              try:
+                  __import__(m)
+                  print(f'OK {m}')
+              except Exception as e:
+                  failed.append(f'{m}: {e}')
+                  print(f'FAIL {m}: {e}')
+          if failed:
+              exit(1)
+          print(f'{len(modules)} modules import OK')
+          "
+
+      - name: Quick unit test
+        run: |
+          python -c "
+          import sys; sys.path.insert(0, '.')
+          from tools.storage import SessionStore
+          s = SessionStore('ci_test')
+          s.save_context('test_key', 'test_val', 'ci', 1.0)
+          ctx = s.load_all_context()
+          assert ctx['test_key']['value'] == 'test_val'
+          s.close()
+          import os
+          try:
+              os.remove('data/session_ci_test.db')
+          except: pass
+          print('Storage unit test OK')
+          "
+
+      - name: Report generation test
+        run: |
+          python -c "
+          import sys; sys.path.insert(0, '.')
+          from tools.reporter import generate_html
+          html = generate_html({'target': 'http://test.com', 'elapsed_seconds': 1.5,
+              'timestamp': 0, 'summary': {'vulnerabilities': 3, 'by_type': {'sqli': 2, 'xss': 1}},
+              'recon': {'pages_crawled': 10, 'endpoints': 5, 'params_mined': 20,
+                        'technologies': ['PHP'], 'open_ports': [80]}})
+          assert '<html' in html and 'AIMY-SIKLL' in html
+          print('HTML report generation OK')
+          "
+
+      - name: CLI help test
+        run: python main.py --help 2>&1 | head -20

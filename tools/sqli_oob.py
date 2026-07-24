@@ -1,6 +1,8 @@
-import threading, json, time
-from typing import Optional, Dict
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Dict, Optional
+
 import requests
 
 from tools.log_utils import get_logger

@@ -17,6 +17,7 @@ def probe_and_detect(
     post_data: dict = None,
 ) -> str:
     import random
+
     from tools.http_client import build_url
 
     marker = PROBE_MARKER % random.randint(10000, 99999)

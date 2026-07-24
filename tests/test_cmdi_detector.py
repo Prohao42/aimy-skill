@@ -1,6 +1,7 @@
 import re
-import pytest
+
 import responses
+
 from tools.cmdi_detector import check
 
 

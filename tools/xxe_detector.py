@@ -10,12 +10,15 @@ Detection Methods:
   6. XInclude injection
   7. XSLT injection (secondary)
 """
-import re, time, random, string, hashlib
+import random
+import re
+import string
+import time
 from typing import Dict, List, Optional, Tuple
-from urllib.parse import urljoin, urlparse, parse_qs, urlencode, urlunparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-from tools.log_utils import get_logger
 from tools.http_client import HttpClient
+from tools.log_utils import get_logger
 
 logger = get_logger("xxe")
 

@@ -1,11 +1,13 @@
-import time, statistics
-from typing import Optional, Dict, List, Tuple
+import statistics
+import time
 from enum import Enum
+from typing import Dict, List, Optional, Tuple
+
 import requests
 
-from tools.log_utils import get_logger
 from tools.http_client import build_url
-from tools.response_profiler import ResponseProfiler, CLEAN_VALUE
+from tools.log_utils import get_logger
+from tools.response_profiler import CLEAN_VALUE, ResponseProfiler
 
 logger = get_logger("verification_oracle")
 
@@ -235,8 +237,9 @@ class VerificationOracle:
 
     def _verify_xss(self, finding, url, param, sess, timeout, post_body, post_data, voter):
         import random
-        from tools.payload_engine import generate
+
         from tools.html_context_parser import probe_and_detect
+        from tools.payload_engine import generate
 
         detected_ctx = probe_and_detect(url, param, sess, timeout, post_body, post_data)
         if detected_ctx in ("not_reflected", "unknown"):

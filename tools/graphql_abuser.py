@@ -12,12 +12,14 @@ Attack Techniques:
   8. Schema leaking via error messages
   9. Subscription hijacking
 """
-import re, json, time, random
-from typing import Dict, List, Optional, Tuple
+import json
+import re
+import time
+from typing import Dict, List
 from urllib.parse import urljoin
 
-from tools.log_utils import get_logger
 from tools.http_client import HttpClient
+from tools.log_utils import get_logger
 
 logger = get_logger("graphql_abuser")
 

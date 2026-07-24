@@ -1,7 +1,8 @@
 import re
-import pytest
+
 import responses
-from tools.proto_pollution import check, PP_MARKER
+
+from tools.proto_pollution import PP_MARKER, check
 
 
 class TestProtoPollution:

@@ -1,9 +1,12 @@
-import sys, traceback
+import sys
+import traceback
+
 sys.path.insert(0, ".")
 
 import requests
-from tools.orchestrator import run
+
 from tools.http_client import _solve_challenge
+from tools.orchestrator import run
 from tools.settings import settings
 
 sess = requests.Session()

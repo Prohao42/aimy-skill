@@ -1,8 +1,12 @@
-import json, re, time, hashlib, copy
-from typing import Dict, List, Optional, Any, Set, Tuple
+import hashlib
+import json
+import re
+import time
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from urllib.parse import urlparse, parse_qs, urlencode
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import parse_qs, urlparse
+
 from tools.log_utils import get_logger
 from tools.settings import settings
 

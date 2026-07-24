@@ -1,6 +1,8 @@
-import re, json, copy
-from typing import Dict, List, Optional, Any, Set, Tuple
+import json
+import re
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set
+
 from tools.log_utils import get_logger
 from tools.settings import settings
 
@@ -34,7 +36,7 @@ class ConstraintGraph:
 
     def ingest_request(self, url: str, body: Optional[str],
                        params: Dict[str, str] = None):
-        from urllib.parse import urlparse, parse_qs
+        from urllib.parse import parse_qs, urlparse
         parsed = urlparse(url)
         qs = parse_qs(parsed.query)
         for k, vals in qs.items():

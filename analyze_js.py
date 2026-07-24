@@ -1,4 +1,8 @@
-import requests, urllib3, re, json
+import re
+
+import requests
+import urllib3
+
 urllib3.disable_warnings()
 
 s = requests.Session()

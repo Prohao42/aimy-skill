@@ -1,5 +1,5 @@
-import pytest
 import responses
+
 from tools.second_order_verifier import SecondOrderVerifier
 
 

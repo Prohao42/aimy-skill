@@ -18,8 +18,11 @@ import time
 from typing import Dict, List
 from urllib.parse import urljoin
 
+import requests
+
 from tools.http_client import HttpClient
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("graphql_abuser")
 
@@ -219,7 +222,7 @@ class GraphQLAbuser:
             url = urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
             try:
                 resp = self.sess.post(url, json={"query": "{__typename}"},
-                                      timeout=self.timeout, verify=False,
+                                      timeout=self.timeout, verify=settings.verify_ssl,
                                       headers={"Content-Type": "application/json"})
                 if resp.status_code in (200, 400, 422) and (
                     "data" in resp.text or "errors" in resp.text or "message" in resp.text
@@ -238,7 +241,7 @@ class GraphQLAbuser:
             payload["operationName"] = operation_name
         try:
             resp = self.sess.post(endpoint, json=payload,
-                                  timeout=self.timeout, verify=False,
+                                  timeout=self.timeout, verify=settings.verify_ssl,
                                   headers={"Content-Type": "application/json"})
             return {
                 "status_code": resp.status_code,
@@ -310,7 +313,7 @@ class GraphQLAbuser:
         # Introspection via GET
         try:
             resp = self.sess.get(endpoint, params={"query": INTROSPECTION_MINIMAL},
-                                 timeout=self.timeout, verify=False)
+                                 timeout=self.timeout, verify=settings.verify_ssl)
             if resp.status_code == 200 and "__schema" in resp.text:
                 findings.append({
                     "method": "introspection_via_get",
@@ -375,7 +378,7 @@ class GraphQLAbuser:
         try:
             start = time.time()
             resp = self.sess.post(endpoint, json=batch_payload,
-                                  timeout=self.timeout, verify=False,
+                                  timeout=self.timeout, verify=settings.verify_ssl,
                                   headers={"Content-Type": "application/json"})
             batch_time = time.time() - start
             if resp.status_code == 200:

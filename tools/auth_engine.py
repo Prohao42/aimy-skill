@@ -1,4 +1,4 @@
-import pickle
+import json
 import re
 from typing import Dict, Optional
 
@@ -150,7 +150,8 @@ class AuthSession:
                            auth_type: str = "auto") -> Optional[requests.Session]:
         from tools.playwright_auth import PlaywrightAuth
         from tools.playwright_engine import PlaywrightEngine
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+        sess.verify = settings.verify_ssl
         engine = PlaywrightEngine()
         try:
             engine.start()
@@ -177,13 +178,13 @@ class AuthSession:
             "cookies": dict(self.sess.cookies),
             "headers": dict(self.sess.headers),
         }
-        with open(path, "wb") as f:
-            pickle.dump(data, f)
+        with open(path, "w") as f:
+            json.dump(data, f)
 
     def load_session(self, path: str) -> bool:
         try:
-            with open(path, "rb") as f:
-                data = pickle.load(f)
+            with open(path, "r") as f:
+                data = json.load(f)
             for k, v in data.get("cookies", {}).items():
                 self.sess.cookies.set(k, v)
             for k, v in data.get("headers", {}).items():
@@ -195,7 +196,8 @@ class AuthSession:
 
 
 def auth_from_args(args) -> requests.Session:
-    sess = requests.Session(); sess.verify = settings.verify_ssl
+    sess = requests.Session()
+    sess.verify = settings.verify_ssl
     sess.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
     from tools.kali_executor import init_kali, init_kali_local

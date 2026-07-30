@@ -39,7 +39,8 @@ NOSQLI_ERROR_PATTERNS = [
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, waf_name: Optional[str] = None) -> dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": [], "payload": None}
 
     voter = ConfidenceVoter()

@@ -38,7 +38,8 @@ def run_workflow_scan(url: str, workflow_steps: List[Dict],
                       sess=None, timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     trace = trace_workflow(sess, url, workflow_steps)
     deviator = WorkflowDeviator(trace)
     findings = []
@@ -91,7 +92,8 @@ def run_race_scan(url: str, param: str = None, concurrency: int = 20,
                   sess=None, timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     profiler = RaceProfiler(sess, timeout)
     method = "POST"
     body = {param: "1"} if param else {"id": "1"}
@@ -120,7 +122,8 @@ def run_constraint_scan(url: str, param: str = None,
                         sess=None, timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     graph = ConstraintGraph()
     try:
         r = sess.get(url, timeout=timeout)

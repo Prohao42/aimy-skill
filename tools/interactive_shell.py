@@ -93,7 +93,7 @@ class PTYShell:
         )
         b64 = base64.b64encode(python_code.encode()).decode()
         cmd = "nohup python -c \"exec(__import__('base64').b64decode('%s').decode())\" > /dev/null 2>&1 &" % b64
-        r = self._run(cmd)
+        self._run(cmd)
         result = {"success": True, "command": cmd, "local_port": local_port,
                    "forward_to": "%s:%d" % (target_host, target_port)}
         return result

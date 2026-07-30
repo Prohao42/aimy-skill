@@ -20,8 +20,11 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
+import requests
+
 from tools.http_client import HttpClient
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("second_order")
 
@@ -51,7 +54,7 @@ class VerificationResult:
 class SecondOrderVerifier:
     """
     Cross-validates vulnerability findings using multiple independent methods.
-    
+
     Usage:
         verifier = SecondOrderVerifier(sess, timeout)
         result = verifier.verify(url, param, "sqli", original_evidence)
@@ -113,10 +116,10 @@ class SecondOrderVerifier:
             if method == "POST":
                 resp = self.sess.post(url, data=data, headers=headers,
                                       cookies=cookies, timeout=self.timeout,
-                                      allow_redirects=False, verify=False)
+                                      allow_redirects=False, verify=settings.verify_ssl)
             else:
                 resp = self.sess.get(url, headers=headers, cookies=cookies,
-                                     timeout=self.timeout, allow_redirects=False, verify=False)
+                                     timeout=self.timeout, allow_redirects=False, verify=settings.verify_ssl)
             elapsed = time.time() - start
             return resp.status_code, resp.text, elapsed
         except Exception as e:
@@ -310,7 +313,7 @@ class SecondOrderVerifier:
         all_evidence = []
         post_data = kwargs.get("data")
         is_post = kwargs.get("is_post", False)
-        context = evidence.get("context", "html")
+        evidence.get("context", "html")
         method = "POST" if is_post else "GET"
         marker = "aimy_%s" % self._random_suffix(6)
 
@@ -337,7 +340,7 @@ class SecondOrderVerifier:
         # Method 2: HTML context verification
         methods_tried.append("html_context")
         try:
-            html_payload = "<aimy%xss%d>" % (random.randint(100, 999),)
+            html_payload = "<aimy_xss_%d>" % random.randint(100, 999)
             if is_post and post_data:
                 url_html = url
                 data_html = self._inject_body(post_data, param, html_payload)
@@ -398,8 +401,8 @@ class SecondOrderVerifier:
             payloads = [
                 ("{{%s}}" % expr, "jinja2"),
                 ("${%s}" % expr, "velocity"),
-                ("<%= %s %%>" % expr, "erb"),
-                ("#[[% %s ]]" % expr, "freemarker"),
+                ("<%%= %s %%>" % expr, "erb"),
+                ("#[[ %s ]]" % expr, "freemarker"),
             ]
             for payload, engine in payloads:
                 if is_post and post_data:
@@ -423,7 +426,7 @@ class SecondOrderVerifier:
             str_payloads = [
                 ("{{'%s'}}" % marker, "jinja2"),
                 ("${'%s'}" % marker, "velocity"),
-                ("<%= '%s' %%>" % marker, "erb"),
+                ("<%%= '%s' %%>" % marker, "erb"),
             ]
             for payload, engine in str_payloads:
                 if is_post and post_data:
@@ -570,7 +573,7 @@ class SecondOrderVerifier:
         # Method 1: Known file content verification
         methods_tried.append("known_file")
         try:
-            marker = "aimy_lfi_%s" % self._random_suffix(6)
+            "aimy_lfi_%s" % self._random_suffix(6)
             lfi_payloads = [
                 "php://filter/convert.base64-encode/resource=/etc/hostname",
                 "....//....//....//....//etc/hostname",
@@ -629,7 +632,7 @@ class SecondOrderVerifier:
         methods_tried.append("log_poisoning")
         try:
             poison_marker = "AIMYLOG%s" % self._random_suffix(6)
-            self.sess.get(url, headers={"User-Agent": poison_marker}, timeout=self.timeout, verify=False)
+            self.sess.get(url, headers={"User-Agent": poison_marker}, timeout=self.timeout, verify=settings.verify_ssl)
             log_paths = ["/var/log/apache2/access.log", "/var/log/nginx/access.log"]
             for log_path in log_paths:
                 if is_post and post_data:
@@ -732,9 +735,8 @@ class SecondOrderVerifier:
         methods_tried = []
         methods_succeeded = []
         all_evidence = []
-        post_data = kwargs.get("data")
-        is_post = kwargs.get("is_post", False)
-        method = "POST" if is_post else "GET"
+        kwargs.get("data")
+        kwargs.get("is_post", False)
 
         # Method 1: File read via XXE
         methods_tried.append("file_read")

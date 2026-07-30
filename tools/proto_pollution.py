@@ -32,7 +32,8 @@ PP_DEEP_MERGE_PAYLOADS = [
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": []}
 
     if param:

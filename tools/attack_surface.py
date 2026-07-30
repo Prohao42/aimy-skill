@@ -1,4 +1,5 @@
-from typing import Dict
+import re
+from typing import Dict, List, Optional
 
 from tools.log_utils import get_logger
 
@@ -187,6 +188,158 @@ DETECTOR_PRIORITY_BY_TECH = {
 }
 
 
+# ---------------------------------------------------------------------------
+# CVE knowledge base — version-aware vulnerability lookup
+# ---------------------------------------------------------------------------
+
+TECH_CVE_DB: Dict[str, List[Dict]] = {
+    "spring": [
+        {"cve": "CVE-2022-22965", "range": (5, 6), "name": "Spring4Shell", "impact": "RCE", "cvss": 9.8},
+        {"cve": "CVE-2022-22963", "range": (5, 6), "name": "SpEL RCE", "impact": "RCE", "cvss": 9.8},
+        {"cve": "CVE-2022-22950", "range": (5, 6), "name": "DoS", "impact": "DoS", "cvss": 7.5},
+        {"cve": "CVE-2023-20861", "range": (6, 7), "name": "Spring Boot Actuator Leak", "impact": "Info Leak", "cvss": 5.5},
+    ],
+    "tomcat": [
+        {"cve": "CVE-2020-1938", "range": (6, 10), "name": "Ghostcat (AJP)", "impact": "LFI/RCE", "cvss": 9.8},
+        {"cve": "CVE-2020-13935", "range": (9, 10), "name": "WebSocket DoS", "impact": "DoS", "cvss": 7.5},
+        {"cve": "CVE-2021-42340", "range": (10, 11), "name": "Memory Leak", "impact": "Info Leak", "cvss": 7.5},
+    ],
+    "weblogic": [
+        {"cve": "CVE-2017-10271", "range": (10, 13), "name": "WebLogic WLS RCE", "impact": "RCE", "cvss": 9.8},
+        {"cve": "CVE-2020-14882", "range": (12, 15), "name": "WebLogic Console RCE", "impact": "RCE", "cvss": 9.8},
+        {"cve": "CVE-2021-2109", "range": (12, 15), "name": "WebLogic JNDI RCE", "impact": "RCE", "cvss": 9.8},
+    ],
+    "thinkphp": [
+        {"cve": "CVE-2018-20062", "range": (5, 6), "name": "ThinkPHP5 RCE", "impact": "RCE", "cvss": 9.8},
+        {"cve": "CVE-2019-9082", "range": (5, 6), "name": "ThinkPHP5 Inject RCE", "impact": "RCE", "cvss": 9.8},
+    ],
+    "laravel": [
+        {"cve": "CVE-2021-3129", "range": (8, 9), "name": "Laravel Ignition RCE", "impact": "RCE", "cvss": 9.8},
+        {"cve": "CVE-2021-4359", "range": (8, 10), "name": "App Key Leak", "impact": "Info Leak", "cvss": 7.5},
+    ],
+    "wordpress": [
+        {"cve": "ANY-PLUGIN", "range": (4, 7), "name": "Unpatched Plugin RCE", "impact": "RCE", "cvss": 9.8},
+    ],
+    "drupal": [
+        {"cve": "CVE-2018-7600", "range": (7, 9), "name": "Drupalgeddon2", "impact": "RCE", "cvss": 9.8},
+        {"cve": "CVE-2019-6341", "range": (8, 9), "name": "Drupal REST RCE", "impact": "RCE", "cvss": 9.8},
+    ],
+    "struts": [
+        {"cve": "CVE-2017-5638", "range": (2, 3), "name": "Struts2 Content-Type RCE", "impact": "RCE", "cvss": 10.0},
+        {"cve": "CVE-2017-9805", "range": (2, 3), "name": "Struts2 REST RCE", "impact": "RCE", "cvss": 9.8},
+    ],
+    "flask": [
+        {"cve": "WERKZEUG-CONSOLE", "range": (0, 2), "name": "Werkzeug Console RCE", "impact": "RCE", "cvss": 9.8},
+    ],
+    "jenkins": [
+        {"cve": "CVE-2019-1003000", "range": (2, 3), "name": "Jenkins RCE", "impact": "RCE", "cvss": 9.8},
+    ],
+}
+
+EXPLOIT_AVAILABILITY: Dict[str, Dict] = {
+    "CVE-2022-22965": {"public_poc": True, "difficulty": "easy", "type": "http_get"},
+    "CVE-2020-1938": {"public_poc": True, "difficulty": "easy", "type": "ajp_protocol"},
+    "CVE-2017-10271": {"public_poc": True, "difficulty": "easy", "type": "http_post_xml"},
+    "CVE-2018-20062": {"public_poc": True, "difficulty": "easy", "type": "http_get"},
+    "CVE-2018-7600": {"public_poc": True, "difficulty": "easy", "type": "http_post"},
+}
+
+
+def lookup_cves(tech_id: str, version_str: str = "") -> List[Dict]:
+    if tech_id not in TECH_CVE_DB:
+        return []
+    version_match = re.search(r'(\d+)', version_str)
+    major = int(version_match.group(1)) if version_match else 0
+    hits = []
+    for entry in TECH_CVE_DB[tech_id]:
+        start, end = entry["range"]
+        if start <= major <= end or not version_str:
+            info = dict(entry)
+            exploit = EXPLOIT_AVAILABILITY.get(entry["cve"], {})
+            info["exploit_available"] = exploit.get("public_poc", False)
+            info["difficulty"] = exploit.get("difficulty", "unknown")
+            info["exploit_type"] = exploit.get("type", "unknown")
+            hits.append(info)
+    return hits
+
+
+# ---------------------------------------------------------------------------
+# Smart attack path ranking — considers CVE availability + exploit ease + impact
+# ---------------------------------------------------------------------------
+
+IMPACT_WEIGHTS = {"RCE": 10, "LFI/RCE": 9, "LFI": 8, "Data Exfil": 7,
+                   "Auth Bypass": 6, "Info Leak": 4, "DoS": 3, "Priv Esc": 8}
+
+
+def rank_attack_paths(techs: List[Dict], open_ports: List[Dict],
+                       git_leak: Optional[Dict] = None) -> List[Dict]:
+    paths = []
+    for t in techs:
+        tech_id = t.get("id", "").lower()
+        version = t.get("version", "")
+        cves = lookup_cves(tech_id, version)
+        for cve in cves:
+            weight = IMPACT_WEIGHTS.get(cve["impact"], 5)
+            if cve.get("exploit_available"):
+                weight *= 1.5
+            if cve.get("difficulty") == "easy":
+                weight *= 1.2
+            paths.append({
+                "type": "cve",
+                "tech": tech_id,
+                "cve": cve["cve"],
+                "name": cve["name"],
+                "impact": cve["impact"],
+                "score": round(weight, 1),
+                "exploit_type": cve.get("exploit_type", "manual"),
+                "cvss": cve.get("cvss", 0),
+            })
+
+    for port_info in open_ports:
+        port = port_info.get("port")
+        if port in OPEN_PORT_ATTACK_MAP:
+            entry = OPEN_PORT_ATTACK_MAP[port]
+            risk = entry["risk"]
+            weight = {"critical": 8, "high": 5, "medium": 3, "low": 1}.get(risk, 3)
+            for check in entry["checks"]:
+                paths.append({
+                    "type": "open_port",
+                    "port": port,
+                    "module": entry["module"],
+                    "check": check,
+                    "score": weight,
+                    "impact": "RCE" if risk == "critical" else "Access",
+                })
+
+    if git_leak and git_leak.get("git_exposed"):
+        sensitive_count = len(git_leak.get("sensitive_finds", []))
+        paths.append({
+            "type": "git_leak",
+            "score": min(7 + sensitive_count, 10),
+            "impact": "Data Exfil",
+            "sensitive_finds": sensitive_count,
+        })
+
+    paths.sort(key=lambda p: -p["score"])
+    return paths
+
+
+def visualize_attack_paths(paths: List[Dict]) -> str:
+    if not paths:
+        return "No attack paths identified."
+    lines = ["Attack Path Ranking (by score):"]
+    for i, p in enumerate(paths[:15]):
+        prefix = {10: "[CRIT]", 9: "[CRIT]", 8: "[HIGH]", 7: "[HIGH]",
+                  6: "[MED]", 5: "[MED]"}.get(int(p.get("score", 0)), "[LOW]")
+        if p["type"] == "cve":
+            lines.append(f"  {i+1}. {prefix} {p['cve']} ({p['name']}) — impact={p['impact']} score={p['score']} exploit={p['exploit_type']}")
+        elif p["type"] == "open_port":
+            lines.append(f"  {i+1}. {prefix} Port {p['port']} ({p['module']}) — {p['check']} score={p['score']}")
+        elif p["type"] == "git_leak":
+            lines.append(f"  {i+1}. {prefix} .git leak ({p['sensitive_finds']} sensitive files) score={p['score']}")
+    return "\n".join(lines)
+
+
 def _tech_id_from_tech(tech: Dict) -> str:
     return tech.get("id", "").lower()
 
@@ -202,9 +355,9 @@ def build_attack_plan(recon_results: Dict) -> Dict:
 
     techs = recon_results.get("technologies", [])
     open_ports = recon_results.get("open_ports", [])
-    subdomains = recon_results.get("subdomains", [])
+    recon_results.get("subdomains", [])
     git_leak = recon_results.get("git_leak", {})
-    dirs = recon_results.get("directories", [])
+    recon_results.get("directories", [])
 
     detected_tech_ids = set()
     for t in techs:

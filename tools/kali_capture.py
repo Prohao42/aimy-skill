@@ -128,7 +128,6 @@ class KaliCapture:
             interface = resolve_interface()
         if not _install_tshark_json_deps(self.kali, self.local):
             return []
-        fields = "frame.time_relative,ip.src,ip.dst,tcp.srcport,tcp.dstport,http.request.method,http.request.uri,http.response.code,http.host"
         cmd = (
             f"timeout {timeout} tshark -i {interface} -c {max_packets} "
             f"'-Y' 'http or tls.handshake.type==1' "

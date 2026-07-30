@@ -165,7 +165,7 @@ class DeviationOracle:
             for method in ("PUT", "PATCH", "DELETE", "POST"):
                 try:
                     r = self.sess.request(method, url, timeout=self.timeout,
-                                          verify=False)
+                                          verify=settings.verify_ssl)
                     if r.status_code in (200, 201, 204):
                         body_lower = r.text.lower()
                         if not any(ind in body_lower for ind in
@@ -194,7 +194,7 @@ class DeviationOracle:
                         r = self.sess.request(method, url,
                                               json={field: "admin", "username": "test"},
                                               timeout=self.timeout,
-                                              verify=False)
+                                              verify=settings.verify_ssl)
                         if r.status_code in (200, 201, 204):
                             body = r.text.lower()
                             if "admin" in body or "role" in body:
@@ -257,6 +257,7 @@ class OracleSession:
 def check(url: str, param: str = None, sess=None, timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     oracle = DeviationOracle(url, sess, timeout)
     return oracle.run()

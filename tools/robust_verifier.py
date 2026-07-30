@@ -77,8 +77,7 @@ def verify_sqli_boolean(url: str, param: str, sess: requests.Session,
     baseline_resp = _get_baseline_response(url, param, sess, timeout)
     if not baseline_resp:
         return result
-    baseline_len = len(baseline_resp.text)
-    baseline_status = baseline_resp.status_code
+    len(baseline_resp.text)
 
     boolean_pairs = [
         ("1=1", "1=2"),

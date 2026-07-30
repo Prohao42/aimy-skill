@@ -1,6 +1,5 @@
 import hashlib
 import re
-import statistics
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
@@ -14,6 +13,7 @@ from tools.payload_engine import (
     generate_sqli_time,
     generate_sqli_union,
 )
+from tools.settings import settings
 
 logger = get_logger("enhanced_verify")
 
@@ -79,7 +79,7 @@ class EnhancedVerifier:
                 methods.append({"method": "time_based", "passed": True})
                 break
 
-        marker_path = hashlib.md5(("path_" + marker).encode()).hexdigest()[:8]
+        hashlib.md5(("path_" + marker).encode()).hexdigest()[:8]
         path_payload = "' OR 1=1--"
         normal_path = self._send_with_path(url, param, "test")
         marker_path_resp = self._send_with_path(url, param, path_payload)
@@ -168,7 +168,7 @@ class EnhancedVerifier:
     def verify_ssti(self, url: str, param: str, original_result: Dict) -> VerifyResult:
         result = VerifyResult(vuln_type="ssti", confirmed=False)
         methods = []
-        marker = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
+        hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
 
         math_exprs = [
             ("{{7*7}}", "49"),
@@ -302,14 +302,14 @@ class EnhancedVerifier:
     def _send_payload(self, url: str, param: str, payload: str) -> Optional[requests.Response]:
         try:
             test_url = url.replace(param + "=", param + "=" + requests.utils.quote(payload, safe=""))
-            return self.sess.get(test_url, timeout=self.timeout, verify=False)
+            return self.sess.get(test_url, timeout=self.timeout, verify=settings.verify_ssl)
         except Exception:
             return None
 
     def _send_with_path(self, url: str, param: str, value: str) -> Optional[requests.Response]:
         try:
             test_url = url.replace(param + "=", param + "=" + value)
-            return self.sess.get(test_url, timeout=self.timeout, verify=False)
+            return self.sess.get(test_url, timeout=self.timeout, verify=settings.verify_ssl)
         except Exception:
             return None
 

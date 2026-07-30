@@ -4,32 +4,13 @@ import threading
 import time
 from typing import Dict, List, Optional
 
+import requests
+
 from tools.log_utils import get_logger
 
 logger = get_logger("orchestrator")
 
-from tools import (
-    auth_bypass,
-    biz_logic_scanner,
-    cmdi_detector,
-    cors_scanner,
-    crawler,
-    deserialization_detector,
-    graphql_scanner,
-    jwt_detector,
-    jwt_exploiter,
-    lfi_scanner,
-    nosqli_detector,
-    param_miner,
-    proto_pollution,
-    race_condition,
-    sql_injection,
-    sqli_weaponizer,
-    ssrf_detector,
-    ssti_detector,
-    waf_bypass,
-    xss_detector,
-)
+from tools import auth_bypass, crawler, jwt_exploiter, param_miner, sqli_weaponizer, waf_bypass
 from tools.adaptive_fuzzer import AdaptiveFuzzer
 from tools.adaptive_payload import suggest_additional_tests
 from tools.attack_graph import build_attack_graph
@@ -38,9 +19,6 @@ from tools.binary_search import binary_search_sqli_blind, sqli_union_probe
 from tools.context_memory import get_memory
 from tools.cross_validator import run_cross_validation
 from tools.dual_session import DualSessionManager
-from tools.enhanced_verify import EnhancedVerifier
-from tools.graphql_abuser import check as graphql_abuse_check
-from tools.jwt_attacker import check as jwt_attack_check
 from tools.oob_server import OOBServer
 from tools.playwright_engine import PlaywrightEngine
 from tools.reasoning_engine import ReasoningEngine
@@ -52,17 +30,15 @@ from tools.recon import (
 )
 from tools.response_profiler import ResponseProfiler
 from tools.robust_verifier import verify_finding as robust_verify
-from tools.ssrf_chain import chain_ssrf as ssrf_chain_attack
-from tools.type_confusion import TypeConfusionDetector
-from tools.version_fingerprint import fingerprint_target
-
-# New enhanced modules
 from tools.second_order_verifier import SecondOrderVerifier
 from tools.semantic_analyzer import analyze_single_response, compare_responses
 from tools.spa_crawler import crawl_spa
+from tools.ssrf_chain import chain_ssrf as ssrf_chain_attack
+from tools.tool_registry import get, get_detector_config
+from tools.type_confusion import TypeConfusionDetector
 from tools.verification_oracle import VerificationOracle
+from tools.version_fingerprint import fingerprint_target
 from tools.vuln_context import ContextMemory as VulnContextMemory
-from tools.xxe_detector import check as xxe_check
 
 SKIP_PARAMS = {
     "submit", "button", "reset", "image", "file", "action",
@@ -71,39 +47,38 @@ SKIP_PARAMS = {
 }
 SIGNATURE_PLACEHOLDER = "__placeholder__"
 
-ALL_DETECTORS = {
-    "sql_injection": lambda u, p, s, t, w, o: sql_injection.check(u, p, s, t, waf_name=w),
-    "xss": lambda u, p, s, t, w, o: xss_detector.check(u, p, s, t, waf_name=w),
-    "ssti": lambda u, p, s, t, w, o: ssti_detector.check(u, p, s, t, waf_name=w),
-    "cmdi": lambda u, p, s, t, w, o: cmdi_detector.check(u, p, s, t, waf_name=w, oob_url=o.get("oob_url"), oob_domain=o.get("oob_domain")),
-    "ssrf": lambda u, p, s, t, w, o: ssrf_detector.check(u, p, s, t, oob_server=o.get("oob_url")),
-    "nosqli": lambda u, p, s, t, w, o: nosqli_detector.check(u, p, s, t, waf_name=w),
-    "lfi": lambda u, p, s, t, w, o: lfi_scanner.check(u, p, s, t, waf_name=w),
-    "race": lambda u, p, s, t, w, o: race_condition.check(u, p, s, t),
-    "jwt": lambda u, p, s, t, w, o: jwt_detector.check(u, p, s, t),
-    "graphql": lambda u, p, s, t, w, o: graphql_scanner.check(u, p, s, t),
-    "cors": lambda u, p, s, t, w, o: cors_scanner.check(u, p, s, t),
-    "deser": lambda u, p, s, t, w, o: deserialization_detector.check(u, p, s, t),
-    "proto_pollution": lambda u, p, s, t, w, o: proto_pollution.check(u, p, s, t),
-    "bizlogic": lambda u, p, s, t, w, o: biz_logic_scanner.check(u, p, s, t),
-    "waf_heavy": lambda u, p, s, t, w, o: waf_bypass.heavy_check(u, p, s, t),
-    "xxe": lambda u, p, s, t, w, o: xxe_check(u, p, sess=s, timeout=t),
-    "graphql_abuse": lambda u, p, s, t, w, o: graphql_abuse_check(u, sess=s, timeout=t),
-    "jwt_attack": lambda u, p, s, t, w, o: jwt_attack_check(u, sess=s, timeout=t),
-}
-
-DETECTOR_RISK_ORDER = {
-    "sql_injection": 0, "cmdi": 0, "deser": 0, "xxe": 0,
-    "ssrf": 1, "lfi": 1, "ssti": 1,
-    "xss": 2, "nosqli": 2, "bizlogic": 2,
-    "jwt": 3, "graphql": 3, "graphql_abuse": 3, "jwt_attack": 3, "cors": 3,
-    "proto_pollution": 3, "race": 4, "waf_heavy": 5,
-}
+_detector_config = get_detector_config()
+ALL_DETECTOR_NAMES = list(_detector_config["all"].keys())
+DETECTOR_RISK_ORDER = _detector_config["risk_order"]
+HIGH_VALUE_DETECTORS = set(_detector_config["high_value"])
+LOW_VALUE_DETECTORS = set(_detector_config["low_value"])
 
 
-# High-value mode: skip low-impact vuln types
-HIGH_VALUE_DETECTORS = {"sql_injection", "cmdi", "deser", "xxe", "ssrf", "lfi", "ssti"}
-LOW_VALUE_DETECTORS = {"cors", "xss", "prototype_pollution", "race", "waf_heavy"}
+def _run_detector_by_name(vtype: str, url: str, param: str,
+                           sess, timeout: float, waf_name: str = "",
+                           oob_opts: dict = None) -> Dict:
+    fn = get(vtype)
+    if not fn:
+        fn = get(vtype.replace("_", "-"))
+    if not fn:
+        return {"vulnerable": False, "error": f"no detector: {vtype}"}
+    try:
+        from inspect import signature
+        sig = signature(fn)
+        kwargs = {}
+        if "waf_name" in sig.parameters:
+            kwargs["waf_name"] = waf_name
+        if "oob_url" in sig.parameters or "oob_server" in sig.parameters:
+            kwargs["oob_url"] = (oob_opts or {}).get("oob_url")
+            kwargs["oob_domain"] = (oob_opts or {}).get("oob_domain")
+        if "sess" in sig.parameters:
+            result = fn(url=url, param=param, sess=sess, timeout=timeout, **kwargs)
+        else:
+            result = fn(url, param, sess, timeout, **kwargs)
+        return result if isinstance(result, dict) else {"vulnerable": False, "raw": str(result)}
+    except Exception as e:
+        logger.debug("run_detector %s: %s", vtype, e)
+        return {"vulnerable": False, "error": str(e)}
 
 
 class Orchestrator:
@@ -444,7 +419,7 @@ class Orchestrator:
         if self.last_hypotheses:
             suggested = self.reasoner.suggest_detectors(self.last_hypotheses)
             if suggested:
-                for d in list(ALL_DETECTORS.keys()):
+                for d in list(ALL_DETECTOR_NAMES):
                     if d not in suggested:
                         suggested.append(d)
                 return self._filter_high_value(suggested)
@@ -455,13 +430,13 @@ class Orchestrator:
             recommended = plan["recommended_detectors"]
             mapped = []
             for d in recommended:
-                if d in ALL_DETECTORS:
+                if d in ALL_DETECTOR_NAMES:
                     mapped.append(d)
                 elif d == "sql_injection":
                     mapped.append("sql_injection")
             recommended = mapped
         if not recommended:
-            recommended = list(ALL_DETECTORS.keys())
+            recommended = list(ALL_DETECTOR_NAMES)
 
         recommended = self._filter_high_value(recommended)
         recommended.sort(key=lambda d: DETECTOR_RISK_ORDER.get(d, 9))
@@ -637,15 +612,15 @@ class Orchestrator:
         """Multi-angle verification: re-run same detector with different payloads."""
         cross_findings = []
 
-        fn = ALL_DETECTORS.get(vtype)
-        if not fn:
+        fn_cross = _run_detector_by_name(vtype, url, param, self.sess, self.timeout, waf_name, oob)
+        if fn_cross.get("error"):
             first_result["cross_verified"] = []
             first_result["cross_count"] = 0
             first_result["confirmed"] = first_result.get("vulnerable", False)
             return first_result
 
         try:
-            r2 = fn(url, param, self.sess, self.timeout, waf_name, oob)
+            r2 = _run_detector_by_name(vtype, url, param, self.sess, self.timeout, waf_name, oob)
             if isinstance(r2, dict) and r2.get("vulnerable"):
                 cv = self.oracle.verify(vtype, r2, url, param, self.sess, self.timeout)
                 if cv.get("verified") is not False:
@@ -696,11 +671,10 @@ class Orchestrator:
     def _run_detector(self, vtype: str, url: str, param: str,
                       waf_name: Optional[str], oob: dict,
                       effective_timeout: float) -> Optional[Dict]:
-        fn = ALL_DETECTORS.get(vtype)
-        if fn is None:
+        if vtype not in ALL_DETECTOR_NAMES:
             return None
         try:
-            r = fn(url, param, self.sess, effective_timeout, waf_name, oob)
+            r = _run_detector_by_name(vtype, url, param, self.sess, effective_timeout, waf_name, oob)
             if isinstance(r, dict):
                 r["_vtype"] = vtype
                 return r
@@ -1225,7 +1199,7 @@ class Orchestrator:
         result = {"anomalies_found": 0, "scan_count": 0}
         try:
             from tools.ai_vuln_hunter import generate_target_brief
-            recon = self.state["phases"].get("recon", {})
+            self.state["phases"].get("recon", {})
             findings = self.all_findings
             waf_data = self.state.get("waf", {})
             ai_prep = self.state.get("ai_prepared", {})
@@ -1782,7 +1756,7 @@ class Orchestrator:
         start = time.time()
         self.oob_server.start()
 
-        recon_result = self.phase_recon()
+        self.phase_recon()
         self.phase_attack_plan()
         self.phase_reason()
 

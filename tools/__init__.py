@@ -1,3 +1,4 @@
+from tools._session import make_session
 from tools.active_prober import ActiveProber
 from tools.adaptive_fuzzer import AdaptiveFuzzer, PayloadGroup
 from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
@@ -43,6 +44,7 @@ from tools.waf_bypass import fingerprint_waf
 from tools.xss_detector import check as check_xss
 
 __all__ = [
+    "make_session",
     "HttpClient", "FakeResponse", "build_url",
     "settings", "get_logger", "mode_echo",
     "show_banner", "filter_vulnerabilities", "enrich_result",

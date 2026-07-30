@@ -44,7 +44,7 @@ def sqlmap_detect(url: str, param: str, dbms: Optional[str] = None) -> Dict:
     r = kali.run(cmd, timeout=300)
     elapsed = time.time() - start
     stdout = r.get("stdout", "")
-    stderr = r.get("stderr", "")
+    r.get("stderr", "")
 
     result = {
         "vulnerable": False,

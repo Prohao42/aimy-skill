@@ -289,7 +289,8 @@ def trace_workflow(sess, base_url: str, steps: List[Dict]) -> WorkflowTrace:
 def check(base_url: str, sess=None, timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {
         "vulnerable": False,
         "findings": [],

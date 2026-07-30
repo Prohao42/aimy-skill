@@ -1,8 +1,9 @@
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("version_fingerprint")
 
@@ -163,20 +164,15 @@ class VersionFingerprint:
 
         try:
             parts = version.split(".")
-            major = int(parts[0])
-            year_range = None
-
+            major = int(parts[0]) if parts[0].isdigit() else 0
             for (start, end), cves in YEAR_CVE_MAP[product].items():
-                if start <= 2024:
-                    year_range = (start, end)
+                if start <= major <= end:
+                    info.cve_matches = cves
+                    if len(cves) >= 2:
+                        info.risk_level = "critical"
+                    elif cves:
+                        info.risk_level = "high"
                     break
-
-            if year_range:
-                info.cve_matches = YEAR_CVE_MAP[product][year_range]
-                if len(info.cve_matches) >= 2:
-                    info.risk_level = "critical"
-                elif info.cve_matches:
-                    info.risk_level = "high"
         except (ValueError, IndexError):
             pass
 
@@ -208,7 +204,7 @@ def fingerprint_target(target: str, sess, timeout: float = 10.0) -> Dict:
     fp = VersionFingerprint()
 
     try:
-        resp = sess.get(target, timeout=timeout, verify=False, allow_redirects=True)
+        resp = sess.get(target, timeout=timeout, verify=settings.verify_ssl, allow_redirects=True)
         fp.extract_from_headers(dict(resp.headers))
         fp.extract_from_body(resp.text[:5000])
     except Exception as e:
@@ -221,7 +217,7 @@ def fingerprint_target(target: str, sess, timeout: float = 10.0) -> Dict:
     ]
     for path in probe_paths:
         try:
-            r = sess.get(target.rstrip("/") + path, timeout=max(3, timeout * 0.5), verify=False)
+            r = sess.get(target.rstrip("/") + path, timeout=max(3, timeout * 0.5), verify=settings.verify_ssl)
             fp.extract_from_headers(dict(r.headers))
             fp.extract_from_body(r.text[:3000])
             if r.status_code == 200 and len(r.text) < 500:

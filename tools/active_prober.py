@@ -15,6 +15,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+from tools.settings import settings
+
 
 @dataclass
 class ProbeResult:
@@ -196,7 +198,7 @@ class ActiveProber:
         method = "header"
 
         try:
-            resp = self.sess.get(target, timeout=self.timeout, verify=False)
+            resp = self.sess.get(target, timeout=self.timeout, verify=settings.verify_ssl)
         except Exception:
             return ProbeResult(tech=tech, confidence=0.0)
 

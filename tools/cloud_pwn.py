@@ -90,7 +90,8 @@ class CloudPwn:
         ]
         for name, cmd in checks:
             try:
-                r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30, env=env)
+                cmd_parts = cmd.split()
+                r = subprocess.run(cmd_parts, capture_output=True, text=True, timeout=30, env=env)
                 output = (r.stdout or "")[:500]
                 if r.returncode == 0 and output.strip():
                     result["actions"].append({"check": name, "output": output.strip()})
@@ -149,7 +150,6 @@ class CloudPwn:
         return result
 
     def run(self, text: str, cloud_hint: Optional[str] = None) -> Dict:
-        found_creds = {}
         aws_creds = parse_aws_credentials(text)
         gcp_creds = parse_gcp_credentials(text)
         azure_creds = parse_azure_credentials(text)

@@ -185,7 +185,6 @@ class ReasoningEngine:
         endpoint_map = {}
 
         for h in hypotheses:
-            key = h.vuln_type
             if h.param:
                 param_map.setdefault(h.param, []).append(h)
             if h.endpoint:

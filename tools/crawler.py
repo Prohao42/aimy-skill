@@ -5,10 +5,24 @@ import time
 import urllib.parse
 from typing import Dict, List, Optional, Set
 
+import requests
+
 from tools.log_utils import get_logger
 from tools.settings import settings
 
 logger = get_logger("crawler")
+
+
+def _flatten_dict(d: dict, prefix: str = "") -> dict:
+    items = {}
+    for k, v in d.items():
+        path = f"{prefix}.{k}" if prefix else k
+        if isinstance(v, dict):
+            items.update(_flatten_dict(v, path))
+        else:
+            items[path] = v
+    return items
+
 
 IGNORE_EXTENSIONS = {
     ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".ico", ".webp",
@@ -153,10 +167,10 @@ class Crawler:
         for path in COMMON_API_PATHS:
             try:
                 r = http.get("%s%s" % (self.base_url, path), timeout=max(3, self.timeout * 0.5),
-                             verify=False)
+                             verify=settings.verify_ssl)
                 ct = r.headers.get("Content-Type", "")
                 if r.status_code not in (404, 0) and (len(r.text) < 7000 or "text/html" not in ct):
-                    key = "%s [%d] %s" % (path, r.status_code, ct.split(";")[0])
+                    "%s [%d] %s" % (path, r.status_code, ct.split(";")[0])
                     found.add((path, r.status_code, ct, r.text[:200]))
             except Exception as e:
                 logger.debug("common api %s: %s", path, e)
@@ -255,12 +269,51 @@ class Crawler:
             logger.debug("crawl %s: %s", url, e)
             return None
 
+    def _extract_ssr_data(self, html: str, base: str):
+        next_data = re.search(r'<script[^>]*id="__NEXT_DATA__"[^>]*type="application/json"[^>]*>(.*?)</script>', html, re.DOTALL)
+        if next_data:
+            try:
+                import json
+                data = json.loads(next_data.group(1))
+                props = data.get("props", {}).get("pageProps", {})
+                for k, v in _flatten_dict(props).items():
+                    if isinstance(v, str) and v.startswith("/"):
+                        self.api_endpoints.add(v)
+            except Exception:
+                pass
+        init_state = re.search(r'window\.__INITIAL_STATE__\s*=\s*({.*?});', html, re.DOTALL)
+        if init_state:
+            try:
+                import json
+                data = json.loads(init_state.group(1))
+                for k, v in _flatten_dict(data).items():
+                    if isinstance(v, str) and v.startswith("/api/"):
+                        self.api_endpoints.add(v)
+                        p = urllib.parse.urlparse(v).path.rstrip("/") or "/"
+                        if p not in self.endpoints:
+                            self.endpoints[p] = {"url": v, "methods": ["GET"], "params": [], "source": "ssr"}
+                    if isinstance(v, str) and v.startswith("http"):
+                        self.api_endpoints.add(v)
+            except Exception:
+                pass
+        nuxt_data = re.search(r'<script[^>]*>window\.__NUXT__\s*=\s*({.*?})</script>', html, re.DOTALL)
+        if nuxt_data:
+            try:
+                import json
+                data = json.loads(nuxt_data.group(1))
+                for k, v in _flatten_dict(data).items():
+                    if isinstance(v, str) and v.startswith("/"):
+                        self.api_endpoints.add(v)
+            except Exception:
+                pass
+
     def _process_page(self, url: str, r) -> List[tuple]:
         html = r.text
         new_urls = []
 
         self._extract_forms(html, url)
         self._extract_endpoints(html, url)
+        self._extract_ssr_data(html, url)
         self._extract_embedded_params(html)
 
         if r.url != url and self._should_crawl(r.url):

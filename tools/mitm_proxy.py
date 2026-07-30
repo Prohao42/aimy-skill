@@ -101,7 +101,7 @@ def _generate_host_cert(hostname: str) -> Optional[str]:
         )
         for tmp in [csr_path, extfile]:
             try: os.remove(tmp)
-            except: pass
+            except Exception: pass
         return cert_path
     except subprocess.CalledProcessError as e:
         logger.debug("Cert gen failed for %s: %s", hostname, e.stderr.decode()[:100])
@@ -193,7 +193,7 @@ class _ProxyHandler(BaseHTTPRequestHandler):
             pass
         finally:
             try: upstream.close()
-            except: pass
+            except Exception: pass
 
     def _proxy_http(self, upstream, host: str, tag: str):
         buf = b""
@@ -232,7 +232,7 @@ class _ProxyHandler(BaseHTTPRequestHandler):
             logger.debug("[%s] tunnel closed: %s", tag, e)
         finally:
             try: upstream.close()
-            except: pass
+            except Exception: pass
 
     def _capture_http_request(self):
         content_len = int(self.headers.get("Content-Length", 0))

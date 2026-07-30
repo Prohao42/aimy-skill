@@ -134,7 +134,8 @@ def _test_java_bytes(url: str, param: str, sess: requests.Session, timeout: floa
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": [], "error": None}
 
     # Phase 1: Source code leak detection (GET — detects deser usage in responses)

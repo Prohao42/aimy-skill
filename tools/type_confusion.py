@@ -1,12 +1,12 @@
 import hashlib
 import json
-import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("type_confusion")
 
@@ -243,10 +243,10 @@ class TypeConfusionDetector:
             if method.upper() == "POST" and post_data:
                 data = post_data.copy()
                 data[param] = value
-                return self.sess.post(url, data=data, timeout=self.timeout, verify=False)
+                return self.sess.post(url, data=data, timeout=self.timeout, verify=settings.verify_ssl)
             else:
                 test_url = url.replace(param + "=", param + "=" + requests.utils.quote(value, safe=""))
-                return self.sess.get(test_url, timeout=self.timeout, verify=False)
+                return self.sess.get(test_url, timeout=self.timeout, verify=settings.verify_ssl)
         except Exception:
             return None
 

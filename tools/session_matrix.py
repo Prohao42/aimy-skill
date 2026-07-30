@@ -1,6 +1,5 @@
 import json
 import os
-import pickle
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
@@ -10,7 +9,7 @@ from tools.settings import settings
 
 logger = get_logger("session_matrix")
 
-SESSION_FILE = os.path.expanduser("~/.aimy-sikll/sessions.pkl")
+SESSION_FILE = os.path.expanduser("~/.aimy-sikll/sessions.json")
 
 
 @dataclass
@@ -82,7 +81,6 @@ class SessionMatrix:
                     identity.authenticated = True
                     if "Authorization" in sess.headers:
                         identity.headers["Authorization"] = sess.headers["Authorization"]
-                    id_str = identity.label
                     if hasattr(sess, '_auth'):
                         identity.headers.setdefault("Authorization",
                                                      str(sess._auth))
@@ -136,9 +134,19 @@ class SessionMatrix:
         with self._lock:
             try:
                 os.makedirs(os.path.dirname(SESSION_FILE), exist_ok=True)
-                with open(SESSION_FILE, "wb") as f:
-                    pickle.dump({k: v for k, v in self.identities.items()
-                                if v.authenticated}, f)
+                data = {k: {
+                    "label": v.label,
+                    "username": v.username,
+                    "password": v.password,
+                    "role": v.role,
+                    "cookies": v.cookies,
+                    "headers": v.headers,
+                    "tokens": v.tokens,
+                    "authenticated": v.authenticated,
+                    "metadata": v.metadata,
+                } for k, v in self.identities.items() if v.authenticated}
+                with open(SESSION_FILE, "w") as f:
+                    json.dump(data, f)
             except Exception as e:
                 logger.debug("save sessions: %s", e)
 
@@ -148,11 +156,22 @@ class SessionMatrix:
         self._loaded = True
         try:
             if os.path.isfile(SESSION_FILE):
-                with open(SESSION_FILE, "rb") as f:
-                    data = pickle.load(f)
+                with open(SESSION_FILE, "r") as f:
+                    data = json.load(f)
                     for k, v in data.items():
                         if k not in self.identities:
-                            self.identities[k] = v
+                            identity = Identity(
+                                label=v.get("label", k),
+                                username=v.get("username", ""),
+                                password=v.get("password", ""),
+                                role=v.get("role", "user"),
+                            )
+                            identity.cookies = v.get("cookies", {})
+                            identity.headers = v.get("headers", {})
+                            identity.tokens = v.get("tokens", {})
+                            identity.authenticated = v.get("authenticated", False)
+                            identity.metadata = v.get("metadata", {})
+                            self.identities[k] = identity
         except Exception as e:
             logger.debug("load sessions: %s", e)
 

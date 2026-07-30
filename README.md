@@ -1,112 +1,210 @@
 <div align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&pause=1000&color=00FF00&center=true&vCenter=true&width=600&lines=aimy-sikll+v2.2.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="Typing SVG" />
+  <h1>aimy-sikll</h1>
+  <p><strong>AI Agent 原生渗透测试技能库</strong><br>
+  <em>111 模块 · 33,314 行 · 零 lint 错误</em></p>
 </div>
 
-<h1 align="center">🚀 aimy-sikll</h1>
-<p align="center"><b>让 AI 替你挖洞 — 下一代 AI 嵌入式渗透测试工具包</b></p>
-
 <div align="center">
-  <a href="https://aimy-sikll.netlify.app/">🌐 官网</a> •
-  <a href="#-核心优势">✨ 优势</a> •
-  <a href="#-快速上手">⚡ 快速上手</a> •
-  <a href="#-命令速查">📖 命令</a> •
-  <a href="#-架构">🏗 架构</a>
-</div>
 
-<br>
+[![version](https://img.shields.io/badge/version-2.3.1-brightgreen)]()
+[![python](https://img.shields.io/badge/python-3.8+-blue)]()
+[![modules](https://img.shields.io/badge/modules-111-orange)]()
+[![tests](https://img.shields.io/badge/tests-77-green)]()
+[![ruff](https://img.shields.io/badge/ruff-0-brightgreen)]()
+[![license](https://img.shields.io/badge/license-MIT-red)]()
 
-<div align="center">
-  <img src="https://img.shields.io/badge/version-2.2.0-brightgreen" alt="version">
-  <img src="https://img.shields.io/badge/python-3.8%2B-blue" alt="python">
-  <img src="https://img.shields.io/badge/modules-65-orange" alt="modules">
-  <img src="https://img.shields.io/badge/skills-80%2B-purple" alt="skills">
-  <img src="https://img.shields.io/badge/license-MIT-red" alt="license">
-  <img src="https://img.shields.io/badge/tests-220%2B-green" alt="tests">
 </div>
 
 ---
 
-## ✨ 核心优势
+## 概述
 
-### 🧠 AI Agent 原生，开箱即用
-
-专为 Claude Code、AutoGPT、Cursor 等 AI Agent 设计——统一 `check()` 接口 + JSON 输出，AI 直接解析，无需二次开发。
+一套结构化的技能库，为 AI Agent 赋予自主渗透测试能力。每个模块暴露统一的 `check()` 接口，专供语言模型直接消费。
 
 ```python
-from tools.sql_injection import SQLInjectionChecker
-checker = SQLInjectionChecker()
-result = checker.check(url="http://target.com/page?id=1", param="id", sess=session, timeout=10)
-# → {"vulnerable": true, "type": "boolean_blind", "dbms": "MySQL", "confidence": 0.95}
+from tools import check_sqli
+
+result = check_sqli("http://target.com/page?id=1", "id")
+# → {"vulnerable": true, "type": "boolean_blind", "confidence": 0.95}
 ```
 
-### 🔫 全攻击链覆盖，一站打通
+---
 
-| 阶段 | 能力 |
-|------|------|
-| 🔍 侦察 | 端口扫描 · 目录枚举 · 网页爬虫 · SPA动态爬取 · 参数挖掘 · **版本指纹** · **CVE匹配** |
-| 💉 注入检测 | SQL · XSS · SSRF · 命令注入 · SSTI · NoSQL · LFI · GraphQL · **类型混淆** |
-| 🔐 认证突破 | 认证绕过 · JWT检测/破解 · CORS · 双会话BOLA · SAML |
-| 🧠 业务逻辑 | 价格篡改 · 条件竞争 · 工作流绕过 · Mass Assignment · **TOCTOU竞态** |
-| ⚔️ 武器化 | SQL数据提取 · SSRF云元数据 · JWT伪造 · 反序列化 · 反弹Shell · **多跳SSRF链** |
-| 🛡️ WAF 绕过 | 14种WAF指纹 · 11编码器 · HTTP协议绕过 |
-| ✅ 验证 | **5+ payload交叉验证** · Oracle验证 · 误报过滤 · 鲁棒验证 |
+## 攻击面
 
-### 🚀 三行命令，从零到报告
+| 层面 | 覆盖 |
+|-------|----------|
+| 侦察 | 技术栈指纹(80+特征)、端口扫描(130+端口)、目录枚举、Git泄露检测、SSR数据提取、参数挖掘 |
+| 注入检测 | SQLi(5方法)、XSS(8上下文)、SSRF(9协议)、SSTI(11引擎)、CMDI(3通道)、LFI、XXE、NoSQL、GraphQL |
+| WAF绕过 | 14种WAF指纹、**22种自适应编码策略**、检测到拦截自动升级 |
+| 认证突破 | JWT检测/破解/伪造、CORS、CSRF、SAML、OAuth、6种认证绕过技术 |
+| 内网渗透 | ICMP/ARP存活发现、SMB空会话、WMI/PsExec/WinRM横向移动、LLMNR哈希捕获、SOCKS级联代理 |
+| 数据库横向 | MSSQL xp_cmdshell、linked server枚举、MySQL OUTFILE、PostgreSQL dblink |
+| 链式攻击 | SSRF→RCE、LFI→RCE、SQLi→Shell、gopher协议转换——**根据发现自动编排** |
+| 自律循环 | 假设驱动：侦察→假设→测试→学习→迭代，贝叶斯信念更新 |
+
+---
+
+## 架构
+
+系统采用分层架构，各层职责清晰分离：
+
+```
+                     ┌──────────────────────┐
+                     │   AI Agent            │
+                     │  (消费技能模块)        │
+                     └──────────┬───────────┘
+                                │
+                     ┌──────────▼───────────┐
+                     │   auto_pwn            │  自律攻击循环
+                     │  假设→测试→学习→迭代   │  贝叶斯信念更新
+                     │  无新发现自动终止       │  自动触发链式攻击
+                     └──────────┬───────────┘
+                                │
+                     ┌──────────▼───────────┐
+                     │   tool_registry       │  插件注册中心
+                     │  40+ 检测器注册       │  配置驱动，一行添加
+                     └──────────┬───────────┘
+                                │
+                     ┌──────────▼───────────┐
+                     │   ScanContext         │  请求级上下文
+                     │  session/timeout/     │  消除全局可变状态
+                     │  findings/state       │  支持线程安全并发
+                     └──────────────────────┘
+```
+
+**关键设计决策：**
+
+- **注册中心模式**：新增检测器只需一行 `register_tool()`，不需要改动核心代码。
+- **上下文对象**：`ScanContext` 替代模块级全局变量，确保线程安全。
+- **反射分发**：`_run_detector_by_name()` 通过 inspect 解析函数签名，自动适配参数。
+- **假设循环**：`auto_pwn` 维护贝叶斯信念，无新发现时自动终止。
+
+---
+
+## 安装
+
+### 基础安装
 
 ```bash
-# 全自动渗透（爬虫 → 检测 → 武器化 → 报告）
+git clone https://github.com/your-repo/aimy-sikll.git
+cd aimy-sikll
+pip install -r requirements.txt
+```
+
+### 可选依赖
+
+```bash
+# SPA爬虫 & XSS浏览器验证
+pip install playwright
+playwright install chromium
+
+# SMB/WMI横向移动（impacket）
+pip install impacket
+
+# 数据库横向
+pip install pymssql pymysql psycopg2-binary
+
+# 全量开发依赖
+pip install ".[dev]"
+```
+
+### 验证安装
+
+```bash
+python -c "from tools import check_sqli; print('OK')"
+python main.py list
+```
+
+---
+
+## 快速开始
+
+```bash
+# CLI — 全自动渗透
 python main.py auto -u http://target.com
 
-# 带认证的深度扫描
-python main.py deepscan -u http://target.com/admin --auth-type form --auth-user admin --auth-pass secret
+# 编程调用 — AI Agent 消费
+python -c "
+from tools import check_sqli, check_ssrf
+r1 = check_sqli('http://target.com/page?id=1', 'id')
+r2 = check_ssrf('http://target.com/fetch?url=', 'url')
+print(r1, r2)
+"
 
-# 单点快速检测
+# 自律攻击循环
+python -c "
+from tools.auto_pwn import auto_pwn
+report = auto_pwn('http://target.com')
+print(f'确认: {len(report.get(\"confirmed\", []))} 个漏洞')
+"
+```
+
+---
+
+## 工作模式
+
+### 模式一：AI Agent 直接调用（推荐）
+
+AI 按需 import 技能模块，消费富化后的 JSON 结果：
+
+```python
+from tools import check_sqli, check_ssrf, check_xss
+
+result = check_sqli("http://target.com/page?id=1", "id")
+# → {"vulnerable": true, "type": "boolean_blind",
+#     "_ai_advice": "Use sqli_weaponizer for data extraction",
+#     "_next_steps": ["sqli_weaponizer"]}
+```
+
+### 模式二：自律攻击循环
+
+交给 auto_pwn，系统自主决策：
+
+```bash
+python -c "
+from tools.auto_pwn import auto_pwn
+report = auto_pwn('http://target.com')
+#  侦察 → 假设 → 测试 → 学习 → 迭代
+#  贝叶斯信念更新，无新发现自动终止
+"
+```
+
+### 模式三：CLI 全自动渗透
+
+一键跑完侦察→检测→报告：
+
+```bash
+python main.py auto -u http://target.com
+python main.py deepscan -u http://target.com
+python main.py quickscan -u http://target.com  # 极速模式
+```
+
+### 模式四：单点检测
+
+针对单个漏洞类型：
+
+```bash
 python main.py sqlcheck -u "http://target.com/page?id=1"
+python main.py xsscheck -u "http://target.com/search?q=test"
+```
+
+### 模式五：内网渗透
+
+```bash
+# 存活发现 → 端口扫 → 横向移动
+python -c "
+from tools.internal_scan import full_network_scan
+from tools.smb_lateral import lateral_move
+print(full_network_scan('192.168.1.0/24'))
+"
 ```
 
 ---
 
-## ⚡ 快速上手
+## 命令
 
-### 1. 安装
-
-```bash
-pip install -r requirements.txt && playwright install chromium
-```
-
-### 2. 智能体提示词安装
-
-```bash
-# 安装 AI Agent 提示词
-https://github.com/Prohao42/aimy-skill
-```
-
-### 3. 跑一个全自动扫描
-
-```bash
-python main.py auto -u http://target.com
-```
-
-### 4. 极速模式（跳过验证）
-
-```bash
-# 跳过所有验证层，极速扫描
-python main.py auto -u http://target.com --skip-verify
-```
-
-### 环境要求
-
-- Python 3.8+
-- 操作系统：Windows / Linux / macOS
-- 可选：Playwright（SPA爬虫 & XSS浏览器验证）
-- 可选：Kali Linux 工具集（扩展功能）
-
----
-
-## 📖 命令速查
-
-### 🔍 发现
-
+### 侦察
 ```
 portscan        TCP端口扫描
 dirfuzz         目录枚举
@@ -114,195 +212,97 @@ crawl           网页爬虫
 param-mine      参数挖掘
 ```
 
-### 💉 注入检测
-
+### 注入检测
 ```
-sqlcheck        SQL注入检测
-sqli-blind      SQL盲注利用（4种DBMS）
-sqli-oob        OOB SQL注入
-xsscheck        XSS检测（7+上下文）
-xss-validate    XSS浏览器验证（Playwright）
-cmdi            命令注入检测
-ssti            模板注入检测
-ssrf            SSRF检测（9种scheme）
-nosqli          NoSQL注入检测
+sqlcheck        SQL注入（5种方法）
+sqli-blind      盲注（4种DBMS）
+sqli-oob        OOB注入
+xsscheck        XSS（8种上下文）
+cmdi            命令注入
+ssti            模板注入（11种引擎）
+ssrf            SSRF（9种协议）
+nosqli          NoSQL注入
 lfi             本地文件包含
 ```
 
-### 🔐 认证 & 授权
-
+### 认证 & 授权
 ```
 auth-bypass     认证绕过（6种技术）
 jwt             JWT检测分析
-jwt-exploit     JWT破解/伪造
-cors            CORS跨域检测
+jwt-exploit     JWT破解与伪造
+cors            CORS配置检测
 ```
 
-### 🧠 业务逻辑
-
+### 内网渗透
 ```
-bizlogic        业务逻辑漏洞检测（9种场景）
-race            条件竞争检测
-workflow        工作流执行
-chain           利用链组合
+internal-scan   网络发现（ICMP/ARP + 端口扫描）
+smb-lateral     SMB空会话 + WMI/PsExec/WinRM
+responder       LLMNR/NBT-NS哈希捕获
+db-lateral      数据库横向（MSSQL/MySQL/PG）
 ```
 
-### ⚔️ 武器化
-
+### 武器化
 ```
-sqli-weaponize  SQL注入数据提取
-ssrf-pwn        SSRF云元数据+文件读取
-ssrf-lateral    SSRF横向移动
-deser-weaponize 反序列化payload生成
+sqli-weaponize  SQL注入数据提取（列数探测 + UNION）
+ssrf-pwn        SSRF云元数据 + IMDSv2
 reverse-shell   反弹Shell生成器
+deser-weaponize 反序列化payload生成
 ```
 
-### 🛡️ WAF 绕过
-
+### 自动化流程
 ```
-waf             WAF指纹识别（14种）
-waf-heavy       WAF严格绕过注入检测
-```
-
-### 🔬 深度检测
-
-```
-graphql         GraphQL扫描
-deser           反序列化检测
-proto-pollution 原型链污染检测
-```
-
-### 🤖 全自动流程
-
-```
-deepscan        深度扫描 → 爬虫+检测+报告
-autohunt        自动狩猎 → +参数挖掘+武器化
-auto            全自动渗透 → 增强版
-proxy           MITM代理 → 凭据捕获
-capture         数据包捕获
-```
-
-### 🛠 工具
-
-```
-fuzz            模糊测试
-payload-mutate  Payload变异
-list            列出所有工具
-```
-
-### 全局选项
-
-```
---timeout SEC      请求超时（默认: 10s）
---delay SEC        请求间隔
---mode MODE        输出模式: rookie / veteran
---skip-verify      跳过所有验证层（极速模式）
---auth-type TYPE   认证类型: form / api / basic
---auth-url URL     认证地址
---auth-user USER   用户名
---auth-pass PASS   密码
---session-file     会话持久化
---ssl-verify       启用SSL验证
+auto            全自动渗透
+auto-pwn        假设驱动自律攻击循环
+deepscan        深度扫描
+proxy           MITM代理
 ```
 
 ---
 
-## 🏗 架构
+## 核心模块
 
-```
-                    ┌──────────────┐
-                    │   AI Agent   │  ← Claude Code / AutoGPT / Cursor
-                    │  (ai-mian/)  │  ← 80+ Attack Skill 文件
-                    └──────┬───────┘
-                           │
-                    ┌──────▼───────┐
-                    │   CLI 入口    │  ← 35+ 命令 · argparse
-                    │  (main.py)   │
-                    └──────┬───────┘
-                           │
-                    ┌──────▼───────┐
-                    │  自动编排引擎  │  ← 6阶段流水线
-                    │ (orchestrator)│  ← ThreadPool 并行
-                    └──────┬───────┘
-                           │
-    ┌──────────────────────┼──────────────────────┐
-    │          │          │          │            │
- ┌──▼──┐  ┌───▼───┐  ┌───▼───┐  ┌──▼───┐  ┌────▼────┐
- │ 基础设施│  │  侦查  │  │ 注入检测│  │认证/  │  │ 业务逻辑  │
- │http_cli│  │crawler│  │sql_inj│  │访问控制│  │biz_logic│
- │payload │  │spa_crw│  │xss_det│  │jwt    │  │deviation│
- │oob_svr │  │dirfuzz│  │ssrf   │  │cors   │  │race_cond│
- │mitm    │  │portscan│  │cmdi   │  │dual_ses│  │workflow │
- └────────┘  └───────┘  └───────┘  └───────┘  └─────────┘
-    ┌──────────────────────┬─────────────────────────┐
-    │       武器化层        │        辅助分析层         │
-    │  sqli_weaponizer     │  resp_profiler          │
-    │  ssrf_pwn            │  verification_oracle    │
-    │  ssrf_chain          │  enhanced_verify        │
-    │  jwt_exploiter       │  false_positive_filter  │
-    │  chain_engine        │  cross_validator        │
-    └──────────────────────┴─────────────────────────┘
-    ┌──────────────────────┬─────────────────────────┐
-    │      智能分析层       │       新增能力模块        │
-    │  reasoning_engine    │  version_fingerprint    │
-    │  knowledge_graph     │  ssrf_chain (多跳)      │
-    │  attack_graph        │  type_confusion         │
-    │  attack_surface      │  enhanced_verify        │
-    └──────────────────────┴─────────────────────────┘
-```
-
-### 核心引擎
-
-| 模块 | 亮点 |
-|------|------|
-| **sqli_blind** | 4种DBMS盲注 · 并行二分法 · OOB通道 · 4级fallback |
-| **ssrf_pwn** | AWS/GCP/Azure/阿里云元数据 · IMDSv2 · k8s发现 |
-| **ssrf_chain** | 多跳内网穿透 · Redis/SQL/Docker/K8s协议转换 |
-| **waf_bypass** | 14种WAF指纹 · 11编码器 · HTTP协议绕过 |
-| **dual_session** | 双会话BOLA差分 · JSON字段级比对 |
-| **session_matrix** | 多身份矩阵 · 跨会话持久化 |
-| **payload_engine** | YAML种子 · 上下文感知变异 · 编码链 |
-| **reasoning_engine** | 30+规则假设驱动 · 自动推断攻击路径 |
-| **chain_engine** | SSRF→RCE · LFI→RCE · 链式利用组合 |
-| **version_fingerprint** | 响应头/错误页版本提取 · 25+产品CVE匹配 |
-| **type_confusion** | 7种类型测试 · TOCTOU竞态检测 |
-| **enhanced_verify** | 5+ payload交叉验证 · 降低误报率 |
+| 模块 | 说明 |
+|--------|-------------|
+| `sqli_blind` | 4种DBMS盲注，并行二分搜索，OOB通道 |
+| `sqli_weaponizer` | 列数探测，自适应UNION提取 |
+| `ssrf_pwn` | AWS/GCP/Azure元数据，IMDSv2，Kubernetes |
+| `waf_bypass` | 14种WAF指纹，22种自适应编码策略 |
+| `attack_surface` | CVE知识库(10技术栈)，攻击路径排序 |
+| `chain_engine` | 8条编排规则，根据发现自动组合 |
+| `auto_pwn` | 假设驱动循环，贝叶斯信念更新 |
+| `internal_scan` | ICMP/ARP存活扫描，多线程端口扫 |
+| `smb_lateral` | SMB空会话，WMI，PsExec，WinRM |
+| `responder_kit` | LLMNR/NBT-NS欺骗和哈希捕获 |
+| `db_lateral` | MSSQL linked server，MySQL OUTFILE，PG dblink |
+| `tunnel_agent` | 环境感知隧道，SOCKS级联，SSH跳板 |
+| `smart_fuzzer` | 响应指纹识别，差分分数学习 |
+| `tool_registry` | 插件系统，配置驱动，一行注册 |
 
 ---
 
-## 🎯 适合谁用
+## 质量
 
-| 角色 | 价值 |
-|------|------|
-| **渗透测试工程师** | 35+ 命令覆盖全攻击链，自动化报告 |
-| **AI Agent 开发者** | 统一接口 + JSON 输出 + 80+ Skill，即插即用 |
-| **安全研究员** | 深度武器化模块 + WAF 绕过引擎 |
-| **CTF 选手** | 全链路工具包，快速验证漏洞 |
-| **企业安全团队** | 自动化流水线 + 持续集成 |
-
----
-
-## 🧪 测试
-
-```bash
-pytest                    # 全部测试
-pytest --cov=tools        # 覆盖率报告
+```
+111 模块 · 33,314 行 · 77 测试
+ruff: 0 错误 · 编译: 0 错误
 ```
 
 ---
 
-## 🌐 项目宣传网站
+## 环境要求
 
-https://aimy-sikll.netlify.app/
+- Python 3.8+
+- 可选：Playwright（SPA爬虫、XSS浏览器验证）
+- 可选：impacket（SMB/WMI横向移动）
 
 ---
 
-## ⚠️ 法律声明
+## 许可
 
-本工具仅限 **已获得明确授权** 的环境中进行安全测试、CTF 竞赛或漏洞研究使用。未经授权使用可能违反法律法规。使用者自行承担所有责任。
+MIT。仅限授权安全测试使用。使用者承担所有责任。
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ for the security research community</sub>
+  <sub>为 AI Agent 设计。为安全工程师构建。</sub>
 </div>

@@ -211,13 +211,12 @@ def _detect_boolean_sqli(url, param, sess, timeout, post_data, base_data, waf_na
             pair_hit = False
             if report_true.is_anomalous != report_false.is_anomalous:
                 pair_hit = True
-                reason = ""
                 if report_true.delta_status or report_false.delta_status:
-                    reason = "status_diff"
+                    pass
                 elif report_true.delta_length_pct or report_false.delta_length_pct:
-                    reason = "length_diff"
+                    pass
                 else:
-                    reason = "body_diff"
+                    pass
                 result["evidence"].append("bool: %s (true=%s false=%s)" % (true_p[:20], report_true.reasons, report_false.reasons))
                 result["vector"] = true_p
 
@@ -292,9 +291,9 @@ def _detect_time_sqli(url, param, sess, timeout, post_data, base_data, waf_name=
             if post_data is not None:
                 d = base_data.copy() if base_data else {}
                 d[param] = payload
-                r = sess.post(url, data=d, timeout=timeout + 3)
+                sess.post(url, data=d, timeout=timeout + 3)
             else:
-                r = sess.get(build_url(url, param, payload), timeout=timeout + 3)
+                sess.get(build_url(url, param, payload), timeout=timeout + 3)
             elapsed = time.time() - start_t
             if elapsed >= threshold:
                 confirmed_count += 1

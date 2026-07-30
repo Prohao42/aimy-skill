@@ -109,7 +109,8 @@ def _verify_http(url: str, param: str, sess: "requests.Session",
 def check(url: str, param: str, sess: Optional["requests.Session"] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
 
     logger.info("XSS browser verify: %s?%s (playwright=%s)", url, param, HAS_PLAYWRIGHT)
 

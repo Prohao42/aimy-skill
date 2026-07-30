@@ -2,6 +2,8 @@ import random
 import string
 import time
 
+import requests
+
 from tools.log_utils import get_logger
 
 logger = get_logger("evasion_engine")

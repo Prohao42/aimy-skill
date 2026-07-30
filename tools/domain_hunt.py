@@ -109,7 +109,7 @@ def _asrep_impl(result, dc_ip, domain, usernames):
 
     for username in usernames:
         try:
-            principal_name = PrincipalName(constants.PrincipalNameType.NT_PRINCIPAL.value, username)
+            PrincipalName(constants.PrincipalNameType.NT_PRINCIPAL.value, username)
             tgt, cipher, key, old_session_key = sendKerberos(
                 None, None, None, None,
                 None, None, None,

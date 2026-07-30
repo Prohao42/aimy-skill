@@ -2,6 +2,8 @@ import re
 import urllib.parse
 from typing import Dict, List, Optional
 
+import requests
+
 from tools.http_client import build_url
 from tools.log_utils import get_logger
 from tools.settings import settings
@@ -635,7 +637,8 @@ def check(url: str, param: str = None, sess: Optional["requests.Session"] = None
           timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {
         "vulnerable": False,
         "findings": [],

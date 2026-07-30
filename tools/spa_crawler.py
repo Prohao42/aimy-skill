@@ -135,7 +135,7 @@ class SpaCrawler:
 
     def _extract_from_page(self, page):
         try:
-            html = page.content()
+            page.content()
 
             url = page.url
             path = urlparse(url).path.rstrip("/") or "/"

@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("recon.subdomain")
 
@@ -47,7 +48,7 @@ def _check_http(domain: str, timeout: float = 5.0) -> Optional[Dict]:
     for scheme in ("https", "http"):
         try:
             r = requests.get("%s://%s" % (scheme, domain), timeout=timeout,
-                             headers={"User-Agent": "Mozilla/5.0"}, verify=False)
+                             headers={"User-Agent": "Mozilla/5.0"}, verify=settings.verify_ssl)
             result["status"] = r.status_code
             result["server"] = r.headers.get("Server")
             result["tech"].append(scheme)

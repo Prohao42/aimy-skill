@@ -161,7 +161,7 @@ class BinaryAnalyzer:
             })
 
         # Imports
-        import_dir_rva = struct.unpack("<I", data[pe_offset+24+104:pe_offset+24+108])[0] if magic in (0x10b, 0x20b) else 0
+        struct.unpack("<I", data[pe_offset+24+104:pe_offset+24+108])[0] if magic in (0x10b, 0x20b) else 0
         for dll_name, apis in DANGEROUS_IMPORTS.items():
             dll_pattern = dll_name.lower().encode()
             if dll_pattern in data.lower():
@@ -188,7 +188,7 @@ class BinaryAnalyzer:
         info.format_type = "ELF"
 
         elf_class = data[4]
-        elf_data = data[5]
+        data[5]
         arch_map = {1: "x86", 2: "x64"}
         info.arch = arch_map.get(elf_class, "unknown")
         os_map = {0: "System V", 3: "Linux", 97: "ARM"}

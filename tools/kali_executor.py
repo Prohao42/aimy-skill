@@ -95,10 +95,10 @@ class KaliExecutor:
     def disconnect(self):
         if self._sftp:
             try: self._sftp.close()
-            except: pass
+            except Exception: pass
         if self._client:
             try: self._client.close()
-            except: pass
+            except Exception: pass
         self._client = None
         self._sftp = None
 
@@ -163,18 +163,18 @@ class KaliExecutor:
         try:
             self._sftp.stat(remote_path)
             return True
-        except:
+        except Exception:
             return False
 
     def list_dir(self, remote_path: str) -> List[str]:
         if self.config.local:
             try:
                 return os.listdir(remote_path)
-            except:
+            except Exception:
                 return []
         try:
             return self._sftp.listdir(remote_path)
-        except:
+        except Exception:
             return []
 
     def read_file_lines(self, remote_path: str) -> List[str]:

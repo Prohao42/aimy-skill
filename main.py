@@ -129,8 +129,6 @@ def _validate_url(url: str, name: str = "url") -> None:
 
 
 def cmd_portscan(args):
-    from tools.http_client import HttpClient
-    http = HttpClient(_sess(args), args.timeout)
     import socket as _socket
     target = args.target
     ports = [int(p) for p in args.ports.split(",")] if args.ports else [21,22,80,443,3306,6379,8080,8443,9200,27017]
@@ -319,11 +317,9 @@ def cmd_verify(args):
 def cmd_csrf(args):
     from tools.csrf_scanner import check as csrf_check
     if args.bypass:
-        import urllib.parse
+        import json
 
         from tools.csrf_scanner import bypass_check as csrf_bypass
-        parsed = urllib.parse.urlparse(args.url)
-        import json
         data = json.loads(args.data) if args.data else {"test": "value"}
         r = csrf_bypass(args.url, args.action or "/", data, _sess(args), args.timeout)
     else:
@@ -493,7 +489,7 @@ def cmd_domain(args):
     if args.userlist:
         try:
             with open(args.userlist, "r") as f:
-                userlist = [l.strip() for l in f if l.strip()]
+                userlist = [line.strip() for line in f if line.strip()]
         except Exception as e:
             logger.error("userlist: %s", e)
     r = domain_hunt(
@@ -845,43 +841,55 @@ def main():
     p.set_defaults(func=cmd_dirfuzz)
 
     p = sub.add_parser("sqlcheck", help="SQL注入检测")
-    p.add_argument("url"); p.add_argument("--param", default="id")
-    p.add_argument("--post", action="store_true"); p.add_argument("--data", type=json.loads, default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
+    p.add_argument("--post", action="store_true")
+    p.add_argument("--data", type=json.loads, default=None)
     p.set_defaults(func=cmd_sqlcheck)
 
     p = sub.add_parser("xsscheck", help="XSS检测")
-    p.add_argument("url"); p.add_argument("--param", default="q")
-    p.add_argument("--post", action="store_true"); p.add_argument("--data", type=json.loads, default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default="q")
+    p.add_argument("--post", action="store_true")
+    p.add_argument("--data", type=json.loads, default=None)
     p.add_argument("--context", default="all", help="html/attr/js/all")
     p.set_defaults(func=cmd_xsscheck)
 
     p = sub.add_parser("cmdi", help="命令注入检测")
-    p.add_argument("url"); p.add_argument("--param", default="cmd")
+    p.add_argument("url")
+    p.add_argument("--param", default="cmd")
     p.set_defaults(func=cmd_cmdi)
 
     p = sub.add_parser("ssti", help="模板注入检测")
-    p.add_argument("url"); p.add_argument("--param", default="name")
+    p.add_argument("url")
+    p.add_argument("--param", default="name")
     p.set_defaults(func=cmd_ssti)
 
     p = sub.add_parser("ssrf", help="SSRF检测")
-    p.add_argument("url"); p.add_argument("--param", default="url")
+    p.add_argument("url")
+    p.add_argument("--param", default="url")
     p.set_defaults(func=cmd_ssrf)
 
     p = sub.add_parser("nosqli", help="NoSQL注入检测")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_nosqli)
 
     p = sub.add_parser("lfi", help="本地文件包含检测")
-    p.add_argument("url"); p.add_argument("--param", default="file")
+    p.add_argument("url")
+    p.add_argument("--param", default="file")
     p.set_defaults(func=cmd_lfi)
 
     p = sub.add_parser("sqli-blind", help="SQL盲注利用")
-    p.add_argument("url"); p.add_argument("--param", default="id")
-    p.add_argument("--post", action="store_true"); p.add_argument("--data", type=json.loads, default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
+    p.add_argument("--post", action="store_true")
+    p.add_argument("--data", type=json.loads, default=None)
     p.set_defaults(func=cmd_sqli_blind)
 
     p = sub.add_parser("sqli-oob", help="OOB SQL注入")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.add_argument("--domain", default="oob.local")
     p.set_defaults(func=cmd_sqli_oob)
 
@@ -890,7 +898,8 @@ def main():
     p.set_defaults(func=cmd_auth_bypass)
 
     p = sub.add_parser("jwt", help="JWT检测")
-    p.add_argument("url"); p.add_argument("--param", default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default=None)
     p.set_defaults(func=cmd_jwt)
 
     p = sub.add_parser("graphql", help="GraphQL扫描")
@@ -898,11 +907,13 @@ def main():
     p.set_defaults(func=cmd_graphql)
 
     p = sub.add_parser("deser", help="反序列化检测")
-    p.add_argument("url"); p.add_argument("--param", default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default=None)
     p.set_defaults(func=cmd_deser)
 
     p = sub.add_parser("proto-pollution", help="原型链污染检测")
-    p.add_argument("url"); p.add_argument("--param", default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default=None)
     p.set_defaults(func=cmd_proto)
 
     p = sub.add_parser("cors", help="CORS检测")
@@ -910,23 +921,28 @@ def main():
     p.set_defaults(func=cmd_cors)
 
     p = sub.add_parser("xss-validate", help="XSS验证")
-    p.add_argument("url"); p.add_argument("--param", default="q")
+    p.add_argument("url")
+    p.add_argument("--param", default="q")
     p.set_defaults(func=cmd_xss_validate)
 
     p = sub.add_parser("waf", help="WAF指纹识别与绕过")
-    p.add_argument("url"); p.add_argument("--param", default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default=None)
     p.set_defaults(func=cmd_waf)
 
     p = sub.add_parser("waf-heavy", help="WAF严格绕过注入检测(HPP/分块/Unicode/注释嵌套)")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_waf_heavy)
 
     p = sub.add_parser("bizlogic", help="深度业务逻辑漏洞挖掘(2FA/价格/MassAssn/逻辑)")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_bizlogic)
 
     p = sub.add_parser("xxe", help="XXE XML外部实体检测")
-    p.add_argument("url"); p.add_argument("--param", default=None)
+    p.add_argument("url")
+    p.add_argument("--param", default=None)
     p.set_defaults(func=cmd_xxe)
 
     p = sub.add_parser("smuggler", help="HTTP请求走私检测 (CL.TE/TE.CL/TE.TE/h2c)")
@@ -962,11 +978,13 @@ def main():
     p.set_defaults(func=cmd_graphql_abuse)
 
     p = sub.add_parser("jwt-attack", help="JWT攻击(算法混淆/弱密钥/注入)")
-    p.add_argument("url"); p.add_argument("--token", default=None)
+    p.add_argument("url")
+    p.add_argument("--token", default=None)
     p.set_defaults(func=cmd_jwt_attack)
 
     p = sub.add_parser("verify", help="第二序交叉验证(多方法确认)")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.add_argument("--vuln-type", default="sqli",
                    choices=["sqli", "ssrf", "xss", "ssti", "cmdi", "lfi", "nosqli", "xxe"])
     p.set_defaults(func=cmd_verify)
@@ -1015,7 +1033,8 @@ def main():
     p.set_defaults(func=cmd_auto)
 
     p = sub.add_parser("chain", help="利用链组合攻击")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.add_argument("--chain", default="full_chain")
     p.set_defaults(func=cmd_chain)
 
@@ -1053,7 +1072,8 @@ def main():
     p.set_defaults(func=cmd_workflow)
 
     p = sub.add_parser("sqli-weaponize", help="SQL注入数据提取")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_sqli_weaponize)
 
     p = sub.add_parser("jwt-exploit", help="JWT利用(crack/伪造)")
@@ -1063,11 +1083,13 @@ def main():
     p.set_defaults(func=cmd_jwt_exploit)
 
     p = sub.add_parser("ssrf-pwn", help="SSRF文件读取与云元数据")
-    p.add_argument("url"); p.add_argument("--param", default="url")
+    p.add_argument("url")
+    p.add_argument("--param", default="url")
     p.set_defaults(func=cmd_ssrf_pwn)
 
     p = sub.add_parser("ssrf-lateral", help="SSRF横向移动")
-    p.add_argument("url"); p.add_argument("--param", default="url")
+    p.add_argument("url")
+    p.add_argument("--param", default="url")
     p.set_defaults(func=cmd_ssrf_lateral)
 
     p = sub.add_parser("deser-weaponize", help="反序列化payload生成")
@@ -1104,7 +1126,8 @@ def main():
     p.set_defaults(func=cmd_payload_mutate)
 
     p = sub.add_parser("fuzz-engine", help="高级语法模糊测试(grammar-based)")
-    p.add_argument("url"); p.add_argument("--param", default="id")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
     p.add_argument("--vuln-type", default="", help="sql/ssrf/lfi/xss/ssti/cmdi")
     p.add_argument("--count", type=int, default=20, help="payload数量")
     p.set_defaults(func=cmd_fuzz_engine)
@@ -1139,36 +1162,47 @@ def main():
     ksub.add_parser("list-tools", help="列出 Kali 上可用的工具").set_defaults(func=cmd_kali, kali_command="list-tools")
 
     pks = ksub.add_parser("sqlmap", help="sqlmap SQL 注入检测与利用")
-    pks.add_argument("url"); pks.add_argument("--param", default="id")
-    pks.add_argument("--dbms", default=""); pks.add_argument("--dump", action="store_true")
+    pks.add_argument("url")
+    pks.add_argument("--param", default="id")
+    pks.add_argument("--dbms", default="")
+    pks.add_argument("--dump", action="store_true")
     pks.set_defaults(func=cmd_kali, kali_command="sqlmap")
 
     pkn = ksub.add_parser("nmap", help="nmap 端口扫描")
-    pkn.add_argument("target"); pkn.add_argument("--ports", default="")
+    pkn.add_argument("target")
+    pkn.add_argument("--ports", default="")
     pkn.add_argument("--full", action="store_true", help="全面扫描 (-sV -sC)")
     pkn.set_defaults(func=cmd_kali, kali_command="nmap")
 
     pkf = ksub.add_parser("ffuf", help="ffuf 目录/文件枚举")
-    pkf.add_argument("url"); pkf.add_argument("--wordlist", default="")
-    pkf.add_argument("--extensions", default=""); pkf.add_argument("--threads", type=int, default=50)
+    pkf.add_argument("url")
+    pkf.add_argument("--wordlist", default="")
+    pkf.add_argument("--extensions", default="")
+    pkf.add_argument("--threads", type=int, default=50)
     pkf.set_defaults(func=cmd_kali, kali_command="ffuf")
 
     pkg = ksub.add_parser("gobuster", help="gobuster 目录爆破")
-    pkg.add_argument("url"); pkg.add_argument("--wordlist", default="")
-    pkg.add_argument("--extensions", default="php,txt,zip,bak,html"); pkg.add_argument("--threads", type=int, default=30)
+    pkg.add_argument("url")
+    pkg.add_argument("--wordlist", default="")
+    pkg.add_argument("--extensions", default="php,txt,zip,bak,html")
+    pkg.add_argument("--threads", type=int, default=30)
     pkg.set_defaults(func=cmd_kali, kali_command="gobuster")
 
     pknuc = ksub.add_parser("nuclei", help="nuclei 漏洞模板扫描")
-    pknuc.add_argument("url"); pknuc.add_argument("--severity", default="medium,high,critical")
+    pknuc.add_argument("url")
+    pknuc.add_argument("--severity", default="medium,high,critical")
     pknuc.set_defaults(func=cmd_kali, kali_command="nuclei")
 
     pknik = ksub.add_parser("nikto", help="nikto Web 服务器扫描")
-    pknik.add_argument("url"); pknik.add_argument("--max-time", type=int, default=60)
+    pknik.add_argument("url")
+    pknik.add_argument("--max-time", type=int, default=60)
     pknik.set_defaults(func=cmd_kali, kali_command="nikto")
 
     pkh = ksub.add_parser("hydra", help="hydra 暴力破解")
-    pkh.add_argument("target"); pkh.add_argument("--service", default="ssh")
-    pkh.add_argument("--user", default=""); pkh.add_argument("--threads", type=int, default=4)
+    pkh.add_argument("target")
+    pkh.add_argument("--service", default="ssh")
+    pkh.add_argument("--user", default="")
+    pkh.add_argument("--threads", type=int, default=4)
     pkh.add_argument("--port", type=int, default=0)
     pkh.set_defaults(func=cmd_kali, kali_command="hydra")
 
@@ -1177,21 +1211,28 @@ def main():
     pkw.set_defaults(func=cmd_kali, kali_command="whatweb")
 
     pkwp = ksub.add_parser("wpscan", help="wpscan WordPress 漏洞扫描")
-    pkwp.add_argument("url"); pkwp.add_argument("--enumerate", action="store_true", default=True)
+    pkwp.add_argument("url")
+    pkwp.add_argument("--enumerate", action="store_true", default=True)
     pkwp.set_defaults(func=cmd_kali, kali_command="wpscan")
 
     pkmsf = ksub.add_parser("msfconsole", help="metasploit 漏洞利用")
-    pkmsf.add_argument("target"); pkmsf.add_argument("--module", default="", help="MSF 模块路径")
-    pkmsf.add_argument("--rport", type=int, default=80); pkmsf.add_argument("--ssl", action="store_true")
-    pkmsf.add_argument("--payload", default=""); pkmsf.add_argument("--lhost", default="")
+    pkmsf.add_argument("target")
+    pkmsf.add_argument("--module", default="", help="MSF 模块路径")
+    pkmsf.add_argument("--rport", type=int, default=80)
+    pkmsf.add_argument("--ssl", action="store_true")
+    pkmsf.add_argument("--payload", default="")
+    pkmsf.add_argument("--lhost", default="")
     pkmsf.add_argument("--lport", type=int, default=4444)
     pkmsf.set_defaults(func=cmd_kali, kali_command="msfconsole")
 
     pkauto = ksub.add_parser("autoexploit", help="根据漏洞类型自动选择 Kali 工具利用")
-    pkauto.add_argument("url"); pkauto.add_argument("vuln_type",
+    pkauto.add_argument("url")
+    pkauto.add_argument("vuln_type",
         choices=["sqli","cmdi","xss","lfi","ssrf","http","service","wordpress"])
-    pkauto.add_argument("--param", default=""); pkauto.add_argument("--dbms", default="")
-    pkauto.add_argument("--service", default=""); pkauto.add_argument("--user", default="")
+    pkauto.add_argument("--param", default="")
+    pkauto.add_argument("--dbms", default="")
+    pkauto.add_argument("--service", default="")
+    pkauto.add_argument("--user", default="")
     pkauto.set_defaults(func=cmd_kali, kali_command="autoexploit")
 
     args = parser.parse_args()

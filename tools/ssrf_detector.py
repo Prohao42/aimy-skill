@@ -89,6 +89,9 @@ SSRF_URLS = [
     "http://169.254.169.254/2009-04-04/meta-data/",
     "http://metadata.tencentyun.com/latest/meta-data/",
     "http://100.100.100.200/latest/meta-data/",
+    "ftp://ftp.gnu.org/",
+    "ldap://127.0.0.1:389/",
+    "sftp://127.0.0.1:22/",
 ]
 
 INTERNAL_PROBES = [
@@ -329,7 +332,8 @@ def _test_oob(url: str, param: str, sess: requests.Session,
 def check(url: str, param: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0, oob_server: Optional[str] = None) -> dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "type": None, "evidence": [], "payload": None,
               "oob_tested": False, "oob_server_used": oob_server,
               "confidence": "low", "confirmed": False, "oob_methods": []}
@@ -390,5 +394,16 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         result["confidence"] = "low"
         if not _is_local_target(url):
             result["note"] = "External target: OOB callback may not reach local listener. Use --oob-server to specify a public callback URL."
+        else:
+            try:
+                oob_retry = _test_oob(url, param, sess, timeout * 1.5, custom_callback=oob_server)
+                if oob_retry.get("vulnerable"):
+                    result["vulnerable"] = True
+                    result["type"] = oob_retry.get("type", "oob_callback_retry")
+                    result["confidence"] = "medium"
+                    result["evidence"] = oob_retry["evidence"]
+                    result["oob_methods"] = oob_retry.get("oob_methods", [])
+            except Exception as e:
+                logger.debug("ssrf oob retry: %s", e)
 
     return result

@@ -103,6 +103,31 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
         result["vulnerable"] = True
 
     if not result["vulnerable"]:
+        true_payloads = [
+            "{{'a'.startswith('a')}}",
+            "${'a'.startsWith('a')}",
+            "#{7==7}",
+        ]
+        false_payloads = [
+            "{{'a'.startswith('b')}}",
+            "${'a'.startsWith('b')}",
+            "#{7==8}",
+        ]
+        for tp, fp in zip(true_payloads, false_payloads):
+            try:
+                r_true = sess.get(build_url(url, param, tp), timeout=timeout)
+                r_false = sess.get(build_url(url, param, fp), timeout=timeout)
+                if r_true.text != r_false.text and len(r_true.text) > 50:
+                    result["vulnerable"] = True
+                    result["evidence"].append("ssti: boolean blind (true!=false)")
+                    result["payload"] = tp
+                    result["engine"] = "detected_boolean"
+                    voter.add_vote("boolean_blind", 0.6)
+                    break
+            except Exception as e:
+                logger.debug("ssti boolean blind: %s", e)
+
+    if not result["vulnerable"]:
         baseline = _measure_baseline(url, param, sess, timeout)
         if baseline < timeout * 0.8:
             threshold = max(2.0, baseline * 1.5 + 1.5)

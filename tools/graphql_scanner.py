@@ -42,7 +42,8 @@ def has_graphql_schema(body: str) -> bool:
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "endpoints": [], "introspection": False, "evidence": []}
 
     base = url.rstrip("/")

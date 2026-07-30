@@ -62,7 +62,8 @@ def check_options_preflight(url: str, sess: requests.Session,
 def check(url: str, param: str = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "findings": [], "sensitive_headers_exposed": []}
 
     if not url.startswith("http"):

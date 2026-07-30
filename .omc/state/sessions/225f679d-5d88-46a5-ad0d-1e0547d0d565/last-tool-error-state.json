@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"# 获取 ThinkPHP 错误详情 — 包含路径/文件/行号\\n/usr/bin/curl -sk \\\"https://120.24.24.103/admin/Login/login\\\" | grep -oP '(?<=<div class=\\\"detail\\\">).*?(?=</div>)' || \\\\\\n  /usr/bin/curl -sk \\\"https://12...",
+  "error": "Exit code 1\n  File \"<string>\", line 13\n    files = re.findall(r'/(?:app|vendor|www|data)[^<\"'\\s]+', html)\n                                                       ^\nSyntaxError: unexpected character after line continuation character",
+  "timestamp": "2026-07-30T11:05:36.399Z",
+  "retry_count": 3
+}

@@ -225,7 +225,8 @@ LOGIN_ENDPOINTS = [
 def check_admin_endpoints(url: str, sess: Optional[requests.Session] = None,
                           timeout: float = 10.0) -> List[Dict]:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     results = []
     base = url.rstrip("/")
     for path in ADMIN_PATHS:
@@ -242,7 +243,8 @@ def check_admin_endpoints(url: str, sess: Optional[requests.Session] = None,
 def check_path_bypass(url_pattern: str, sess: Optional[requests.Session] = None,
                       timeout: float = 10.0) -> List[Dict]:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     results = []
     for bp in PATH_BYPASSES:
         test_url = url_pattern.replace("/admin", bp) if "/admin" in url_pattern else bp
@@ -259,7 +261,8 @@ def check_path_bypass(url_pattern: str, sess: Optional[requests.Session] = None,
 def check_cookie_tamper(url: str, sess: Optional[requests.Session] = None,
                         timeout: float = 10.0) -> List[Dict]:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     baseline = None
     try:
         baseline = sess.get(url, timeout=timeout)
@@ -287,7 +290,8 @@ def check_cookie_tamper(url: str, sess: Optional[requests.Session] = None,
 def check_header_injection(url: str, sess: Optional[requests.Session] = None,
                            timeout: float = 10.0) -> List[Dict]:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     baseline = None
     try:
         baseline = sess.get(url, timeout=timeout)
@@ -309,7 +313,8 @@ def check_header_injection(url: str, sess: Optional[requests.Session] = None,
 def check_method_bypass(url: str, sess: Optional[requests.Session] = None,
                         timeout: float = 10.0) -> List[Dict]:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     results = []
     baseline = None
     try:
@@ -331,7 +336,8 @@ def check_method_bypass(url: str, sess: Optional[requests.Session] = None,
 def check_default_creds(url: str, sess: Optional[requests.Session] = None,
                         timeout: float = 10.0) -> List[Dict]:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     results = []
     base = url.rstrip("/")
     for endpoint in LOGIN_ENDPOINTS:
@@ -362,7 +368,8 @@ def check_default_creds(url: str, sess: Optional[requests.Session] = None,
 def check_mass_assignment(url: str, sess: Optional[requests.Session] = None,
                           timeout: float = 10.0) -> List[Dict]:
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     results = []
     base = url.rstrip("/")
     for payload in MASS_ASSIGN_PAYLOADS:

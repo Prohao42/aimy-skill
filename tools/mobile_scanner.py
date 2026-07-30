@@ -68,7 +68,7 @@ class AndroidScanner:
                 recommendation="Use apktool to decode the manifest",
             ))
             return
-        lines = self.manifest_xml.split("\n")
+        self.manifest_xml.split("\n")
 
     def _check_backup(self):
         if 'android:allowBackup="true"' in self.manifest_xml or "allowBackup=true" in self.manifest_xml:

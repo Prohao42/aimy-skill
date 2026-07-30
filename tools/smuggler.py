@@ -105,7 +105,6 @@ def _detect_via_delay(host: str, port: int, raw_request: str, timeout: float = 1
 def _detect_cl_te(host: str, port: int, url: str, timeout: float) -> List[Dict]:
     results = []
     for name, tpl in CL_TE_PAYLOADS:
-        marker_key = "ts"
         payload = tpl.format(host=host, ts=int(time.time()))
         raw = payload.encode()
         try:

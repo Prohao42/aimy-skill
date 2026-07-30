@@ -6,6 +6,8 @@ import time
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
+import requests
+
 from tools.http_client import build_url
 from tools.log_utils import get_logger
 from tools.settings import settings
@@ -592,7 +594,8 @@ def check_oob_dns(url: str, param: str, oob_domain: str,
                   timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {"vulnerable": False, "findings": []}
 
     detector = BlindInjector(sess, timeout)
@@ -604,11 +607,6 @@ def check_oob_dns(url: str, param: str, oob_domain: str,
     if dbms not in OOB_DNS_PAYLOADS:
         return result
 
-    test_queries = [
-        ("version", "VERSION()", "@@version"),
-        ("user", "USER()", "user()"),
-        ("database", "DATABASE()", "database()"),
-    ]
 
     query_map = {
         "mysql": {"version": "@@version", "user": "user()", "database": "database()"},
@@ -648,7 +646,8 @@ def check(url: str, param: str, sess: Optional["requests.Session"] = None,
           auto_detect_waf: bool = True) -> Dict:
     if sess is None:
         import requests
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
 
     if waf_name is None and auto_detect_waf and HAS_WAF:
         try:

@@ -20,8 +20,11 @@ import time
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
+import requests
+
 from tools.http_client import HttpClient
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("jwt_attacker")
 
@@ -105,7 +108,7 @@ class JWTAttacker:
 
     def _find_token(self, url: str) -> Optional[str]:
         try:
-            resp = self.sess.get(url, timeout=self.timeout, verify=False, allow_redirects=False)
+            resp = self.sess.get(url, timeout=self.timeout, verify=settings.verify_ssl, allow_redirects=False)
             token = None
 
             auth_header = resp.headers.get("Authorization", "")
@@ -135,7 +138,7 @@ class JWTAttacker:
         for path in candidates:
             url = urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
             try:
-                resp = self.sess.get(url, timeout=self.timeout, verify=False)
+                resp = self.sess.get(url, timeout=self.timeout, verify=settings.verify_ssl)
                 if resp.status_code == 200:
                     data = resp.json()
                     if "keys" in data or "jwks_uri" in data:
@@ -363,7 +366,7 @@ class JWTAttacker:
                     test_header["kid"] = inj_value
                     test_token = self._encode_token(test_header, payload)
                     resp = self.sess.get(url, headers={"Authorization": "Bearer %s" % test_token},
-                                        timeout=self.timeout, verify=False)
+                                        timeout=self.timeout, verify=settings.verify_ssl)
                     if resp.status_code not in (401, 403, 500, 502, 503):
                         findings.append({
                             "method": "kid_injection",

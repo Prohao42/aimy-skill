@@ -92,7 +92,7 @@ def _is_in_html_context(html: str, marker: str, payload: str) -> bool:
     if idx < 0:
         return False
     before = html[max(0, idx - 100):idx]
-    after = html[idx + len(marker) + len(payload):idx + len(marker) + len(payload) + 100]
+    html[idx + len(marker) + len(payload):idx + len(marker) + len(payload) + 100]
     in_script = before.lower().rfind('<script') > before.lower().rfind('</script')
     in_html_tag = '<' in before.split('>')[-1] if '>' in before else '<' in before
     if in_script and not in_html_tag:

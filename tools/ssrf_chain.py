@@ -1,11 +1,11 @@
 import re
-import urllib.parse
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import requests
 
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("ssrf_chain")
 
@@ -208,7 +208,7 @@ class SSRFChainEngine:
             r = self.sess.get(test_url, timeout=self.timeout)
             if "redis_version" in r.text:
                 chain_path.append("redis_info_leak")
-                version = re.search(r"redis_version:(\d+\.\d+\.\d+)", r.text)
+                re.search(r"redis_version:(\d+\.\d+\.\d+)", r.text)
                 return HopResult(
                     hop=1, protocol="redis", target=target, port=port,
                     success=True, response_preview=r.text[:300],
@@ -316,7 +316,7 @@ class SSRFChainEngine:
             k8s_url = "https://%s:%d%s" % (host, port, path)
             test_url = base_url.replace(param + "=", param + "=" + k8s_url)
             try:
-                r = self.sess.get(test_url, timeout=self.timeout, verify=False)
+                r = self.sess.get(test_url, timeout=self.timeout, verify=settings.verify_ssl)
                 if r.status_code == 200:
                     try:
                         data = r.json()

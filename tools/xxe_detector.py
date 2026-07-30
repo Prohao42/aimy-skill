@@ -17,8 +17,11 @@ import time
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
+import requests
+
 from tools.http_client import HttpClient
 from tools.log_utils import get_logger
+from tools.settings import settings
 
 logger = get_logger("xxe")
 
@@ -148,13 +151,13 @@ class XXEDetector:
             start = time.time()
             if raw_body is not None:
                 resp = self.sess.post(url, data=raw_body, headers=headers,
-                                      timeout=self.timeout, allow_redirects=False, verify=False)
+                                      timeout=self.timeout, allow_redirects=False, verify=settings.verify_ssl)
             elif method == "POST":
                 resp = self.sess.post(url, data=data, headers=headers,
-                                      timeout=self.timeout, allow_redirects=False, verify=False)
+                                      timeout=self.timeout, allow_redirects=False, verify=settings.verify_ssl)
             else:
                 resp = self.sess.get(url, headers=headers, timeout=self.timeout,
-                                     allow_redirects=False, verify=False)
+                                     allow_redirects=False, verify=settings.verify_ssl)
             elapsed = time.time() - start
             return resp.status_code, resp.text, elapsed
         except Exception as e:
@@ -189,7 +192,6 @@ class XXEDetector:
     def _check_param_based(self, url: str, param: str,
                            is_post: bool, post_data: Dict) -> List[Dict]:
         findings = []
-        method = "POST" if is_post else "GET"
 
         # Method 1: In-band file read
         for payload in FILE_READ_PAYLOADS[:2]:

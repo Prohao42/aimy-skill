@@ -87,7 +87,7 @@ class RaceProfiler:
             start = time.time()
             r = getattr(self.sess, method.lower())(url, json=body,
                                                     timeout=self.timeout,
-                                                    verify=False)
+                                                    verify=settings.verify_ssl)
             elapsed = (time.time() - start) * 1000
             return {
                 "status": r.status_code,
@@ -106,7 +106,7 @@ class RaceProfiler:
                 start = time.time()
                 r = getattr(self.sess, method.lower())(url, json=body,
                                                         timeout=self.timeout + 5,
-                                                        verify=False)
+                                                        verify=settings.verify_ssl)
                 return {
                     "index": i,
                     "status": r.status_code,
@@ -184,7 +184,7 @@ class StateIntegrityChecker:
             try:
                 r = self.sess.get(label if label.startswith("http")
                                   else label, timeout=self.timeout,
-                                  verify=False)
+                                  verify=settings.verify_ssl)
                 unchanged = r.text == current
                 results[label] = {
                     "unchanged": unchanged,
@@ -200,7 +200,8 @@ class StateIntegrityChecker:
 def check(url: str, param: str = None, sess=None, timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     profiler = RaceProfiler(sess, timeout)
     write_keywords = ["create", "order", "checkout", "redeem", "claim",
                        "submit", "transfer", "vote", "like"]

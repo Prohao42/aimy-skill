@@ -144,7 +144,7 @@ class ConstraintGraph:
 
         found_price = self._param_names & price_like
         found_qty = self._param_names & quantity_like
-        found_limit = self._param_names & limit_like
+        self._param_names & limit_like
 
         if found_price:
             p = list(found_price)[0]
@@ -265,7 +265,8 @@ class ConstraintBreaker:
 def check(url: str, param: str = None, sess=None, timeout: float = 10.0) -> Dict:
     import requests
     if sess is None:
-        sess = requests.Session(); sess.verify = settings.verify_ssl
+        sess = requests.Session()
+    sess.verify = settings.verify_ssl
     result = {
         "vulnerable": False,
         "findings": [],

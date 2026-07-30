@@ -124,10 +124,8 @@ class RaceConditionTester:
                   "race_window_ms": [], "responses": [], "rounds_tested": 0}
 
         param_lower = param.lower()
-        scenario = "generic"
         for sname, sdata in RACE_SCENARIOS.items():
             if any(k in param_lower for k in sdata["key_patterns"]):
-                scenario = sname
                 break
 
         data = {param: "1"}

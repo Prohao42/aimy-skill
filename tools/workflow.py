@@ -106,7 +106,8 @@ class Workflow:
 
     def run(self, context: Dict = None) -> Dict:
         import requests
-        http = requests.Session(); http.verify = settings.verify_ssl
+        http = requests.Session()
+        http.verify = settings.verify_ssl
         http.headers["User-Agent"] = "Mozilla/5.0"
         if context is None:
             context = {}
@@ -197,7 +198,8 @@ SAMPLE_WORKFLOWS = {
 
 def run(workflow_name: str, context: Dict = None) -> Dict:
     import requests
-    http = requests.Session(); http.verify = settings.verify_ssl
+    http = requests.Session()
+    http.verify = settings.verify_ssl
     http.headers["User-Agent"] = "Mozilla/5.0"
     if workflow_name in SAMPLE_WORKFLOWS:
         data = SAMPLE_WORKFLOWS[workflow_name]

@@ -207,7 +207,7 @@ class AttackTree:
         self.nodes["root"].children.append("branch_service")
 
         web_root = self.nodes[web_root_id]
-        service_root = self.nodes[service_root_id]
+        self.nodes[service_root_id]
 
         path_prefixes = {d.split("/")[1] if d.count("/") > 1 else d.strip("/")
                          for d in dirs_lower if d.strip("/")}

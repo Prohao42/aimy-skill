@@ -27,11 +27,13 @@ class DualSessionManager:
         high_creds: Optional[Dict[str, str]] = None,
         auth_type: str = "form",
     ) -> "DualSessionManager":
-        low = requests.Session(); low.verify = settings.verify_ssl
+        low = requests.Session()
+        low.verify = settings.verify_ssl
         _do_login(low, low_url, low_creds, auth_type)
         high = None
         if high_creds:
-            high = requests.Session(); high.verify = settings.verify_ssl
+            high = requests.Session()
+            high.verify = settings.verify_ssl
             _do_login(high, high_url or low_url, high_creds, auth_type)
         return cls(low, high)
 

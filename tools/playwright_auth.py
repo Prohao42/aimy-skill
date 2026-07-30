@@ -6,6 +6,7 @@ import requests
 
 from tools.log_utils import get_logger
 from tools.playwright_engine import PlaywrightEngine
+from tools.settings import settings
 
 logger = get_logger("playwright_auth")
 
@@ -255,7 +256,7 @@ class PlaywrightAuth:
                 url,
                 json={"username": username, "password": password},
                 timeout=15,
-                verify=False,
+                verify=settings.verify_ssl,
             )
             if resp.status_code == 200:
                 data = resp.json()

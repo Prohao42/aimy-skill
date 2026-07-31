@@ -424,6 +424,19 @@ curl -fsSLO https://oss-qn.yaklang.com/hack-skills/latest/hack-skills.zip
 - 标准只读侦察命令（如 `xp_cmdshell 'whoami'`、`LOAD_FILE('/etc/passwd')`）予以保留。
 - 防御性加固片段（如 `rename-command FLUSHALL ""`）作为防御措施予以保留。
 
+## 相关项目（姊妹站）
+
+HackSkills 是 Yaklang 生态下面向 Agent 的系列知识库之一：
+
+| 项目 | 在线站点 | 定位 |
+|---|---|---|
+| **HackSkills**（本库） | [skills.hackbenchmark.com](https://skills.hackbenchmark.com) | 面向 AI Agent 的渗透/安全攻防技能库（Web/API/认证/提权/逆向/密码学等） |
+| **Yak Skills** | [skills.yaklang.io](https://skills.yaklang.io) · [yaklang/yak-skills](https://github.com/yaklang/yak-skills) | Yaklang 编程 + Yak 热加载技能库（MITM / Web Fuzzer / 全局热加载、前端加密对抗） |
+| **训练素材** | [yaklang/yaklang-ai-training-materials](https://github.com/yaklang/yaklang-ai-training-materials) | 更复杂的 Yak 代码、100+ 标准库实战、详细案例 |
+| **Benchmark** | [hackbenchmark.com](https://hackbenchmark.com) | AI Agent 对抗真实 Web 漏洞 |
+
+> 当某个发现需要定制工具——代理热加载、流量解密、Fuzz 逻辑——从 HackSkills 切到 **Yak Skills** 获取 Yaklang 实现范式。
+
 ## 贡献方式
 
 欢迎提交 PR，重点方向包括：

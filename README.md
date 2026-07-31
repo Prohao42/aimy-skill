@@ -6,7 +6,7 @@
 <p align="center"><b>让 AI 替你挖洞 — 下一代 AI 嵌入式渗透测试工具包</b></p>
 
 <div align="center">
-  <a href="https://aimy-sikll.netlify.app/">🌐 官网</a> •
+  <a href="https://aimywz.edgeone.dev/">🌐 官网</a> •
   <a href="#-核心优势">✨ 优势</a> •
   <a href="#-快速上手">⚡ 快速上手</a> •
   <a href="#-命令速查">📖 命令</a> •
@@ -293,7 +293,7 @@ pytest --cov=tools        # 覆盖率报告
 
 ## 🌐 项目宣传网站
 
-https://aimy-sikll.netlify.app/
+https://aimywz.edgeone.dev/
 
 ---
 

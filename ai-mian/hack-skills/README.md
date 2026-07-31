@@ -427,6 +427,19 @@ Conventions:
 - Standard read-only recon commands (e.g. `xp_cmdshell 'whoami'`, `LOAD_FILE('/etc/passwd')`) are kept.
 - Defensive hardening snippets (e.g. `rename-command FLUSHALL ""`) are kept as defenses.
 
+## Related Projects (Sister Sites)
+
+HackSkills is part of a family of agent-facing knowledge bases from the Yaklang ecosystem:
+
+| Project | Live site | Focus |
+|---|---|---|
+| **HackSkills** (this repo) | [skills.hackbenchmark.com](https://skills.hackbenchmark.com) | Offensive-security skills for AI agents (Web/API/auth/privesc/RE/crypto …) |
+| **Yak Skills** | [skills.yaklang.io](https://skills.yaklang.io) · [yaklang/yak-skills](https://github.com/yaklang/yak-skills) | Yaklang programming + Yak hot patch skills (MITM / Web Fuzzer / Global hot patch, frontend-crypto bypass) |
+| **Training materials** | [yaklang/yaklang-ai-training-materials](https://github.com/yaklang/yaklang-ai-training-materials) | More complex Yak code, 100+ stdlib practice, detailed cases |
+| **Benchmark** | [hackbenchmark.com](https://hackbenchmark.com) | AI agents vs. real-world web vulnerabilities |
+
+> When a finding needs custom tooling — proxy hot-patching, traffic decryption, fuzzing logic — pivot from HackSkills to **Yak Skills** for the Yaklang implementation playbooks.
+
 ## Contributing
 
 PRs are welcome. Key areas include:

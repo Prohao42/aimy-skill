@@ -7,6 +7,7 @@ import sys
 import urllib.parse as _urlparse
 
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry as urllib3_Retry
 
 from tools.kali_executor import get_kali, init_kali, init_kali_local
 from tools.kali_executor import is_available as kali_avail
@@ -22,6 +23,21 @@ URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
 
 
 class _TLS12Adapter(HTTPAdapter):
+    """强制 TLS1.2 + 指数退避自动重试 (连接/超时/5xx)。"""
+
+    def __init__(self, max_retries=2, **kwargs):
+        retries = urllib3_Retry(
+            total=max_retries,
+            connect=max_retries,
+            read=max_retries,
+            status=max_retries,
+            backoff_factor=0.3,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset(["GET", "POST", "HEAD", "OPTIONS"]),
+            respect_retry_after_header=True,
+        )
+        super().__init__(max_retries=retries, **kwargs)
+
     def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
         ctx = ssl.create_default_context()
         ctx.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -29,7 +45,6 @@ class _TLS12Adapter(HTTPAdapter):
         if not settings.verify_ssl:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
-            kwargs["assert_hostname"] = False
         kwargs["ssl_context"] = ctx
         return super().init_poolmanager(connections, maxsize=max(100, maxsize), block=block, **kwargs)
 
@@ -130,27 +145,31 @@ def _validate_url(url: str, name: str = "url") -> None:
 
 def cmd_portscan(args):
     import socket as _socket
+    import concurrent.futures as _futures
     target = args.target
     ports = [int(p) for p in args.ports.split(",")] if args.ports else [21,22,80,443,3306,6379,8080,8443,9200,27017]
-    results = []
-    for port in ports:
+
+    def _scan(port):
+        sock = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+        sock.settimeout(args.timeout)
         try:
-            sock = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
-            sock.settimeout(args.timeout)
             r = sock.connect_ex((target, port))
+            return {"port": port, "state": "open"} if r == 0 else None
+        except Exception:
+            return None
+        finally:
             sock.close()
-            if r == 0:
-                results.append({"port": port, "state": "open"})
-        except Exception as e:
-            logger.debug("port %d: %s", port, e)
-        _output({"target": target, "open_ports": results, "count": len(results)})
+
+    with _futures.ThreadPoolExecutor(max_workers=min(50, max(1, len(ports)))) as ex:
+        results = [f for f in ex.map(_scan, ports) if f]
+    _output({"target": target, "open_ports": results, "count": len(results)})
 
 
 def cmd_dirfuzz(args):
+    import concurrent.futures as _futures
     http = _sess(args)
     url = args.url.rstrip("/")
     wordlist = args.wordlist
-    results = []
     try:
         with open(wordlist, "r") as f:
             paths = [line.strip() for line in f if line.strip()]
@@ -158,14 +177,19 @@ def cmd_dirfuzz(args):
         logger.debug("dirfuzz wordlist: %s", e)
         paths = ["admin", "login", "wp-admin", "backup", "api",
                   "config", ".git", ".env", "robots.txt", "sitemap.xml"]
-    for path in paths[:args.max]:
+
+    def _probe(path):
         try:
             r = http.get("%s/%s" % (url, path), timeout=args.timeout)
             if r.status_code not in (404,):
-                results.append({"path": "/%s" % path, "status": r.status_code,
-                                "size": len(r.text)})
+                return {"path": "/%s" % path, "status": r.status_code,
+                        "size": len(r.text)}
         except Exception as e:
             logger.debug("dirfuzz %s: %s", path, e)
+        return None
+
+    with _futures.ThreadPoolExecutor(max_workers=min(30, max(1, args.max))) as ex:
+        results = [f for f in ex.map(_probe, paths[:args.max]) if f]
     _output({"target": url, "found": results, "count": len(results)})
 
 
@@ -786,13 +810,12 @@ def cmd_kali(args):
 
 
 def cmd_list(args):
-    from tools.tool_registry import list_tools
-    tools = list_tools()
+    from tools.tool_registry import list_all
+    tools = list_all()
     if settings.is_rookie():
         print(json.dumps(tools, indent=2, ensure_ascii=False))
     else:
-        names = [t.get("name", t) for t in (tools if isinstance(tools, list) else [])]
-        print("  ".join(names))
+        print("  ".join(tools.keys()))
 
 
 def _output(result):

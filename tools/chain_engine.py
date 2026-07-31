@@ -972,3 +972,9 @@ class ChainEngine:
         }
         fn = chain_map.get(chain, self.full_chain)
         return fn(url, param)
+
+
+def run(url: str, param: str, sess: Optional[requests.Session] = None,
+        timeout: float = 10.0, chain: str = "full_chain") -> Dict:
+    engine = ChainEngine(sess, timeout)
+    return engine.run(url, param, chain)

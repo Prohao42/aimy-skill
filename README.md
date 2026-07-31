@@ -2,7 +2,7 @@
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&pause=1000&color=00FF00&center=true&vCenter=true&width=600&lines=aimy-sikll+v2.2.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="Typing SVG" />
 </div>
 
-<h1 align="center">🚀 aimy-sikll</h1>
+<h1 align="center">🚀 aimy-skill</h1>
 <p align="center"><b>让 AI 替你挖洞 — 下一代 AI 嵌入式渗透测试工具包</b></p>
 
 <div align="center">

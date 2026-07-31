@@ -582,12 +582,12 @@ class TestOrchestratorIntegration:
         assert "phases" in result
 
     def test_select_detectors_default_order(self):
-        from tools.orchestrator import ALL_DETECTORS, Orchestrator
+        from tools.orchestrator import ALL_DETECTORS, DETECTOR_RISK_ORDER, Orchestrator
         o = Orchestrator("http://target.test", time_budget=600)
         o.last_hypotheses = []
         result = o._select_detectors()
         assert len(result) == len(ALL_DETECTORS)
-        assert result[0] == "sql_injection"
+        assert DETECTOR_RISK_ORDER[result[0]] == min(DETECTOR_RISK_ORDER.values())
 
     @patch("tools.orchestrator.fingerprint_tech", return_value={})
     @patch("tools.orchestrator.scan_ports", return_value={})

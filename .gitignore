@@ -49,3 +49,8 @@ pre-commit/
 # Data
 data/*.json
 data/*.log
+
+# Editor / agent state
+.omc/
+.opencode/
+.agent/

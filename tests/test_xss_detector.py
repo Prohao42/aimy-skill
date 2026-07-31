@@ -6,12 +6,15 @@ from tools.xss_detector import check
 class TestXSSDetector:
     @responses.activate
     def test_reflected_xss(self):
-        body = "<html>XSS_TEST_100<script>alert(1)</script></html>"
-        responses.add(
+        def callback(request):
+            import urllib.parse
+            q = urllib.parse.parse_qs(request.url.split("?", 1)[1])["q"][0]
+            return (200, {}, "<html>%s</html>" % q)
+
+        responses.add_callback(
             responses.GET,
-            "http://test.com/page?q=XSS_TEST_100%3Cscript%3Ealert%281%29%3C%2Fscript%3E",
-            body=body,
-            status=200,
+            "http://test.com/page",
+            callback=callback,
         )
 
         result = check("http://test.com/page", "q")

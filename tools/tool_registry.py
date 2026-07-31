@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import threading
 from typing import Callable, Dict, List, Optional
 
 from tools.log_utils import get_logger
@@ -8,6 +9,7 @@ logger = get_logger("tool_registry")
 
 _registry: Dict[str, Dict] = {}
 _risk_order: Dict[str, int] = {}
+_load_lock = threading.RLock()
 
 
 def detector(name: str, risk: int = 5, tags: Optional[List[str]] = None,
@@ -21,8 +23,9 @@ def detector(name: str, risk: int = 5, tags: Optional[List[str]] = None,
             "description": description or func.__doc__ or "",
             "module": func.__module__,
         }
-        _registry[name] = info
-        _risk_order[name] = risk
+        with _load_lock:
+            _registry[name] = info
+            _risk_order[name] = risk
         logger.debug("registered detector: %s (risk=%d, module=%s)", name, risk, func.__module__)
         return func
     return wrapper
@@ -39,25 +42,31 @@ def register_tool(name: str, module_path: str, func_name: str,
         "risk": risk,
         "tags": tags or [],
     }
-    _registry[name] = info
-    _risk_order[name] = risk
+    with _load_lock:
+        _registry[name] = info
+        _risk_order[name] = risk
 
 
 def get(name: str) -> Optional[Callable]:
+    """懒加载并缓存工具函数 (线程安全)。"""
     info = _registry.get(name)
     if not info:
         return None
     fn = info.get("fn")
     if fn:
         return fn
-    try:
-        mod = importlib.import_module(info["module"])
-        fn = getattr(mod, info["func_name"])
-        info["fn"] = fn
-        return fn
-    except Exception as e:
-        logger.debug("load %s: %s", name, e)
-        return None
+    with _load_lock:
+        fn = info.get("fn")
+        if fn:
+            return fn
+        try:
+            mod = importlib.import_module(info["module"])
+            fn = getattr(mod, info["func_name"])
+            info["fn"] = fn
+            return fn
+        except Exception as e:
+            logger.debug("load %s: %s", name, e)
+            return None
 
 
 def get_info(name: str) -> Optional[Dict]:
@@ -65,6 +74,7 @@ def get_info(name: str) -> Optional[Dict]:
 
 
 def list_all() -> Dict[str, str]:
+    """返回 {工具名: 描述}，按键名排序。"""
     return {k: v.get("description", "") for k, v in sorted(_registry.items())}
 
 
@@ -107,7 +117,7 @@ def auto_discover(package: str = "tools"):
 
 
 register_tool("portscan", "tools.recon.port_scanner", "scan_ports", "TCP端口扫描", risk=3, tags=["recon"])
-register_tool("dirfuzz", "tools.recon.dir_fuzzer", "run", "目录枚举", risk=3, tags=["recon"])
+register_tool("dirfuzz", "tools.recon.dir_fuzzer", "fuzz_directories", "目录枚举", risk=3, tags=["recon"])
 register_tool("sqlcheck", "tools.sql_injection", "check", "SQL注入检测", risk=0, tags=["injection", "critical"])
 register_tool("xsscheck", "tools.xss_detector", "check", "XSS检测", risk=2, tags=["injection"])
 register_tool("cmdi", "tools.cmdi_detector", "check", "命令注入检测", risk=0, tags=["injection", "critical"])

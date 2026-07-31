@@ -1,5 +1,21 @@
 from tools._session import make_session
 from tools.active_prober import ActiveProber
+from tools.exceptions import (
+    AimyError,
+    ChainError,
+    ConfigurationError,
+    ConnectionError,
+    DNSError,
+    DetectionError,
+    FalsePositiveError,
+    NetworkError,
+    OOBError,
+    PayloadError,
+    TLSError,
+    TimeoutError,
+    ValidationError,
+    WAFBlockedError,
+)
 from tools.adaptive_fuzzer import AdaptiveFuzzer, PayloadGroup
 from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
 from tools.attack_tree import AttackTree, AttackTreeNode
@@ -48,6 +64,10 @@ __all__ = [
     "HttpClient", "FakeResponse", "build_url",
     "settings", "get_logger", "mode_echo",
     "show_banner", "filter_vulnerabilities", "enrich_result",
+    "AimyError", "NetworkError", "TimeoutError", "ConnectionError",
+    "DNSError", "TLSError", "WAFBlockedError", "DetectionError",
+    "FalsePositiveError", "ConfigurationError", "ValidationError",
+    "OOBError", "ChainError", "PayloadError",
     "OOBServer", "ResponseProfiler", "VerificationOracle",
     "generate", "generate_sqli_error", "mutate_value", "encode_payload",
     "mine", "crawl",

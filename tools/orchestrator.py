@@ -2,7 +2,7 @@ import concurrent.futures
 import json
 import threading
 import time
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import requests
 
@@ -57,7 +57,9 @@ LOW_VALUE_DETECTORS = set(_detector_config["low_value"])
 def _run_detector_by_name(vtype: str, url: str, param: str,
                            sess, timeout: float, waf_name: str = "",
                            oob_opts: dict = None) -> Dict:
-    fn = get(vtype)
+    fn = ALL_DETECTORS.get(vtype)
+    if not fn:
+        fn = get(vtype)
     if not fn:
         fn = get(vtype.replace("_", "-"))
     if not fn:
@@ -75,6 +77,9 @@ def _run_detector_by_name(vtype: str, url: str, param: str,
             result = fn(url=url, param=param, sess=sess, timeout=timeout, **kwargs)
         else:
             result = fn(url, param, sess, timeout, **kwargs)
+        return result if isinstance(result, dict) else {"vulnerable": False, "raw": str(result)}
+    except TypeError:
+        result = fn(url, param, sess, timeout, waf_name, oob_opts or {})
         return result if isinstance(result, dict) else {"vulnerable": False, "raw": str(result)}
     except Exception as e:
         logger.debug("run_detector %s: %s", vtype, e)
@@ -271,13 +276,16 @@ class Orchestrator:
             "/h2-console", "/api/health", "/api/env",
         ]
         debug_found = []
-        for dp in debug_paths:
-            try:
-                r = self.sess.get(self.target.rstrip("/") + dp, timeout=self.timeout)
-                if r.status_code in (200, 401, 403) and len(r.text) > 5:
-                    debug_found.append({"path": dp, "status": r.status_code, "size": len(r.text)})
-            except Exception:
-                pass
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(10, max(1, self.threads))) as dex:
+            def _probe(dp):
+                try:
+                    r = self.sess.get(self.target.rstrip("/") + dp, timeout=self.timeout)
+                    if r.status_code in (200, 401, 403) and len(r.text) > 5:
+                        return {"path": dp, "status": r.status_code, "size": len(r.text)}
+                except Exception:
+                    pass
+                return None
+            debug_found = [f for f in dex.map(_probe, debug_paths) if f]
         if debug_found:
             print("    -> %d debug/actuator endpoints found" % len(debug_found))
             for d in debug_found:
@@ -671,7 +679,7 @@ class Orchestrator:
     def _run_detector(self, vtype: str, url: str, param: str,
                       waf_name: Optional[str], oob: dict,
                       effective_timeout: float) -> Optional[Dict]:
-        if vtype not in ALL_DETECTOR_NAMES:
+        if vtype not in ALL_DETECTOR_NAMES and vtype not in ALL_DETECTORS:
             return None
         try:
             r = _run_detector_by_name(vtype, url, param, self.sess, effective_timeout, waf_name, oob)
@@ -1864,3 +1872,10 @@ def run(target: str, sess: Optional['requests.Session'] = None,
                      high_priv_sess=high_priv_sess, fast_recon=fast_recon,
                      time_budget=time_budget, high_value=high_value)
     return o.run()
+
+
+ALL_DETECTORS: Dict[str, Callable] = {}
+for _name in ALL_DETECTOR_NAMES:
+    _fn = get(_name)
+    if _fn:
+        ALL_DETECTORS[_name] = _fn

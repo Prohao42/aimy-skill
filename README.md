@@ -1,8 +1,8 @@
-<div align="center">
+<img width="948" height="1192" alt="image" src="https://github.com/user-attachments/assets/d40666de-1a60-4181-b515-288d8f3c669c" /><div align="center">
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v2.3.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v2.3.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="aimy-skill typing banner">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v3.1.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="aimy-skill typing banner">
   </picture>
 
   <h1 align="center">🚀 aimy-skill</h1>
@@ -69,6 +69,9 @@ result = checker.check(
 | 🛡️ **WAF 绕过** | 14 种 WAF 指纹 · 11 编码器 · HTTP 协议绕过 |
 | ✅ **验证** | **5+ payload 交叉验证** · Oracle 验证 · 误报过滤 · 鲁棒验证 |
 
+## ✨ 联系方式
+https://x.com/Fakerrf5
+https://t.me/Prohao42
 ### 🚀 三行命令，从零到报告
 
 ```bash

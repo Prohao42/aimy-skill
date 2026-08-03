@@ -1,4 +1,3 @@
-<img width="948" height="1192" alt="image" src="https://github.com/user-attachments/assets/d40666de-1a60-4181-b515-288d8f3c669c" /><div align="center">
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v2.3.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands">

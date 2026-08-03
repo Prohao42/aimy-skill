@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 
 class _Settings:
@@ -59,12 +58,24 @@ class _Settings:
     def log_level(self) -> str:
         return self._env.get("AIMY_LOG_LEVEL", "WARNING").upper()
 
+    @property
+    def oob_domain(self) -> str:
+        """公网 OOB DNS 域名 (AIMY_OOB_DOMAIN)，用于目标可回连的外部监听。"""
+        return self._env.get("AIMY_OOB_DOMAIN", "")
+
+    @property
+    def oob_callback_url(self) -> str:
+        """公网 OOB HTTP 回调地址 (AIMY_OOB_CALLBACK_URL)，如 http://x.attacker.com:8080。"""
+        return self._env.get("AIMY_OOB_CALLBACK_URL", "")
+
     def to_dict(self) -> dict:
         return {
             "verify_ssl": self.verify_ssl,
             "mode": self.mode,
             "timeout": self.timeout,
             "threads": self.threads,
+            "oob_domain": self.oob_domain,
+            "oob_callback_url": self.oob_callback_url,
         }
 
     def __repr__(self):

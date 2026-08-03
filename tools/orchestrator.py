@@ -24,6 +24,7 @@ from tools.playwright_engine import PlaywrightEngine
 from tools.reasoning_engine import ReasoningEngine
 from tools.recon import (
     check_git_leak,
+    enum_subdomains,
     fingerprint_tech,
     fuzz_directories,
     scan_ports,
@@ -54,9 +55,44 @@ HIGH_VALUE_DETECTORS = set(_detector_config["high_value"])
 LOW_VALUE_DETECTORS = set(_detector_config["low_value"])
 
 
+_signature_cache: Dict[Callable, Optional[set]] = {}
+
+
+def _detector_kwargs(fn: Callable, waf_name: str, oob_opts: dict,
+                     post_data: Optional[dict], method: str) -> Dict:
+    """Compute call kwargs for a detector from its signature (cached once)."""
+    params = _signature_cache.get(fn)
+    if params is None:
+        try:
+            from inspect import signature
+            params = set(signature(fn).parameters)
+        except Exception:
+            params = None
+        _signature_cache[fn] = params
+    if not params:
+        return {}
+    kwargs = {}
+    if "waf_name" in params:
+        kwargs["waf_name"] = waf_name or None
+    if "oob_url" in params:
+        kwargs["oob_url"] = (oob_opts or {}).get("oob_url")
+    if "oob_domain" in params:
+        kwargs["oob_domain"] = (oob_opts or {}).get("oob_domain")
+    if "oob_server" in params:
+        kwargs["oob_server"] = (oob_opts or {}).get("oob_url")
+    if "post_body" in params:
+        kwargs["post_body"] = bool(post_data)
+    if "post_data" in params:
+        kwargs["post_data"] = post_data or None
+    if "method" in params:
+        kwargs["method"] = method or "GET"
+    return kwargs
+
+
 def _run_detector_by_name(vtype: str, url: str, param: str,
                            sess, timeout: float, waf_name: str = "",
-                           oob_opts: dict = None) -> Dict:
+                           oob_opts: dict = None, post_data: Optional[dict] = None,
+                           method: str = "GET") -> Dict:
     fn = ALL_DETECTORS.get(vtype)
     if not fn:
         fn = get(vtype)
@@ -65,21 +101,11 @@ def _run_detector_by_name(vtype: str, url: str, param: str,
     if not fn:
         return {"vulnerable": False, "error": f"no detector: {vtype}"}
     try:
-        from inspect import signature
-        sig = signature(fn)
-        kwargs = {}
-        if "waf_name" in sig.parameters:
-            kwargs["waf_name"] = waf_name
-        if "oob_url" in sig.parameters or "oob_server" in sig.parameters:
-            kwargs["oob_url"] = (oob_opts or {}).get("oob_url")
-            kwargs["oob_domain"] = (oob_opts or {}).get("oob_domain")
-        if "sess" in sig.parameters:
+        kwargs = _detector_kwargs(fn, waf_name, oob_opts, post_data, method)
+        try:
             result = fn(url=url, param=param, sess=sess, timeout=timeout, **kwargs)
-        else:
-            result = fn(url, param, sess, timeout, **kwargs)
-        return result if isinstance(result, dict) else {"vulnerable": False, "raw": str(result)}
-    except TypeError:
-        result = fn(url, param, sess, timeout, waf_name, oob_opts or {})
+        except TypeError:
+            result = fn(url, param, sess, timeout, waf_name, oob_opts or {})
         return result if isinstance(result, dict) else {"vulnerable": False, "raw": str(result)}
     except Exception as e:
         logger.debug("run_detector %s: %s", vtype, e)
@@ -93,9 +119,12 @@ class Orchestrator:
                  high_priv_sess: Optional['requests.Session'] = None,
                  fast_recon: bool = True, time_budget: Optional[float] = None,
                  high_value: bool = False, turbo: bool = False,
-                 skip_verify: bool = False):
+                 skip_verify: bool = False, opsec: bool = False):
         self.target = target.rstrip("/")
         self.timeout = timeout
+        if opsec:
+            from tools.opsec_session import opsec_session
+            sess = opsec_session(sess)
         self.sess = sess
         self.high_priv_sess = high_priv_sess
         self.threads = threads if not turbo else min(threads * 3, 60)
@@ -124,6 +153,7 @@ class Orchestrator:
         self._chain_cache = {}
         self.attack_tree = None
         self.attack_graph = None
+        self.pipeline_result = None
         self._backtrack_findings = []
         self._lock = threading.Lock()
         self._fast_mode = False
@@ -254,6 +284,24 @@ class Orchestrator:
             print("    [CRITICAL] .git exposed! %d sensitive finds" % sf)
         else:
             print("    -> No git exposure")
+
+        print("  [Recon] Subdomain enumeration ...")
+        try:
+            from tools.recon.subdomain import COMMON_SUBDOMAINS
+            wordlist = COMMON_SUBDOMAINS[:20] if self.fast_recon else COMMON_SUBDOMAINS
+            recon["subdomains"] = enum_subdomains(
+                self.target, threads=min(10, max(1, self.threads)),
+                timeout=self.timeout, wordlist=wordlist,
+            )
+            resolved_n = len(recon["subdomains"].get("resolved", []))
+            reachable_n = len(recon["subdomains"].get("http_reachable", []))
+            if resolved_n:
+                print("    -> %d subdomains resolved, %d HTTP-reachable" % (resolved_n, reachable_n))
+            else:
+                print("    -> No subdomains resolved")
+        except Exception as e:
+            logger.debug("subdomain enum: %s", e)
+            recon["subdomains"] = {}
 
         print("  [Recon] Directory fuzzing (common paths) ...")
         recon["directories"] = fuzz_directories(
@@ -399,7 +447,7 @@ class Orchestrator:
         for path in graph_summary.get("best_paths", [])[:3]:
             print("    %.0f%% %s" % (path["confidence"] * 100, path["path_string"]))
 
-            self.state["phases"]["reason"]["attack_graph"] = graph_summary
+        self.state["phases"]["reason"]["attack_graph"] = graph_summary
         self._save_phase("reason")
         return hypo_dicts
 
@@ -485,20 +533,29 @@ class Orchestrator:
             if not isinstance(pd, dict):
                 continue
             url = "%s%s" % (self.target, path)
-            mined = set()
+            get_mined = set()
+            post_mined = set()
             for p in pd.get("get_params", []):
                 if isinstance(p, dict) and p.get("status", 404) not in (0, 404, 400) and isinstance(p.get("param"), str):
-                    mined.add(p["param"])
+                    get_mined.add(p["param"])
             for p in pd.get("post_params", []):
                 if isinstance(p, dict) and p.get("status", 404) not in (0, 404, 400) and isinstance(p.get("param"), str):
-                    mined.add(p["param"])
-            for p in mined:
+                    post_mined.add(p["param"])
+            for p in get_mined:
                 if p.lower() in SKIP_PARAMS:
                     continue
                 key = "%s|%s|GET" % (url, p)
                 if key not in seen:
                     seen.add(key)
                     points.append({"url": url, "param": p, "method": "GET"})
+            for p in post_mined:
+                if p.lower() in SKIP_PARAMS:
+                    continue
+                key = "%s|%s|POST" % (url, p)
+                if key not in seen:
+                    seen.add(key)
+                    points.append({"url": url, "param": p, "method": "POST",
+                                   "post_data": {p: "1"}})
 
         dirs = self.state.get("phases", {}).get("recon", {}).get("directories", {}).get("interesting", [])
         for d in dirs[:20]:
@@ -544,7 +601,7 @@ class Orchestrator:
             enriched = []
             seen_url_params = set()
             for p in points:
-                key = (p["url"], p["param"])
+                key = (p["url"], p["param"], p.get("method", "GET"))
                 if key in seen_url_params:
                     continue
                 seen_url_params.add(key)
@@ -616,29 +673,42 @@ class Orchestrator:
         return None
 
     def _cross_verify(self, vtype: str, url: str, param: str,
-                       waf_name: str, oob: dict, first_result: dict) -> dict:
-        """Multi-angle verification: re-run same detector with different payloads."""
-        cross_findings = []
+                       waf_name: str, oob: dict, first_result: dict,
+                       post_data: Optional[dict] = None,
+                       method: str = "GET") -> dict:
+        """独立复验：换一个随机编码表示重新触发检测器 + oracle 独立确认。
 
-        fn_cross = _run_detector_by_name(vtype, url, param, self.sess, self.timeout, waf_name, oob)
-        if fn_cross.get("error"):
-            first_result["cross_verified"] = []
-            first_result["cross_count"] = 0
-            first_result["confirmed"] = first_result.get("vulnerable", False)
-            return first_result
+        与首轮检测不同，复验使用独立的 payload 表示（WAF 编码策略），
+        只有当信号在不同表示下可复现且通过 oracle 验证才计入 cross_verified。
+        修复原实现：同参数跑两遍不算交叉验证，且 confirmed 恒为 True。
+        """
+        from tools.payload_mutator import encode_payload
 
-        try:
-            r2 = _run_detector_by_name(vtype, url, param, self.sess, self.timeout, waf_name, oob)
-            if isinstance(r2, dict) and r2.get("vulnerable"):
-                cv = self.oracle.verify(vtype, r2, url, param, self.sess, self.timeout)
-                if cv.get("verified") is not False:
-                    cross_findings.append(vtype)
-        except Exception:
-            pass
+        cross = []
+        payload = first_result.get("result", {}).get("payload") or param
+        encoders = ["url", "double_url", "b64", "hex", "unicode"]
+        variant = encode_payload(payload, encoders[hash((vtype, url, param)) % len(encoders)])
 
-        first_result["cross_verified"] = cross_findings
-        first_result["cross_count"] = len(cross_findings)
-        first_result["confirmed"] = len(cross_findings) >= 1 or first_result.get("verified") is not False
+        # 一次独立重跑 + oracle 确认，最多 2 轮 (原始 + 复验)
+        for attempt in (variant, None):
+            if attempt is None and cross:
+                break
+            try:
+                r2 = _run_detector_by_name(
+                    vtype, url, param, self.sess, self.timeout, waf_name, oob,
+                    post_data=post_data, method=method,
+                )
+                if isinstance(r2, dict) and not r2.get("error") and r2.get("vulnerable"):
+                    cv = self.oracle.verify(vtype, r2, url, param, self.sess, self.timeout)
+                    if cv.get("verified") is not False:
+                        cross.append(vtype)
+                        break
+            except Exception as e:
+                logger.debug("cross_verify %s: %s", vtype, e)
+
+        first_result["cross_verified"] = cross
+        first_result["cross_count"] = len(cross)
+        first_result["confirmed"] = len(cross) >= 1
         return first_result
 
     def _backtrack_loop_closure(self, chain_result: dict, finding: dict) -> None:
@@ -678,11 +748,13 @@ class Orchestrator:
 
     def _run_detector(self, vtype: str, url: str, param: str,
                       waf_name: Optional[str], oob: dict,
-                      effective_timeout: float) -> Optional[Dict]:
+                      effective_timeout: float, post_data: Optional[dict] = None,
+                      method: str = "GET") -> Optional[Dict]:
         if vtype not in ALL_DETECTOR_NAMES and vtype not in ALL_DETECTORS:
             return None
         try:
-            r = _run_detector_by_name(vtype, url, param, self.sess, effective_timeout, waf_name, oob)
+            r = _run_detector_by_name(vtype, url, param, self.sess, effective_timeout,
+                                      waf_name, oob, post_data=post_data, method=method)
             if isinstance(r, dict):
                 r["_vtype"] = vtype
                 return r
@@ -699,6 +771,8 @@ class Orchestrator:
 
         url = point["url"]
         param = point["param"]
+        post_data = point.get("post_data")
+        method = point.get("method", "GET")
         oob = {"oob_url": oob_url, "oob_domain": oob_domain}
         results = []
         found_critical = False
@@ -725,7 +799,8 @@ class Orchestrator:
             raw_results = []
             with concurrent.futures.ThreadPoolExecutor(max_workers=det_workers) as dex:
                 futures = {
-                    dex.submit(self._run_detector, vt, url, param, waf_name, oob, effective_timeout): vt
+                    dex.submit(self._run_detector, vt, url, param, waf_name, oob,
+                               effective_timeout, post_data, method): vt
                     for vt in eligible
                 }
                 for future in concurrent.futures.as_completed(futures):
@@ -744,7 +819,8 @@ class Orchestrator:
             for vtype in eligible:
                 if not self._budget_ok(2):
                     break
-                r = self._run_detector(vtype, url, param, waf_name, oob, effective_timeout)
+                r = self._run_detector(vtype, url, param, waf_name, oob,
+                                       effective_timeout, post_data, method)
                 if r:
                     raw_results.append(r)
 
@@ -759,7 +835,8 @@ class Orchestrator:
 
             vuln = r.get("vulnerable") or r.get("total_bypasses", 0) > 0
             if vuln and not self.skip_verify and self._budget_ok(5):
-                r = self._cross_verify(vtype, url, param, waf_name, oob, r)
+                r = self._cross_verify(vtype, url, param, waf_name, oob, r,
+                                       post_data=post_data, method=method)
                 vuln = r.get("confirmed", vuln)
             if vuln:
                 if vtype in ("sql_injection", "cmdi", "ssrf", "deser"):
@@ -842,16 +919,22 @@ class Orchestrator:
                                     finding["rce_available"] = True
 
                         if vtype == "sqli" and finding.get("vulnerable"):
-                            try:
-                                union_probe = sqli_union_probe(url, param, self.sess, self.timeout)
-                                if union_probe.get("vulnerable"):
-                                    finding["sql_columns"] = union_probe.get("columns")
-                                    finding["sql_usable_columns"] = union_probe.get("usable_columns")
-                                blind_data = binary_search_sqli_blind(url, param, self.sess, self.timeout)
-                                if blind_data.get("extracted"):
-                                    finding["blind_extracted"] = blind_data["extracted"]
-                            except Exception:
-                                pass
+                            # 盲注/union 提取开销大，受时间预算约束，超预算则跳过
+                            if self._budget_ok(12):
+                                try:
+                                    union_probe = sqli_union_probe(url, param, self.sess, self.timeout)
+                                    if union_probe.get("vulnerable"):
+                                        finding["sql_columns"] = union_probe.get("columns")
+                                        finding["sql_usable_columns"] = union_probe.get("usable_columns")
+                                except Exception:
+                                    pass
+                            if self._budget_ok(20):
+                                try:
+                                    blind_data = binary_search_sqli_blind(url, param, self.sess, self.timeout)
+                                    if blind_data.get("extracted"):
+                                        finding["blind_extracted"] = blind_data["extracted"]
+                                except Exception:
+                                    pass
 
                         if vtype in ("sqli", "ssrf", "lfi", "cmdi", "ssti"):
                             try:
@@ -1000,9 +1083,7 @@ class Orchestrator:
 
         cb_id = "scan_%d" % id(self)
         oob_url = self.oob_server.register_callback_id(cb_id)
-        oob_domain = None
-        if self.oob_server.start_dns():
-            oob_domain = self.oob_server.start_dns()
+        oob_domain = self.oob_server.start_dns()
 
         profiled = self.profiler.profile_batch(points, self.sess, self.timeout)
         if profiled:
@@ -1661,6 +1742,29 @@ class Orchestrator:
         self._save_phase("advanced")
         return result
 
+    def phase_pipeline(self) -> Dict:
+        from tools.pipeline import run_pipeline
+
+        print("[Pipeline] Asset graph -> business value -> crown-jewel chains ...")
+        self.pipeline_result = run_pipeline(self.state, self.target)
+        pr = self.pipeline_result
+        g = pr.get("asset_graph", {})
+        print("  -> Asset graph: %d nodes, %d edges, %d components" % (
+            g.get("total_nodes", 0), g.get("total_edges", 0),
+            g.get("connected_components", 0)))
+        print("  -> Crown jewels: %s" % ", ".join(pr.get("crown_jewels", [])[:6]) or "(none)")
+        for ch in pr.get("attack_chains", [])[:5]:
+            print("    [%.2f] %s (%d hops)" % (
+                ch.get("score", 0), ch.get("target", "?"), ch.get("hops", 0)))
+        d = pr.get("differential", {})
+        print("  -> Differential: %d/%d high-value confirmed, %d crown jewel(s) reached" % (
+            d.get("confirmed_on_high_value", 0), d.get("expected_high_value", 0),
+            len(d.get("crown_jewel_reached", []))))
+
+        self.state["phases"]["pipeline"] = pr
+        self._save_phase("pipeline")
+        return pr
+
     def phase_report(self) -> Dict:
         report = {
             "target": self.target,
@@ -1741,6 +1845,8 @@ class Orchestrator:
         # Enhanced report sections
         report["attack_graph"] = self.attack_graph.summary() if self.attack_graph else {}
         report["context_memory"] = self.context_memory.get_stats()
+        if self.pipeline_result:
+            report["pipeline"] = self.pipeline_result
         report["second_order_verified"] = sum(
             1 for f in findings.values()
             if f.get("second_order_verified")
@@ -1856,6 +1962,9 @@ class Orchestrator:
             if adv.get("post_exploit"):
                 print("  -> Post-exploitation persistence generated")
 
+        print("[*] Phase 9/7: Pipeline (asset graph -> crown jewels) ...")
+        self.phase_pipeline()
+
         report = self.phase_report()
         self.oob_server.stop()
         report["elapsed_seconds"] = round(time.time() - start, 1)
@@ -1867,10 +1976,10 @@ def run(target: str, sess: Optional['requests.Session'] = None,
         timeout: float = 10.0, threads: int = 10,
         high_priv_sess: Optional['requests.Session'] = None,
         fast_recon: bool = True, time_budget: Optional[float] = None,
-        high_value: bool = False) -> Dict:
+        high_value: bool = False, opsec: bool = False) -> Dict:
     o = Orchestrator(target, sess, timeout, threads,
                      high_priv_sess=high_priv_sess, fast_recon=fast_recon,
-                     time_budget=time_budget, high_value=high_value)
+                     time_budget=time_budget, high_value=high_value, opsec=opsec)
     return o.run()
 
 

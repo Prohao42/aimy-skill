@@ -1,6 +1,7 @@
 import re
 from typing import Dict, List, Optional
 
+from engine.config import DEFAULT_THRESHOLDS
 from tools.log_utils import get_logger
 from tools.response_profiler import ResponseProfiler
 
@@ -34,12 +35,15 @@ ERROR_PAGE_PATTERNS = [
 class FalsePositiveFilter:
     def __init__(self, profiler: Optional[ResponseProfiler] = None):
         self.profiler = profiler
-        self._min_confidence_threshold = 0.5
-        self._min_evidence_count = 2
+        self._thresholds = DEFAULT_THRESHOLDS
+        self._min_confidence_threshold = self._thresholds.min_confidence
+        self._min_evidence_count = self._thresholds.min_evidence
 
-    def set_threshold(self, min_confidence: float = 0.5, min_evidence: int = 2):
-        self._min_confidence_threshold = min_confidence
-        self._min_evidence_count = min_evidence
+    def set_threshold(self, min_confidence: float = None, min_evidence: int = None):
+        if min_confidence is not None:
+            self._min_confidence_threshold = min_confidence
+        if min_evidence is not None:
+            self._min_evidence_count = min_evidence
 
     def filter(self, results: List[Dict]) -> List[Dict]:
         filtered = []
@@ -136,7 +140,7 @@ class FalsePositiveFilter:
         for pat in ERROR_PAGE_PATTERNS:
             if re.search(pat, response_text, re.IGNORECASE):
                 return True
-        if len(response_text) < 50:
+        if len(response_text) < self._thresholds.min_response_bytes:
             return True
         return False
 
@@ -152,14 +156,14 @@ class FalsePositiveFilter:
             return False
         text_lower = response_text.lower()
         noise_count = sum(1 for kw in NOISE_KEYWORDS if kw in text_lower)
-        return noise_count >= 3
+        return noise_count >= self._thresholds.noise_keyword_hits
 
     def _check_stale_data(self, result: Dict) -> bool:
         timestamp = result.get("timestamp", 0)
         if not timestamp:
             return False
         import time
-        return (time.time() - timestamp) > 3600
+        return (time.time() - timestamp) > self._thresholds.stale_seconds
 
 
 def filter_results(results: List[Dict], min_confidence: float = 0.5,

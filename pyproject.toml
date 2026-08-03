@@ -1,6 +1,6 @@
 [project]
 name = "aimy-sikll"
-version = "2.2.0"
+version = "2.3.0"
 description = "轻量级渗透测试辅助工具链 (AI Agent Ready)"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -97,7 +97,7 @@ exclude_dirs = ["tests"]
 skips = ["B101", "B311", "B403", "B405"]
 
 [tool.setuptools.packages.find]
-include = ["tools*", "tools.*"]
+include = ["tools*", "tools.*", "engine*", "engine.*"]
 
 [build-system]
 requires = ["setuptools>=68.0"]

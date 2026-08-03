@@ -1,8 +1,8 @@
 <div align="center">
 
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v2.2.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v2.2.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="aimy-skill typing banner">
+    <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v2.3.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v2.3.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="aimy-skill typing banner">
   </picture>
 
   <h1 align="center">🚀 aimy-skill</h1>
@@ -25,7 +25,7 @@
   <br>
 
   <div align="center">
-    <img src="https://img.shields.io/badge/version-2.2.0-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
+    <img src="https://img.shields.io/badge/version-2.3.0-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
     <img src="https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python">
     <img src="https://img.shields.io/badge/modules-65-orange?style=for-the-badge" alt="modules">
     <img src="https://img.shields.io/badge/skills-80%2B-8B5CF6?style=for-the-badge" alt="skills">

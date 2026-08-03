@@ -34,6 +34,7 @@ class OOBServer:
         self._thread = None
         self._dns_sock = None
         self._dns_thread = None
+        self._dns_domain = None
         self._running = False
         self._callbacks: Dict[str, List[CallbackRecord]] = {}
         self._cb_lock = threading.Lock()
@@ -66,18 +67,21 @@ class OOBServer:
             return False
 
     def start_dns(self) -> Optional[str]:
+        if self._dns_domain:
+            return self._dns_domain
         try:
             self._dns_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._dns_sock.bind(("127.0.0.1", 0))
+            self._dns_sock.bind(("0.0.0.0", 0))
             self._dns_sock.settimeout(1.0)
             dns_port = self._dns_sock.getsockname()[1]
+            self._running = True
             self._dns_thread = threading.Thread(target=self._dns_loop, daemon=True)
             self._dns_thread.start()
             lan_ip = self._get_lan_ip()
             token = "".join(random.choices(string.ascii_lowercase, k=6))
-            domain = f"{token}.{lan_ip.replace('.', '-')}.oob"
-            logger.info("OOB DNS listener on 0.0.0.0:%d domain=%s", dns_port, domain)
-            return domain
+            self._dns_domain = f"{token}.{lan_ip.replace('.', '-')}.oob"
+            logger.info("OOB DNS listener on 0.0.0.0:%d domain=%s", dns_port, self._dns_domain)
+            return self._dns_domain
         except OSError as e:
             logger.warning("OOB DNS bind failed: %s", e)
             return None
@@ -134,7 +138,40 @@ class OOBServer:
     def register_callback_id(self, cb_id: str) -> str:
         with self._cb_lock:
             self._callbacks.setdefault(cb_id, [])
-        return f"http://{self._get_lan_ip()}:{self.port}/cb/{cb_id}"
+        return self.get_callback_url(cb_id)
+
+    def register(self, cb_id: str) -> str:
+        """Alias for register_callback_id (compat with robust_verifier)."""
+        return self.register_callback_id(cb_id)
+
+    def get_callback_url(self, cb_id: str) -> str:
+        public_base = self._public_callback_url()
+        if public_base:
+            return "%s/cb/%s" % (public_base.rstrip("/"), cb_id)
+        return "http://%s:%s/cb/%s" % (self._get_lan_ip(), self.port, cb_id)
+
+    def get_callback_domain(self, cb_id: str) -> str:
+        public_domain = self._public_domain()
+        if public_domain:
+            return public_domain
+        self.start_dns()
+        return self._dns_domain or "%s.oob" % cb_id
+
+    @staticmethod
+    def _public_callback_url() -> Optional[str]:
+        try:
+            from tools.settings import settings
+            return (settings.oob_callback_url or "").strip() or None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _public_domain() -> Optional[str]:
+        try:
+            from tools.settings import settings
+            return (settings.oob_domain or "").strip() or None
+        except Exception:
+            return None
 
     def pop_callbacks(self, cb_id: str) -> List[CallbackRecord]:
         with self._cb_lock:

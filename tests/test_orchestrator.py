@@ -39,7 +39,8 @@ class TestTestSinglePoint:
         """Register a mock detector function in ALL_DETECTORS."""
         from tools.orchestrator import ALL_DETECTORS
         if mock_det is None:
-            mock_det = lambda url, param, sess, timeout, waf, oob: self._detector()
+            def mock_det(url, param, sess, timeout, waf, oob):
+                return self._detector()
         ALL_DETECTORS[name] = mock_det
 
     def _detector(self, vulnerable=True, confidence=0.8, votes=None, evidence=None):
@@ -66,7 +67,7 @@ class TestTestSinglePoint:
             "evidence": ["oracle evidence", "oracle evidence 2"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value=None)
 
         result = o._test_single_point(
@@ -93,7 +94,7 @@ class TestTestSinglePoint:
             "evidence": ["OOB callback", "OOB evidence"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value=None)
 
         result = o._test_single_point(
@@ -121,7 +122,7 @@ class TestTestSinglePoint:
             "evidence": ["weak signal"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
 
         result = o._test_single_point(
             {"url": "http://target.test/page", "param": "q"},
@@ -149,7 +150,7 @@ class TestTestSinglePoint:
             "evidence": ["sqli: error", "time_delay: 3.2s"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value=None)
 
         result = o._test_single_point(
@@ -193,7 +194,7 @@ class TestTestSinglePoint:
             "evidence": [],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
 
         result = o._test_single_point(
             {"url": "http://target.test/page", "param": "q"},
@@ -217,7 +218,7 @@ class TestTestSinglePoint:
             "evidence": ["sqli: error based", "sqli: time based"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value=None)
 
         result = o._test_single_point(
@@ -242,7 +243,7 @@ class TestTestSinglePoint:
             "evidence": ["evidence 1", "evidence 2"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value=None)
 
         result = o._test_single_point(
@@ -269,7 +270,7 @@ class TestTestSinglePoint:
             "response_text": "<title>404 Not Found</title><h1>Error 404</h1>",
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
 
         result = o._test_single_point(
             {"url": "http://target.test/page", "param": "q"},
@@ -295,7 +296,7 @@ class TestTestSinglePoint:
             "evidence": [],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value={"success": True})
 
         o._test_single_point(
@@ -320,7 +321,7 @@ class TestTestSinglePoint:
             "evidence": ["sqli: error", "sqli: evidence 2"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value=None)
 
         o._test_single_point(
@@ -346,7 +347,7 @@ class TestTestSinglePoint:
             "evidence": ["test 1", "test 2"],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
         o._maybe_backtrack_chain = MagicMock(return_value=None)
 
         result = o._test_single_point(
@@ -372,7 +373,7 @@ class TestTestSinglePoint:
             "evidence": [],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
 
         result = o._test_single_point(
             {"url": "http://target.test/page", "param": "q"},
@@ -391,7 +392,7 @@ class TestTestSinglePoint:
         self._register_test_detector(o, "test_vuln", mock_det)
 
         o._budget_ok = MagicMock(return_value=True)
-        cross_mock = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        cross_mock = MagicMock(side_effect=lambda *a, **k: a[5])
         o._cross_verify = cross_mock
         o.oracle.verify = MagicMock(return_value={"verified": True, "confidence_score": 0.8, "confidence_votes": [], "evidence": []})
         o._maybe_backtrack_chain = MagicMock(return_value=None)
@@ -468,7 +469,7 @@ class TestTestSinglePoint:
             "evidence": [],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
 
         o._test_single_point(
             {"url": "http://target.test/page", "param": "q"},
@@ -521,7 +522,7 @@ class TestTestSinglePoint:
             "evidence": [],
         })
         o._budget_ok = MagicMock(return_value=True)
-        o._cross_verify = MagicMock(side_effect=lambda a, b, c, d, e, f: f)
+        o._cross_verify = MagicMock(side_effect=lambda *a, **k: a[5])
 
         o._test_single_point(
             {"url": "http://target.test/page", "param": "q"},
@@ -592,6 +593,7 @@ class TestOrchestratorIntegration:
     @patch("tools.orchestrator.fingerprint_tech", return_value={})
     @patch("tools.orchestrator.scan_ports", return_value={})
     @patch("tools.orchestrator.check_git_leak", return_value={})
+    @patch("tools.orchestrator.enum_subdomains", return_value={})
     @patch("tools.orchestrator.fuzz_directories", return_value={"interesting": []})
     def test_recon_stores_state(self, *mocks):
         from tools.orchestrator import Orchestrator

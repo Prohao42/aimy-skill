@@ -16,7 +16,7 @@ from tools.settings import settings
 
 logger = get_logger("main")
 
-VERSION = "2.2.0"
+VERSION = "2.3.0"
 
 
 URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
@@ -144,8 +144,8 @@ def _validate_url(url: str, name: str = "url") -> None:
 
 
 def cmd_portscan(args):
-    import socket as _socket
     import concurrent.futures as _futures
+    import socket as _socket
     target = args.target
     ports = [int(p) for p in args.ports.split(",")] if args.ports else [21,22,80,443,3306,6379,8080,8443,9200,27017]
 
@@ -508,7 +508,6 @@ def cmd_proxy(args):
 
 
 def cmd_domain(args):
-    from tools.domain_hunt import run as domain_hunt
     userlist = []
     if args.userlist:
         try:
@@ -516,14 +515,26 @@ def cmd_domain(args):
                 userlist = [line.strip() for line in f if line.strip()]
         except Exception as e:
             logger.error("userlist: %s", e)
-    r = domain_hunt(
-        target=args.target,
-        dc_ip=args.dc_ip or None,
-        domain=args.domain or None,
-        username=args.username or None,
-        password=args.password or None,
-        userlist=userlist or None,
-    )
+    if getattr(args, "native", False):
+        from tools.domain_attacks import run as domain_attacks
+        r = domain_attacks(
+            target=args.target,
+            dc_ip=args.dc_ip or None,
+            domain=args.domain or None,
+            username=args.username or None,
+            password=args.password or None,
+            userlist=userlist or None,
+        )
+    else:
+        from tools.domain_hunt import run as domain_hunt
+        r = domain_hunt(
+            target=args.target,
+            dc_ip=args.dc_ip or None,
+            domain=args.domain or None,
+            username=args.username or None,
+            password=args.password or None,
+            userlist=userlist or None,
+        )
     from tools.reporter import _output
     _output(r)
 
@@ -1085,6 +1096,8 @@ def main():
     p.add_argument("--username", default="", help="域用户名")
     p.add_argument("--password", default="", help="域密码")
     p.add_argument("--userlist", default="", help="用户列表文件(AS-REP Roast用)")
+    p.add_argument("--native", action="store_true",
+                   help="原生实现(免impacket/ldap3): AS-REP Roast/LDAP枚举/Kerberoast骨架")
     p.set_defaults(func=cmd_domain)
 
     p = sub.add_parser("workflow", help="工作流执行")

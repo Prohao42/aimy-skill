@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
 
-from tools.exceptions import DNSError, NetworkError, TLSError, TimeoutError
+from tools.exceptions import DNSError, NetworkError, TimeoutError, TLSError
 from tools.log_utils import get_logger
 from tools.settings import settings
 

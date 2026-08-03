@@ -4,6 +4,8 @@ from typing import Dict, Optional
 
 import requests
 
+from engine.config import DEFAULT_THRESHOLDS
+from engine.oob import OfflineOOBJudge
 from tools.http_client import build_url
 from tools.log_utils import get_logger
 from tools.response_profiler import CLEAN_VALUE
@@ -29,9 +31,10 @@ def verify_sqli_timeblind(url: str, param: str, sess: requests.Session,
     delays = [3, 5, 7]
     confirmed = 0
     dbms_hint = None
+    th = DEFAULT_THRESHOLDS
     for dbms, templates in sleep_payloads:
         for delay in delays:
-            threshold = max(delay * 900, baseline * 1.5 + 500)
+            threshold = max(delay * 900, baseline * th.latency_ratio + th.latency_margin_ms)
             for tmpl in templates:
                 payload = tmpl % delay
                 try:
@@ -123,42 +126,78 @@ def verify_ssrf_oob(url: str, param: str, sess: requests.Session,
             from tools.oob_server import OOBServer
             oob_server = OOBServer.get_instance()
         except Exception:
-            return result
+            oob_server = None
 
-    cb_id = oob_server.register("ssrf_oob_check")
-    oob_url = oob_server.get_callback_url(cb_id)
-    if not oob_url:
+    cb_id = None
+    if oob_server is not None:
+        try:
+            cb_id = oob_server.register("ssrf_oob_check")
+        except Exception:
+            cb_id = None
+
+    oob_url = oob_server.get_callback_url(cb_id) if cb_id else None
+    oob_domain = oob_server.get_callback_domain(cb_id) if cb_id else None
+
+    targets = []
+    for p in (oob_url, oob_domain,
+              ("http://%s" % oob_domain) if oob_domain else None,
+              ("https://%s" % oob_domain) if oob_domain else None):
+        if p:
+            targets.append(p)
+
+    probes = []
+    for p in targets:
+        sample = _probe_ssrf(url, param, p, sess, timeout)
+        probes.append({"label": p[:30], **sample})
+
+    control = _probe_ssrf(url, param, OfflineOOBJudge.blackhole_control(), sess, timeout)
+
+    if cb_id:
+        time.sleep(DEFAULT_THRESHOLDS.oob_callback_wait_s)
+        callbacks = oob_server.pop_callbacks(cb_id)
+    else:
+        callbacks = []
+
+    if callbacks:
+        result["vulnerable"] = True
+        result["confidence"] = 0.95
+        result["evidence"] = [{"type": "oob_callback", "count": len(callbacks), "details": str(callbacks[:3])}]
+        result["method"] = "oob_confirmed"
         return result
 
-    oob_domain = oob_server.get_callback_domain(cb_id)
-
-    payloads = [
-        oob_url,
-        oob_domain,
-        "http://%s" % oob_domain,
-        "https://%s" % oob_domain,
-    ]
-    found = False
-    for p in payloads:
-        try:
-            r = sess.get(build_url(url, param, p), timeout=timeout)
-            if r.status_code < 500 or r.status_code in (0,):
-                found = True
-        except Exception:
-            continue
-
-    if found:
-        time.sleep(2)
-        callbacks = oob_server.pop_callbacks(cb_id)
-        if callbacks:
-            result["vulnerable"] = True
-            result["confidence"] = 0.95
-            result["evidence"] = [{"type": "oob_callback", "count": len(callbacks), "details": str(callbacks[:3])}]
-        else:
-            result["vulnerable"] = True
-            result["confidence"] = 0.5
-            result["evidence"] = [{"type": "oob_triggered_no_callback", "note": "request sent but no callback received yet"}]
+    # 无回调：绝不凭「请求已发出/状态码非5xx」下结论，交给离线差分判定。
+    offline = OfflineOOBJudge().judge(probes, control=control)
+    result["offline_oob"] = offline
+    if offline["status"] == "suspected_offline":
+        result["vulnerable"] = True
+        result["confidence"] = offline["confidence"]
+        result["evidence"] = offline["evidence"]
+        result["note"] = offline["note"]
+        result["method"] = "offline_differential"
+    else:
+        result["vulnerable"] = False
+        result["confidence"] = 0.0
+        result["evidence"] = offline["evidence"]
+        result["note"] = offline["note"] or "No OOB callback and no offline differential; inconclusive."
     return result
+
+
+def _probe_ssrf(url: str, param: str, target: str, sess: requests.Session,
+                timeout: float) -> Dict:
+    sample = {"responded": False, "status": 0, "length": 0, "elapsed_ms": 0}
+    if not target:
+        return sample
+    start = time.time()
+    try:
+        r = sess.get(build_url(url, param, target), timeout=timeout)
+        sample["responded"] = True
+        sample["status"] = r.status_code
+        sample["length"] = len(r.text)
+    except Exception:
+        sample["responded"] = False
+    finally:
+        sample["elapsed_ms"] = round((time.time() - start) * 1000, 1)
+    return sample
 
 
 def verify_lfi_content(url: str, param: str, sess: requests.Session,

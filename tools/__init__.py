@@ -1,31 +1,33 @@
 from tools._session import make_session
 from tools.active_prober import ActiveProber
-from tools.exceptions import (
-    AimyError,
-    ChainError,
-    ConfigurationError,
-    ConnectionError,
-    DNSError,
-    DetectionError,
-    FalsePositiveError,
-    NetworkError,
-    OOBError,
-    PayloadError,
-    TLSError,
-    TimeoutError,
-    ValidationError,
-    WAFBlockedError,
-)
 from tools.adaptive_fuzzer import AdaptiveFuzzer, PayloadGroup
 from tools.attack_surface import build_attack_plan, pivot_on_intermediate_result
 from tools.attack_tree import AttackTree, AttackTreeNode
 from tools.auth_bypass import check as check_auth_bypass
+from tools.auth_state_machine import AuthStateMachine, auth_replay
 from tools.biz_logic_scanner import check as check_biz_logic
 from tools.chain_engine import ChainEngine
 from tools.cmdi_detector import check as check_cmdi
 from tools.cors_scanner import check as check_cors
 from tools.crawler import crawl
 from tools.deserialization_detector import check as check_deser
+from tools.domain_attacks import asrep_roast, kerberoast_skeleton, ldap_anonymous_enum
+from tools.exceptions import (
+    AimyError,
+    ChainError,
+    ConfigurationError,
+    ConnectionError,
+    DetectionError,
+    DNSError,
+    FalsePositiveError,
+    NetworkError,
+    OOBError,
+    PayloadError,
+    TimeoutError,
+    TLSError,
+    ValidationError,
+    WAFBlockedError,
+)
 from tools.graphql_scanner import check as check_graphql
 from tools.http_client import FakeResponse, HttpClient, build_url
 from tools.jwt_detector import check as check_jwt
@@ -36,10 +38,13 @@ from tools.log_utils import get_logger, mode_echo
 from tools.mode import enrich_result, filter_vulnerabilities, show_banner
 from tools.nosqli_detector import check as check_nosqli
 from tools.oob_server import OOBServer
+from tools.opsec_session import OPSECSession, opsec_session
 from tools.param_miner import mine
 from tools.payload_engine import generate, generate_sqli_error
 from tools.payload_mutator import encode_payload, mutate_value
 from tools.proto_pollution import check as check_proto
+from tools.protocol_fuzzer import ProtocolFuzzer, default_sender, fuzz_ports
+from tools.proxy_pool import ProxyPool, Throttle, pool_session
 from tools.race_condition import check as check_race
 from tools.reasoning_engine import Hypothesis, ReasoningEngine
 from tools.recon import (
@@ -50,6 +55,7 @@ from tools.recon import (
     scan_ports,
 )
 from tools.response_profiler import ResponseProfiler
+from tools.service_mapping import default_creds, map_open_ports, map_service
 from tools.settings import settings
 from tools.sql_injection import check as check_sqli
 from tools.ssrf_detector import check as check_ssrf
@@ -82,4 +88,10 @@ __all__ = [
     "AttackTree", "AttackTreeNode", "ActiveProber",
     "enum_subdomains", "scan_ports", "fingerprint_tech",
     "check_git_leak", "fuzz_directories",
+    "ProtocolFuzzer", "default_sender", "fuzz_ports",
+    "OPSECSession", "opsec_session",
+    "AuthStateMachine", "auth_replay",
+    "ProxyPool", "Throttle", "pool_session",
+    "map_service", "map_open_ports", "default_creds",
+    "asrep_roast", "ldap_anonymous_enum", "kerberoast_skeleton",
 ]

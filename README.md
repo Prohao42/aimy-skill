@@ -13,7 +13,7 @@
   </p>
 
   <div align="center">
-    <a href="https://aimywz.edgeone.dev/"><b>🌐 官网</b></a> •
+    <a href="https://aimy-skill.netlify.app/"><b>🌐 官网</b></a> •
     <a href="#-核心优势"><b>✨ 优势</b></a> •
     <a href="#-快速上手"><b>⚡ 快速上手</b></a> •
     <a href="#-命令速查"><b>📖 命令</b></a> •
@@ -317,7 +317,7 @@ pytest --cov=tools        # 覆盖率报告
 
 ## 🌐 项目宣传网站
 
-[aimywz.edgeone.dev](https://aimywz.edgeone.dev/)
+https://aimy-skill.netlify.app/
 
 ---
 

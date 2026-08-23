@@ -16,7 +16,7 @@ from tools.settings import settings
 
 logger = get_logger("main")
 
-VERSION = "3.5.0"
+VERSION = "3.6.0"
 
 
 URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
@@ -577,6 +577,38 @@ def cmd_sqli_second_order(args):
     _output(r)
 
 
+def cmd_login(args):
+    """SRC 工作流: 登录 -> 保存 session 文件 -> 后续扫描 --session-file 复用登录态。"""
+    from tools.auth_engine import AuthSession
+    from tools.mode import show_banner
+    if not (args.auth_url and args.auth_user and args.auth_pass):
+        from tools.log_utils import get_logger
+        get_logger("main").error("login 需要 --auth-url --auth-user --auth-pass")
+        sys.exit(1)
+    sess = requests.Session()
+    sess.verify = settings.verify_ssl
+    engine = AuthSession(sess)
+    ok = False
+    if args.auth_type == "form":
+        ok = engine.login_form(args.auth_url, args.auth_user, args.auth_pass)
+    elif args.auth_type == "api":
+        ok = engine.login_api(args.auth_url, args.auth_user, args.auth_pass)
+    elif args.auth_type == "basic":
+        ok = engine.login_basic(args.auth_url, args.auth_user, args.auth_pass)
+    else:
+        ok = engine.login_form(args.auth_url, args.auth_user, args.auth_pass) or \
+             engine.login_api(args.auth_url, args.auth_user, args.auth_pass)
+    if ok:
+        path = args.session_file or "session.json"
+        engine.save_session(path)
+        print(json.dumps({"success": True, "session_file": path,
+                          "cookies": len(sess.cookies)}, ensure_ascii=False))
+    else:
+        print(json.dumps({"success": False, "error": "login failed"},
+                         ensure_ascii=False))
+        sys.exit(1)
+
+
 def cmd_jwt_exploit(args):
     from tools.jwt_exploiter import check as jwte_check
     r = jwte_check(url=args.url, param=getattr(args, "param", None),
@@ -1128,10 +1160,8 @@ def main():
     p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_sqli_weaponize)
 
-    p = sub.add_parser("sqli-second-order", help="二阶SQL注入检测(存储后触发)")
-    p.add_argument("url")
-    p.add_argument("--param", default="username")
-    p.set_defaults(func=cmd_sqli_second_order)
+    p = sub.add_parser("login", help="SRC工作流: 登录并保存session文件(供--session-file复用)")
+    p.set_defaults(func=cmd_login)
 
     p = sub.add_parser("jwt-exploit", help="JWT利用(crack/伪造)")
     p.add_argument("url", nargs="?", default="")

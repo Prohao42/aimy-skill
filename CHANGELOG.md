@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.6.0] - SRC 众测场景工具化
+### 新增
+- SRC 报告模板（tools/src_report.py）：检测结果 -> 可提交漏洞报告（描述/复现步骤/影响/修复建议，14 类漏洞模板 + Markdown 输出）
+- login 命令：SRC 工作流核心 - 登录并保存 session 文件，后续 --session-file 复用登录态
+- WAF 拦截识别（waf_bypass.classify_block / is_blocked）：Cloudflare/Akamai/AWS/F5/Imperva/安全狗/云盾/360 等 10 种 WAF 拦截特征
+- docs/src_hunting.md：SRC 挖洞全流程手册（信息收集->定向检测->验证->报告，含工具配套用法与红线提醒）
+### 说明
+- 真实靶场（DVWA 等）：当前环境无 Docker，无法起真实镜像；现有验收仍为模拟靶场，后续在有 Docker 的环境补充
+
 ## [3.5.1] - 量化验收与修复
 ### 新增
 - 10 端点漏洞靶场量化验收（lab_audit.py）：8 漏洞 + 2 无漏洞对照，检测率 100% / 误报 0

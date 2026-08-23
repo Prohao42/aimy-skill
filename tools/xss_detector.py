@@ -53,9 +53,10 @@ CONTEXT_TO_PAYLOAD_KEY = {
     "attr_single": "attr",
     "attr_value_unquoted": "attr",
     "script": "js",
-    "comment": "html",
+    "comment": "comment",
     "event_handler": "attr",
     "angular": "angular",
+    "json": "json",
 }
 
 XSS_TRIGGER_PATTERNS = ["alert(1)", "onerror=", "onload=", "onfocus=",
@@ -149,7 +150,8 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
             result["evidence"].append("context:not_reflected")
 
     payload_ctx_key = CONTEXT_TO_PAYLOAD_KEY.get(detected_ctx, "html") if detected_ctx != "all" else None
-    contexts_to_try = [payload_ctx_key] if payload_ctx_key else ["html", "attr", "js", "angular"]
+    contexts_to_try = [payload_ctx_key] if payload_ctx_key else [
+        "html", "attr", "js", "angular", "json", "comment"]
 
     confirmed_count = 0
     total_tried = 0
@@ -222,11 +224,14 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
             except Exception:
                 pass
 
-    if result["vulnerable"] and not result["confirmed"]:
-        r = sess.get(build_url(url, param, result.get("vector", "xss")), timeout=timeout)
-        if _check_dom_sink(r.text, result.get("vector", "")):
-            result["confirmed"] = True
-            result["evidence"].append("dom_sink_detected")
+    if result["vulnerable"] and not result["confirmed"] and not post_body:
+        try:
+            r = sess.get(build_url(url, param, result.get("vector", "xss")), timeout=timeout)
+            if _check_dom_sink(r.text, result.get("vector", "")):
+                result["confirmed"] = True
+                result["evidence"].append("dom_sink_detected")
+        except Exception as e:
+            logger.debug("xss dom-sink probe failed: %s", e)
 
     if not result["vulnerable"] or not result["confirmed"]:
         for payload in MUTATION_XSS_PAYLOADS + POLYGLOT_PAYLOADS:

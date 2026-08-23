@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from tools._enrich import deep_check, enrich_generic, enrich_sqli, enrich_ssrf, enrich_xss
 from tools.attack_surface import rank_attack_paths, visualize_attack_paths
@@ -47,7 +47,7 @@ class HypothesisDrivenAgent:
 
     def gather_intel(self) -> Dict:
         logger.info("[AutoPwn] Phase 1: Intelligence gathering")
-        intel = {"target": self.target, "techs": [], "ports": [], "attack_paths": []}
+        intel: Dict[str, Any] = {"target": self.target, "techs": [], "ports": [], "attack_paths": []}
         try:
             orch = Orchestrator(self.target, self.sess, self.timeout, fast_recon=True)
             orch.init_storage()
@@ -238,15 +238,16 @@ class HypothesisDrivenAgent:
             if not self.should_continue(max_iterations):
                 break
 
+        confirmed_hist = [h for h in self.attack_history if h["result"]]
         summary = {
             "target": self.target,
             "iterations": self._iteration,
             "hypotheses_tested": len(self.attack_history),
-            "confirmed": [h for h in self.attack_history if h["result"]],
+            "confirmed": confirmed_hist,
             "beliefs": {k: round(v.belief, 2) for k, v in self.beliefs.items()},
             "history": self.attack_history[-20:],
         }
-        confirmed = len(summary["confirmed"])
+        confirmed = len(confirmed_hist)
         logger.info("[AutoPwn] Done. %d/%d hypotheses confirmed, %d iterations",
                     confirmed, summary["hypotheses_tested"], self._iteration)
         return summary

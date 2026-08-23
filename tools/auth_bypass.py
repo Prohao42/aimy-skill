@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -275,7 +275,7 @@ def check_cookie_tamper(url: str, sess: Optional[requests.Session] = None,
             import requests as _req
             sess_copy = _req.Session()
             for cookie in sess.cookies:
-                sess_copy.cookies.set(cookie.name, cookie.value)
+                sess_copy.cookies.set(cookie.name, cookie.value or "")
             for k, v in payload.items():
                 sess_copy.cookies.set(k, v)
             r = sess_copy.get(url, timeout=timeout)
@@ -396,7 +396,7 @@ def check_mass_assignment(url: str, sess: Optional[requests.Session] = None,
 
 def check(url: str, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
-    r = {
+    r: Dict[str, Any] = {
         "vulnerable": False,
         "admin_endpoints": [],
         "path_bypasses": [],

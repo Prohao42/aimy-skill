@@ -9,7 +9,7 @@ from tools.settings import settings
 
 logger = get_logger("session_matrix")
 
-SESSION_FILE = os.path.expanduser("~/.aimy-sikll/sessions.json")
+SESSION_FILE = os.path.expanduser("~/.aimy-skill/sessions.json")
 
 
 @dataclass

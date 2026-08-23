@@ -396,7 +396,7 @@ def run(target: str, dc_ip: Optional[str] = None,
             pass
     return domain_audit_summary(
         domain=domain or target,
-        dc_ip=dc_ip,
+        dc_ip=dc_ip or "",
         username=username,
         password=password,
         usernames=userlist,

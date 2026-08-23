@@ -143,8 +143,6 @@ class TestIdorChain:
 class TestBizLogicMain:
     @responses.activate
     def test_main_check_aggregates(self):
-        import requests
-        sess = requests.Session()
         responses.add(
             responses.GET, 'http://test.com/dashboard',
             body='dashboard content', status=200,

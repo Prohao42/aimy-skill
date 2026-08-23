@@ -58,6 +58,27 @@ class TestEncoderChains:
             assert len(chain) > 0
 
 
+class TestNewEncoders:
+    def test_versioned_comment(self):
+        from tools.waf_bypass import BypassEncoder
+        out = BypassEncoder.versioned_comment("' UNION SELECT NULL-- ")
+        assert "/*!50000SELECT*/" in out
+        assert "/*!50000UNION*/" in out
+
+    def test_redundant_url_encode(self):
+        from tools.waf_bypass import BypassEncoder
+        out = BypassEncoder.redundant_url_encode("' OR '1'='1")
+        assert "%2527" in out
+
+    def test_new_chains_present(self):
+        import tools.waf_bypass as wb
+        names = []
+        for chain in wb.ENCODER_CHAINS:
+            names.append(" ".join(f.__name__ for f in chain))
+        assert any("versioned_comment" in n for n in names)
+        assert any("redundant_url_encode" in n for n in names)
+
+
 class TestCheck:
     @responses.activate
     def test_basic_request(self):

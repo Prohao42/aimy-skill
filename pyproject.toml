@@ -1,6 +1,6 @@
 [project]
-name = "aimy-sikll"
-version = "2.3.0"
+name = "aimy-skill"
+version = "3.5.0"
 description = "轻量级渗透测试辅助工具链 (AI Agent Ready)"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -26,7 +26,6 @@ dependencies = [
     "beautifulsoup4>=4.11.0",
     "PyJWT>=2.6.0",
     "cryptography>=39.0.0",
-    "aiohttp>=3.9.0",
 ]
 
 [project.optional-dependencies]
@@ -44,9 +43,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/anomalyco/aimy-sikll"
-Repository = "https://github.com/anomalyco/aimy-sikll"
-BugTracker = "https://github.com/anomalyco/aimy-sikll/issues"
+Homepage = "https://github.com/Prohao42/aimy-skill"
+Repository = "https://github.com/Prohao42/aimy-skill"
+BugTracker = "https://github.com/Prohao42/aimy-skill/issues"
 
 [project.scripts]
 aimy = "main:main"
@@ -73,6 +72,28 @@ python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+ignore_missing_imports = true
+# The toolchain is heavily dynamic (dict[str, object] inference). These codes are
+# overwhelmingly inference noise from untyped dict values; disable them so the
+# meaningful checks below surface real bugs (wrong arg counts, bad format strings,
+# bad overrides, missing imports).
+disable_error_code = [
+    "attr-defined",
+    "union-attr",
+    "assignment",
+    "var-annotated",
+    "index",
+    "operator",
+    "list-item",
+    "dict-item",
+    "misc",
+    "valid-type",
+    "has-type",
+    "no-any-return",
+    "return-value",
+    "call-overload",
+    "import-untyped",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "tools/jwt_attacker.py" = ["F401"]

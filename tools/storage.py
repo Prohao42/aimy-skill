@@ -171,7 +171,7 @@ class SessionStore:
     def load_findings(self, session_id: Optional[int] = None, vuln_type: Optional[str] = None) -> List[Dict]:
         sid = session_id or self._ensure_session()
         q = "SELECT * FROM findings WHERE session_id=?"
-        params = [sid]
+        params: List[Any] = [sid]
         if vuln_type:
             q += " AND vuln_type=?"
             params.append(vuln_type)

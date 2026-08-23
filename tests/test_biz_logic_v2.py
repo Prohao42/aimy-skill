@@ -12,14 +12,14 @@ from tools.biz_logic_v2 import (
 class TestRunAuthzScan:
     @patch("tools.biz_logic_v2.DeviationOracle")
     @patch("tools.biz_logic_v2.SessionMatrix")
-    def test_basic_flow(self, MockMatrix, MockOracle):
+    def test_basic_flow(self, mock_matrix_cls, mock_oracle_cls):
         mock_matrix = MagicMock()
-        MockMatrix.return_value = mock_matrix
+        mock_matrix_cls.return_value = mock_matrix
         mock_matrix.authenticate_all.return_value = {"admin": True}
         mock_matrix.list.return_value = [{"label": "admin", "role": "admin"}]
 
         mock_oracle = MagicMock()
-        MockOracle.return_value = mock_oracle
+        mock_oracle_cls.return_value = mock_oracle
         mock_oracle.run.return_value = {"vulnerable": True, "findings": ["x"]}
 
         result = run_authz_scan(
@@ -32,47 +32,47 @@ class TestRunAuthzScan:
 
     @patch("tools.biz_logic_v2.DeviationOracle")
     @patch("tools.biz_logic_v2.SessionMatrix")
-    def test_default_auth_url(self, MockMatrix, MockOracle):
+    def test_default_auth_url(self, mock_matrix_cls, mock_oracle_cls):
         mock_matrix = MagicMock()
-        MockMatrix.return_value = mock_matrix
+        mock_matrix_cls.return_value = mock_matrix
         mock_matrix.authenticate_all.return_value = {}
         mock_matrix.list.return_value = []
 
         mock_oracle = MagicMock()
-        MockOracle.return_value = mock_oracle
+        mock_oracle_cls.return_value = mock_oracle
         mock_oracle.run.return_value = {"vulnerable": False}
 
         run_authz_scan("http://test.com/api", [])
-        MockMatrix.assert_called_once_with("http://test.com/api")
+        mock_matrix_cls.assert_called_once_with("http://test.com/api")
 
     @patch("tools.biz_logic_v2.DeviationOracle")
     @patch("tools.biz_logic_v2.SessionMatrix")
-    def test_custom_auth_url(self, MockMatrix, MockOracle):
+    def test_custom_auth_url(self, mock_matrix_cls, mock_oracle_cls):
         mock_matrix = MagicMock()
-        MockMatrix.return_value = mock_matrix
+        mock_matrix_cls.return_value = mock_matrix
         mock_matrix.authenticate_all.return_value = {}
         mock_matrix.list.return_value = []
 
         mock_oracle = MagicMock()
-        MockOracle.return_value = mock_oracle
+        mock_oracle_cls.return_value = mock_oracle
         mock_oracle.run.return_value = {"vulnerable": False}
 
         run_authz_scan("http://test.com", [], auth_url="http://custom/login")
-        MockMatrix.assert_called_once_with("http://test.com")
+        mock_matrix_cls.assert_called_once_with("http://test.com")
         mock_matrix.authenticate_all.assert_called_once_with(
             "http://custom/login", timeout=10.0
         )
 
     @patch("tools.biz_logic_v2.DeviationOracle")
     @patch("tools.biz_logic_v2.SessionMatrix")
-    def test_multiple_identities(self, MockMatrix, MockOracle):
+    def test_multiple_identities(self, mock_matrix_cls, mock_oracle_cls):
         mock_matrix = MagicMock()
-        MockMatrix.return_value = mock_matrix
+        mock_matrix_cls.return_value = mock_matrix
         mock_matrix.authenticate_all.return_value = {"a": True, "b": False}
         mock_matrix.list.return_value = ["a", "b"]
 
         mock_oracle = MagicMock()
-        MockOracle.return_value = mock_oracle
+        mock_oracle_cls.return_value = mock_oracle
         mock_oracle.run.return_value = {"vulnerable": False}
 
         run_authz_scan("http://test.com", [
@@ -83,30 +83,30 @@ class TestRunAuthzScan:
 
     @patch("tools.biz_logic_v2.DeviationOracle")
     @patch("tools.biz_logic_v2.SessionMatrix")
-    def test_no_identities(self, MockMatrix, MockOracle):
+    def test_no_identities(self, mock_matrix_cls, mock_oracle_cls):
         mock_matrix = MagicMock()
-        MockMatrix.return_value = mock_matrix
+        mock_matrix_cls.return_value = mock_matrix
         mock_matrix.authenticate_all.return_value = {}
         mock_matrix.list.return_value = []
 
         mock_oracle = MagicMock()
-        MockOracle.return_value = mock_oracle
+        mock_oracle_cls.return_value = mock_oracle
         mock_oracle.run.return_value = {"vulnerable": False}
 
-        result = run_authz_scan("http://test.com", [])
-        MockMatrix.assert_called_once_with("http://test.com")
+        run_authz_scan("http://test.com", [])
+        mock_matrix_cls.assert_called_once_with("http://test.com")
         mock_matrix.register.assert_not_called()
 
     @patch("tools.biz_logic_v2.DeviationOracle")
     @patch("tools.biz_logic_v2.SessionMatrix")
-    def test_identity_uses_username_as_label_fallback(self, MockMatrix, MockOracle):
+    def test_identity_uses_username_as_label_fallback(self, mock_matrix_cls, mock_oracle_cls):
         mock_matrix = MagicMock()
-        MockMatrix.return_value = mock_matrix
+        mock_matrix_cls.return_value = mock_matrix
         mock_matrix.authenticate_all.return_value = {}
         mock_matrix.list.return_value = []
 
         mock_oracle = MagicMock()
-        MockOracle.return_value = mock_oracle
+        mock_oracle_cls.return_value = mock_oracle
         mock_oracle.run.return_value = {"vulnerable": False}
 
         run_authz_scan("http://test.com", [
@@ -125,9 +125,9 @@ class TestRunWorkflowScan:
         mock_trace_obj.to_dict.return_value = {}
         mock_trace.return_value = mock_trace_obj
 
-        with patch("tools.biz_logic_v2.WorkflowDeviator") as MockDeviator:
+        with patch("tools.biz_logic_v2.WorkflowDeviator") as mock_deviator_cls:
             mock_deviator = MagicMock()
-            MockDeviator.return_value = mock_deviator
+            mock_deviator_cls.return_value = mock_deviator
             mock_deviator.generate_skip_steps.return_value = []
             mock_deviator.generate_replay.return_value = []
             mock_deviator.find_resource_ids.return_value = []
@@ -143,9 +143,9 @@ class TestRunWorkflowScan:
         mock_trace_obj.to_dict.return_value = {}
         mock_trace.return_value = mock_trace_obj
 
-        with patch("tools.biz_logic_v2.WorkflowDeviator") as MockDeviator:
+        with patch("tools.biz_logic_v2.WorkflowDeviator") as mock_deviator_cls:
             mock_deviator = MagicMock()
-            MockDeviator.return_value = mock_deviator
+            mock_deviator_cls.return_value = mock_deviator
             mock_deviator.generate_skip_steps.return_value = [
                 {"target_url": "http://test.com/s2", "description": "skip step 1"},
             ]
@@ -169,9 +169,9 @@ class TestRunWorkflowScan:
         mock_trace_obj.to_dict.return_value = {}
         mock_trace.return_value = mock_trace_obj
 
-        with patch("tools.biz_logic_v2.WorkflowDeviator") as MockDeviator:
+        with patch("tools.biz_logic_v2.WorkflowDeviator") as mock_deviator_cls:
             mock_deviator = MagicMock()
-            MockDeviator.return_value = mock_deviator
+            mock_deviator_cls.return_value = mock_deviator
             mock_deviator.generate_skip_steps.return_value = [
                 {"target_url": "http://test.com/admin", "description": "skip to admin"},
             ]
@@ -193,9 +193,9 @@ class TestRunWorkflowScan:
         mock_trace_obj.to_dict.return_value = {}
         mock_trace.return_value = mock_trace_obj
 
-        with patch("tools.biz_logic_v2.WorkflowDeviator") as MockDeviator:
+        with patch("tools.biz_logic_v2.WorkflowDeviator") as mock_deviator_cls:
             mock_deviator = MagicMock()
-            MockDeviator.return_value = mock_deviator
+            mock_deviator_cls.return_value = mock_deviator
             mock_deviator.generate_skip_steps.return_value = []
             mock_deviator.generate_replay.return_value = [
                 {"old_url": "http://test.com/s1", "description": "replay"},
@@ -218,9 +218,9 @@ class TestRunWorkflowScan:
         mock_trace_obj.to_dict.return_value = {}
         mock_trace.return_value = mock_trace_obj
 
-        with patch("tools.biz_logic_v2.WorkflowDeviator") as MockDeviator:
+        with patch("tools.biz_logic_v2.WorkflowDeviator") as mock_deviator_cls:
             mock_deviator = MagicMock()
-            MockDeviator.return_value = mock_deviator
+            mock_deviator_cls.return_value = mock_deviator
             mock_deviator.generate_skip_steps.return_value = []
             mock_deviator.generate_replay.return_value = []
             mock_deviator.find_resource_ids.return_value = [
@@ -235,9 +235,9 @@ class TestRunWorkflowScan:
 
 class TestRunRaceScan:
     @patch("tools.biz_logic_v2.RaceProfiler")
-    def test_race_window_found(self, MockProfiler):
+    def test_race_window_found(self, mock_profiler_cls):
         mock_profiler = MagicMock()
-        MockProfiler.return_value = mock_profiler
+        mock_profiler_cls.return_value = mock_profiler
         mock_window = MagicMock()
         mock_window.concurrency = 10
         mock_window.elapsed_ms = 5.0
@@ -255,9 +255,9 @@ class TestRunRaceScan:
         assert len(result["windows"]) == 1
 
     @patch("tools.biz_logic_v2.RaceProfiler")
-    def test_no_race_window(self, MockProfiler):
+    def test_no_race_window(self, mock_profiler_cls):
         mock_profiler = MagicMock()
-        MockProfiler.return_value = mock_profiler
+        mock_profiler_cls.return_value = mock_profiler
         mock_profiler.detect_windows.return_value = {
             "window_found": False,
             "windows": [],
@@ -267,9 +267,9 @@ class TestRunRaceScan:
         assert result["vulnerable"] is False
 
     @patch("tools.biz_logic_v2.RaceProfiler")
-    def test_default_param_body(self, MockProfiler):
+    def test_default_param_body(self, mock_profiler_cls):
         mock_profiler = MagicMock()
-        MockProfiler.return_value = mock_profiler
+        mock_profiler_cls.return_value = mock_profiler
         mock_profiler.detect_windows.return_value = {
             "window_found": False, "windows": [],
         }
@@ -281,9 +281,9 @@ class TestRunRaceScan:
         assert args[0][1] is None
 
     @patch("tools.biz_logic_v2.RaceProfiler")
-    def test_custom_concurrency(self, MockProfiler):
+    def test_custom_concurrency(self, mock_profiler_cls):
         mock_profiler = MagicMock()
-        MockProfiler.return_value = mock_profiler
+        mock_profiler_cls.return_value = mock_profiler
         mock_profiler.detect_windows.return_value = {
             "window_found": False, "windows": [],
         }
@@ -294,9 +294,9 @@ class TestRunRaceScan:
 
 class TestRunConstraintScan:
     @patch("tools.biz_logic_v2.ConstraintGraph")
-    def test_no_constraints(self, MockGraph):
+    def test_no_constraints(self, mock_graph_cls):
         mock_graph = MagicMock()
-        MockGraph.return_value = mock_graph
+        mock_graph_cls.return_value = mock_graph
         mock_graph.detect_constraints.return_value = []
         mock_graph.summary.return_value = {}
 
@@ -305,9 +305,9 @@ class TestRunConstraintScan:
         assert result["findings"] == []
 
     @patch("tools.biz_logic_v2.ConstraintGraph")
-    def test_constraints_detected(self, MockGraph):
+    def test_constraints_detected(self, mock_graph_cls):
         mock_graph = MagicMock()
-        MockGraph.return_value = mock_graph
+        mock_graph_cls.return_value = mock_graph
         mock_constraint = MagicMock()
         mock_constraint.type = "numeric_relationship"
         mock_constraint.description = "price > 0 constraint"
@@ -324,14 +324,14 @@ class TestRunConstraintScan:
 
     @patch("tools.biz_logic_v2.ConstraintGraph")
     @patch("tools.biz_logic_v2.ConstraintBreaker")
-    def test_constraint_breaker_findings(self, MockBreaker, MockGraph):
+    def test_constraint_breaker_findings(self, mock_breaker_cls, mock_graph_cls):
         mock_graph = MagicMock()
-        MockGraph.return_value = mock_graph
+        mock_graph_cls.return_value = mock_graph
         mock_graph.detect_constraints.return_value = []
         mock_graph.summary.return_value = {}
 
         mock_breaker = MagicMock()
-        MockBreaker.return_value = mock_breaker
+        mock_breaker_cls.return_value = mock_breaker
         mock_breaker.generate_break_tests.return_value = [
             {"technique": "negate", "param": "qty", "value": "-1", "variant": "int"},
         ]
@@ -341,9 +341,9 @@ class TestRunConstraintScan:
         assert len(result["findings"]) == 1
 
     @patch("tools.biz_logic_v2.ConstraintGraph")
-    def test_request_exception_handled(self, MockGraph):
+    def test_request_exception_handled(self, mock_graph_cls):
         mock_graph = MagicMock()
-        MockGraph.return_value = mock_graph
+        mock_graph_cls.return_value = mock_graph
         mock_graph.detect_constraints.return_value = []
         mock_graph.summary.return_value = {}
 

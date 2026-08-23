@@ -1,7 +1,7 @@
 
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v2.3.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v3.1.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="aimy-skill typing banner">
+    <source media="(prefers-color-scheme: light)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v3.2.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v3.2.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="aimy-skill typing banner">
   </picture>
 
   <h1 align="center">🚀 aimy-skill</h1>
@@ -24,7 +24,7 @@
   <br>
 
   <div align="center">
-    <img src="https://img.shields.io/badge/version-2.3.0-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
+    <img src="https://img.shields.io/badge/version-3.5.0-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
     <img src="https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python">
     <img src="https://img.shields.io/badge/modules-65-orange?style=for-the-badge" alt="modules">
     <img src="https://img.shields.io/badge/skills-80%2B-8B5CF6?style=for-the-badge" alt="skills">
@@ -262,7 +262,7 @@ list            列出所有工具
     │       武器化层        │        辅助分析层         │
     │  sqli_weaponizer     │  resp_profiler          │
     │  ssrf_pwn            │  verification_oracle    │
-    │  ssrf_chain          │  enhanced_verify        │
+    │  ssrf_chain          │  deviation_oracle       │
     │  jwt_exploiter       │  false_positive_filter  │
     │  chain_engine        │  cross_validator        │
     └──────────────────────┴─────────────────────────┘
@@ -271,26 +271,32 @@ list            列出所有工具
     │  reasoning_engine    │  version_fingerprint    │
     │  knowledge_graph     │  ssrf_chain (多跳)      │
     │  attack_graph        │  type_confusion         │
-    │  attack_surface      │  enhanced_verify        │
     └──────────────────────┴─────────────────────────┘
 ```
 
 ### 🧩 核心引擎
 
+> **v3.2 挖洞能力升级**：黑盒上下文探测替代参数名猜测、UNION 注入真检测（ORDER BY 列数枚举 + 唯一标记回显点定位）、布尔盲注多采样+单对复验、时间盲注负对照（拒绝网络抖动误报）、OOB 通道支持公网 dnslog（AIMY_OOB_DOMAIN / AIMY_OOB_CALLBACK_URL）。
+> **v3.3 武器化升级**：盲 UNION 检测（列数确定无回显 → union_blind + IF() 盲注模板）、sqli-weaponize 全面增强（union 回显自动提取库名/用户/版本 + 表枚举、布尔盲注二分提取、盲 UNION 行存在性 oracle 提取）、payload 引擎新增 MySQL 版本注释（/*!50000*/）与 0x 十六进制字面量编码器、payload_seeds YAML 外置（修复了 YAML 仅首次生效的缓存 bug）。
+> **v3.4 DBMS 系统化升级**：payload 库按 DBMS 分库（payload_seeds/mysql|mssql|postgresql|oracle|sqlite.yml，跨文件追加合并 + dbms 字段过滤 + generate_for_dbms 接口）、错误型检测无 hint 遍历 5 大 DBMS 家族（补齐 Msg NNN / Conversion failed / ERROR: line / ORA- 等高频错误指纹）、时间盲注按 DBMS 优先选 payload、sqli-weaponize 表枚举按 DBMS 分派查询（INFORMATION_SCHEMA / sys.tables / all_tables / sqlite_master）、smuggler 新增 CL.0 检测 + 10 个混淆变体、auto 命令新增 --save-report（JSON + HTML 报告落盘）。
+> **v3.5 高级水平升级**：payload 量级翻倍（payload_seeds 新增 xss/cmdi/ssti/lfi 分库：事件处理器大全、多引擎 RCE 链、wrapper 扩充）、sqli-weaponize 打通检测→数据全链（自动枚举表→列名→行数据 dump）、新增二阶 SQLi 检测器（sqli-second-order 命令，存储后触发布尔差分）、NoSQLi $where 盲注提取（JSON JS oracle 二分抽字段值）+ ReDoS 时间型检测（$regex 灾难回溯）、smuggler HTTP/2 prior-knowledge 探测、post_exploit/c2_beacon 补测试验证（心跳-指令全链路）、版本同步 3.5.0 + CHANGELOG。
+
 | 模块 | 亮点 |
 |------|------|
 | **sqli_blind** | 4 种 DBMS 盲注 · 并行二分法 · OOB 通道 · 4 级 fallback |
+| **sql_injection** | 黑盒上下文探测(数字/字符串) · 真实 UNION 列数枚举+回显点识别 · 布尔多对确认+单对复验 · 时间盲注负对照(零延迟孪生 payload) |
 | **ssrf_pwn** | AWS / GCP / Azure / 阿里云元数据 · IMDSv2 · k8s 发现 |
 | **ssrf_chain** | 多跳内网穿透 · Redis / SQL / Docker / K8s 协议转换 |
-| **waf_bypass** | 14 种 WAF 指纹 · 11 编码器 · HTTP 协议绕过 |
+| **waf_bypass** | 14 种 WAF 指纹 · 16 编码器 · 按 WAF 分派的编码链策略 |
 | **dual_session** | 双会话 BOLA 差分 · JSON 字段级比对 |
 | **session_matrix** | 多身份矩阵 · 跨会话持久化 |
-| **payload_engine** | YAML 种子 · 上下文感知变异 · 编码链 |
+| **payload_engine** | 200+ 种子(6 DBMS 时间型/UNION 到 10 列/XSS 7 上下文/SSTI 多引擎 RCE 链) · YAML 覆盖 · 编码链 |
 | **reasoning_engine** | 30+ 规则假设驱动 · 自动推断攻击路径 |
 | **chain_engine** | SSRF→RCE · LFI→RCE · 链式利用组合 |
 | **version_fingerprint** | 响应头/错误页版本提取 · 25+ 产品 CVE 匹配 |
 | **type_confusion** | 7 种类型测试 · TOCTOU 竞态检测 |
-| **enhanced_verify** | 5+ payload 交叉验证 · 降低误报率 |
+| **cross_validator** | 5+ payload 交叉验证 · 降低误报率 |
+| **OOB 通道** | 本地 0.0.0.0 监听(局域网可达) · 支持 AIMY_OOB_DOMAIN / AIMY_OOB_CALLBACK_URL 公网 dnslog |
 
 ---
 

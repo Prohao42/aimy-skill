@@ -133,3 +133,22 @@ class TestPayloadGenerate:
     def test_unknown_group_returns_empty(self):
         results = generate("nonexistent", "foo", "all")
         assert results == []
+
+    def test_versioned_comment_encoder(self):
+        from tools.payload_engine import ENCODERS
+        out = ENCODERS["versioned_comment"]("' UNION SELECT NULL-- ")
+        assert "/*!50000UNION*/" in out
+        assert "/*!50000SELECT*/" in out
+
+    def test_hex_str_encoder(self):
+        from tools.payload_engine import ENCODERS
+        out = ENCODERS["hex_str"]("'1'='1'")
+        assert "0x31=0x31" in out
+
+    def test_yaml_seeds_appended(self):
+        # payload_seeds/advanced.yml should be layered on top of built-ins
+        err = generate("sqli", "error", "all", max_payloads=999)
+        raws = [p["payload"] for p in err]
+        assert any("CAST" in p for p in raws), "YAML error seed not loaded"
+        bt = generate("sqli", "boolean_true", "all", max_payloads=999)
+        assert any("RAND()<1" in p["payload"] for p in bt), "YAML boolean seed not loaded"

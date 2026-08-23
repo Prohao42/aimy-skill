@@ -25,11 +25,11 @@ CAPTURED = []
 CAPTURE_LOCK = threading.Lock()
 MAX_CAPTURED = 10000
 
-CA_DIR = os.path.expanduser("~/.aimy-sikll/mitm-ca")
+CA_DIR = os.path.expanduser("~/.aimy-skill/mitm-ca")
 CA_KEY = os.path.join(CA_DIR, "ca.key")
 CA_CERT = os.path.join(CA_DIR, "ca.pem")
 CERTS_DIR = os.path.join(CA_DIR, "certs")
-CA_SUBJECT = "/C=CN/O=aimy-sikll/OU=SecurityTesting/CN=aimy MITM CA"
+CA_SUBJECT = "/C=CN/O=aimy-skill/OU=SecurityTesting/CN=aimy MITM CA"
 
 
 def _ensure_ca_dir():
@@ -339,7 +339,7 @@ class MITMProxy:
             "Install into your browser:\n"
             "  Firefox: Preferences → Certificates → Import\n"
             "  Chrome:  chrome://settings/security → Manage Certificates → Import\n"
-            "  curl:    curl --cacert ~/.aimy-sikll/mitm-ca/ca.pem https://...\n"
+            "  curl:    curl --cacert ~/.aimy-skill/mitm-ca/ca.pem https://...\n"
         )
 
     def get_captured(self, clear: bool = False) -> List[Dict]:

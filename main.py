@@ -577,6 +577,29 @@ def cmd_sqli_second_order(args):
     _output(r)
 
 
+def cmd_idor(args):
+    """水平越权检测: A 账号会话访问 B 账号资源。需两个 session 文件或 -id 参数。"""
+    from tools.idor_scanner import check as idor_check
+    from tools.idor_scanner import check_unauthorized
+    sess_a = _sess(args)
+    sess_b = None
+    if getattr(args, "session_file_b", ""):
+        from tools.auth_engine import AuthSession
+        b = requests.Session()
+        b.verify = settings.verify_ssl
+        AuthSession(b).load_session(args.session_file_b)
+        sess_b = b
+    if getattr(args, "no_auth", False):
+        r = check_unauthorized(args.url, sess=sess_a, timeout=args.timeout)
+    else:
+        r = idor_check(args.url, param=args.param, sess_a=sess_a, sess_b=sess_b,
+                       my_id=args.my_id, other_id=args.other_id,
+                       method=args.method,
+                       json_param=args.json_param or None,
+                       timeout=args.timeout)
+    _output(r)
+
+
 def cmd_login(args):
     """SRC 工作流: 登录 -> 保存 session 文件 -> 后续扫描 --session-file 复用登录态。"""
     from tools.auth_engine import AuthSession
@@ -1159,6 +1182,17 @@ def main():
     p.add_argument("url")
     p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_sqli_weaponize)
+
+    p = sub.add_parser("idor", help="水平越权/未授权访问检测(SRC最高频)")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
+    p.add_argument("--my-id", default="", help="自己资源的id")
+    p.add_argument("--other-id", default="", help="目标用户资源的id")
+    p.add_argument("--method", default="GET", choices=["GET", "POST"])
+    p.add_argument("--json-param", default="", help="POST JSON body 中的参数名")
+    p.add_argument("--session-file-b", default="", help="账号B的session文件(对比基准)")
+    p.add_argument("--no-auth", action="store_true", help="未授权访问检测(无会话访问)")
+    p.set_defaults(func=cmd_idor)
 
     p = sub.add_parser("login", help="SRC工作流: 登录并保存session文件(供--session-file复用)")
     p.set_defaults(func=cmd_login)

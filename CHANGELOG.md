@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.1] - IDOR/越权检测（SRC 最高频洞源）
+### 新增
+- tools/idor_scanner.py + idor 命令：水平越权（A 账号会话读 B 资源对比）与未授权访问检测，支持 GET 参数 / POST JSON body，A/B 双 session 对比消除误报
+- payload_seeds/json_api.yml：JSON API 场景注入 payload
+### 说明
+- 用法：python main.py idor "https://t/api/user?id={id}" --my-id 1001 --other-id 1002 --session-file sess.json [--session-file-b b.json] [--no-auth]
+
 ## [3.6.0] - SRC 众测场景工具化
 ### 新增
 - SRC 报告模板（tools/src_report.py）：检测结果 -> 可提交漏洞报告（描述/复现步骤/影响/修复建议，14 类漏洞模板 + Markdown 输出）

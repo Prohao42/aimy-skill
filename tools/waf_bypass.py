@@ -186,6 +186,77 @@ BYPASS_PAYLOADS = {
 # Fingerprinting
 # ---------------------------------------------------------------------------
 
+
+# ---------------------------------------------------------------------------
+# WAF block response classification
+# ---------------------------------------------------------------------------
+
+WAF_BLOCK_SIGNATURES = {
+    "cloudflare": {
+        "headers": ["cf-ray", "cf-mitigated"],
+        "text": ["attention required", "cloudflare", "sorry, you have been blocked",
+                 "cf-chl", "just a moment", "enable javascript and cookies"],
+    },
+    "akamai": {
+        "headers": ["akamai-x-ref", "akamai-ghost"],
+        "text": ["access denied", "akamai", "request rejected", "reference #"],
+    },
+    "aws_waf": {
+        "headers": ["x-amzn-requestid", "x-amz-cf-id"],
+        "text": ["request blocked", "aws waf", "captcha", "verify you are human"],
+    },
+    "f5_bigip": {
+        "headers": ["x-cnection", "x-wa-info"],
+        "text": ["the requested url was rejected", "big-ip", "f5", "aspxerror"],
+    },
+    "imperva": {
+        "headers": ["x-iinfo", "x-cdn"],
+        "text": ["incapsula", "imperva", "contact support for additional information",
+                 "blocked by firewall"],
+    },
+    "safedog": {
+        "text": ["safedog", "安全狗", "请求被拦截", "site cannot be reached"],
+    },
+    "yundun": {
+        "text": ["yundun", "阿里云盾", "拦截", "notice: your request has been blocked"],
+    },
+    "360": {
+        "text": ["360wzws", "360安全", "拦截提示", "wzws-waf-cgi"],
+    },
+    "baidu": {
+        "text": ["baidu yunjiasu", "百度云加速", "yunjiasu"],
+    },
+    "generic": {
+        "text": ["waf", "web application firewall", "blocked by security",
+                 "access denied", "request rejected", "your ip has been blocked",
+                 "403 forbidden"],
+    },
+}
+
+
+def classify_block(resp) -> str:
+    """Given a suspicious response, return the likely WAF name or ''."""
+    if resp is None:
+        return ""
+    headers = {str(k).lower(): str(v).lower() for k, v in (resp.headers or {}).items()}
+    text = (resp.text or "").lower()[:4000]
+    for waf_name, sig in WAF_BLOCK_SIGNATURES.items():
+        if any(h in headers for h in sig.get("headers", [])):
+            return waf_name
+    for waf_name, sig in WAF_BLOCK_SIGNATURES.items():
+        if any(t in text for t in sig.get("text", [])):
+            return waf_name
+    return ""
+
+
+def is_blocked(resp, threshold: int = 403) -> bool:
+    """True if the response looks like a WAF block page (status or signature)."""
+    if resp is None:
+        return False
+    if resp.status_code in (403, 429, 406):
+        return True
+    return bool(classify_block(resp))
+
 def fingerprint_waf(url: str, sess: Optional[requests.Session] = None,
                     timeout: float = 10.0) -> Dict:
     if sess is None:

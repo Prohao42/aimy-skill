@@ -79,6 +79,41 @@ class TestNewEncoders:
         assert any("redundant_url_encode" in n for n in names)
 
 
+
+class TestWafBlock:
+    def test_cloudflare_block_headers(self):
+        from tools.waf_bypass import classify_block
+        class R:
+            status_code = 403
+            headers = {"cf-ray": "abc", "server": "cloudflare"}
+            text = "Sorry, you have been blocked"
+        assert classify_block(R()) == "cloudflare"
+
+    def test_safedog_text(self):
+        from tools.waf_bypass import classify_block
+        class R:
+            status_code = 403
+            headers = {}
+            text = "访问被拦截，安全狗提示"
+        assert classify_block(R()) == "safedog"
+
+    def test_is_blocked_status(self):
+        from tools.waf_bypass import is_blocked
+        class R:
+            status_code = 403
+            headers = {}
+            text = "normal"
+        assert is_blocked(R())
+
+    def test_not_blocked(self):
+        from tools.waf_bypass import is_blocked
+        class R:
+            status_code = 200
+            headers = {}
+            text = "normal page"
+        assert not is_blocked(R())
+
+
 class TestCheck:
     @responses.activate
     def test_basic_request(self):

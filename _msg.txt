@@ -1,7 +1,0 @@
-feat: v3.6.0 - SRC 众测场景工具化 (612 tests green)
-
-- SRC报告模板: tools/src_report.py - 检测结果转可提交报告(14类漏洞模板+Markdown)
-- login命令: 登录并保存session文件, 后续--session-file复用登录态(SRC核心工作流)
-- WAF拦截识别: classify_block/is_blocked - 10种WAF(CF/Akamai/AWS/F5/Imperva/安全狗/云盾/360)拦截特征
-- docs/src_hunting.md: SRC挖洞全流程手册(信息收集->定向检测->验证->报告+红线提醒)
-- 注: 环境无Docker, 真实靶场(DVWA)无法起镜像, 现有验收为模拟靶场

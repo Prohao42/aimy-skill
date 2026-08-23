@@ -17,7 +17,7 @@ Confidence rules:
 
 import json
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -62,7 +62,7 @@ class AttackTree:
       - best_paths(min_confidence=0.5, max_depth=5) → ranked attack paths
     """
 
-    ENTRY_TEMPLATES = {
+    ENTRY_TEMPLATES: Dict[str, dict] = {
         "ssrf": {
             "children": [
                 ("cloud_metadata", "Cloud Metadata Read", 0.85, [
@@ -133,7 +133,7 @@ class AttackTree:
         },
     }
 
-    SERVICE_TEMPLATES = {
+    SERVICE_TEMPLATES: Dict[str, dict] = {
         "redis": {
             "children": [
                 ("ssh_key_inject", "SSH Key Injection", 0.85, [
@@ -376,6 +376,8 @@ class AttackTree:
         return m.get(port)
 
     def propagate(self) -> None:
+        if self.root_id is None:
+            return
         self._propagate_down(self.root_id, 1.0)
 
     def _propagate_down(self, node_id: str, parent_conf: float) -> None:
@@ -434,7 +436,7 @@ class AttackTree:
 
     def best_paths(self, min_confidence: float = 0.20,
                    max_depth: int = 6) -> List[dict]:
-        paths = []
+        paths: List[Dict[str, Any]] = []
         leaf_confirmed = []
 
         for nid, node in self.nodes.items():
@@ -473,13 +475,13 @@ class AttackTree:
         paths = self.best_paths()
         verified = [n.to_dict() for n in self.nodes.values() if n.verified]
 
+        root = self.nodes.get(self.root_id) if self.root_id else None
+        root_confidence = root.confidence if root else 0.0
         return {
             "total_nodes": len(self.nodes),
             "best_paths": paths[:5],
             "verified_nodes": verified,
-            "root_confidence": self.nodes.get(self.root_id, AttackTreeNode(
-                id="", vuln_type="", description="", confidence=0
-            )).confidence,
+            "root_confidence": root_confidence,
         }
 
     def to_json(self) -> str:

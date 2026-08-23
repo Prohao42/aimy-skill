@@ -1,5 +1,5 @@
 import subprocess
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from tools.log_utils import get_logger
 
@@ -94,7 +94,7 @@ def mssql_cmdshell(host: str, user: str, password: str,
 
 
 def mssql_enumerate_linked(host: str, user: str, password: str) -> Dict:
-    result = {"success": False, "linked_servers": []}
+    result: Dict[str, Any] = {"success": False, "linked_servers": []}
     try:
         import pymssql
         conn = pymssql.connect(host=host, user=user, password=password, timeout=5)

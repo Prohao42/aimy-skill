@@ -49,6 +49,9 @@ pre-commit/
 # Data
 data/*.json
 data/*.log
+data/*.db
+data/*.db-shm
+data/*.db-wal
 
 # Editor / agent state
 .omc/

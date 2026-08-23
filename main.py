@@ -16,7 +16,7 @@ from tools.settings import settings
 
 logger = get_logger("main")
 
-VERSION = "2.3.0"
+VERSION = "3.5.0"
 
 
 URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
@@ -41,7 +41,6 @@ class _TLS12Adapter(HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
         ctx = ssl.create_default_context()
         ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        ctx.maximum_version = ssl.TLSVersion.TLSv1_2
         if not settings.verify_ssl:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
@@ -429,13 +428,18 @@ def cmd_auto(args):
     from tools.orchestrator import Orchestrator
     engine = Orchestrator(args.target, _sess(args), args.timeout,
                            args.threads, args.max_pages, args.max_depth,
-                           fast_recon=args.fast_recon,
+                           fast_recon=not getattr(args, "no_fast_recon", False),
                            high_value=getattr(args, "high_value", False),
                            turbo=getattr(args, "turbo", False),
                            skip_verify=getattr(args, "skip_verify", False))
     engine.init_storage(resume=getattr(args, "resume", False),
                         name=getattr(args, "session", "default"))
     report = engine.run()
+    if getattr(args, "save_report", ""):
+        from tools.reporter import save_report
+        paths = save_report(report, args.save_report)
+        if paths:
+            print("[+] Report saved: %s / %s" % (paths.get("json", ""), paths.get("html", "")))
     s = report.get("summary", {})
     if settings.is_rookie():
         print()
@@ -564,6 +568,12 @@ def cmd_workflow(args):
 def cmd_sqli_weaponize(args):
     from tools.sqli_weaponizer import check as sqliw_check
     r = sqliw_check(args.url, args.param, _sess(args), args.timeout)
+    _output(r)
+
+
+def cmd_sqli_second_order(args):
+    from tools.second_order_sqli import check as so_check
+    r = so_check(args.url, args.param, _sess(args), args.timeout)
     _output(r)
 
 
@@ -841,7 +851,7 @@ def _output(result):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="aimy-sikll v%s - 轻量级渗透测试辅助工具链" % VERSION,
+        description="aimy-skill v%s - 轻量级渗透测试辅助工具链" % VERSION,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--timeout", type=float, default=10.0, help="请求超时秒数")
     parser.add_argument("--ssl-verify", action="store_true", help="启用SSL证书验证(默认关闭)")
@@ -1057,11 +1067,12 @@ def main():
     p.add_argument("--threads", type=int, default=20)
     p.add_argument("--max-pages", type=int, default=50)
     p.add_argument("--max-depth", type=int, default=3)
-    p.add_argument("--fast-recon", action="store_true", default=True, help="快速侦察模式(默认)")
+    p.add_argument("--no-fast-recon", action="store_true", help="关闭快速侦察模式，进行完整侦察")
     p.add_argument("--no-chain", action="store_true", help="跳过链式利用阶段")
     p.add_argument("--high-value", action="store_true", help="高价值模式:跳过低危(XSS/CORS等),聚焦RCE/SQLi/SSRF/认证绕过")
     p.add_argument("--turbo", action="store_true", help="极速模式:最大并发+智能终止+自适应策略")
     p.add_argument("--skip-verify", action="store_true", help="跳过交叉验证/Oracle/误报过滤(极速模式)")
+    p.add_argument("--save-report", default="", help="保存报告目录(自动生成 JSON + HTML)")
     p.add_argument("--session", default="default", help="持久化会话名(可恢复)")
     p.add_argument("--resume", action="store_true", help="恢复上一次会话状态")
     p.set_defaults(func=cmd_auto)
@@ -1107,10 +1118,20 @@ def main():
     p.add_argument("--password", default="")
     p.set_defaults(func=cmd_workflow)
 
+    p = sub.add_parser("sqli-second-order", help="二阶SQL注入检测(存储后触发)")
+    p.add_argument("url")
+    p.add_argument("--param", default="username")
+    p.set_defaults(func=cmd_sqli_second_order)
+
     p = sub.add_parser("sqli-weaponize", help="SQL注入数据提取")
     p.add_argument("url")
     p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_sqli_weaponize)
+
+    p = sub.add_parser("sqli-second-order", help="二阶SQL注入检测(存储后触发)")
+    p.add_argument("url")
+    p.add_argument("--param", default="username")
+    p.set_defaults(func=cmd_sqli_second_order)
 
     p = sub.add_parser("jwt-exploit", help="JWT利用(crack/伪造)")
     p.add_argument("url", nargs="?", default="")
@@ -1287,7 +1308,7 @@ def main():
                 "nosqli", "lfi", "sqli-blind", "sqli-oob", "auth-bypass",
                 "jwt", "graphql", "deser", "proto-pollution", "cors",
                 "xss-validate", "waf", "waf-heavy", "bizlogic",
-                "chain", "sqli-weaponize",
+                "chain", "sqli-weaponize", "sqli-second-order",
                 "jwt-exploit", "ssrf-pwn", "ssrf-lateral", "deser-weaponize",
                 "xxe", "graphql-abuse", "jwt-attack", "verify",
                 "smuggler", "webshell", "csrf"}

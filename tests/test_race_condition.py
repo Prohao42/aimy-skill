@@ -8,7 +8,7 @@ class TestRaceCondition:
     def test_race_detection(self):
         def callback(request):
             import json
-            data = json.loads(request.body)
+            json.loads(request.body)
             return (200, {}, json.dumps({"status": "ok", "balance": 100}))
 
         responses.add_callback(

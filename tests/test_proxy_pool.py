@@ -119,6 +119,7 @@ class TestOPSECProxyIntegration:
         kwargs.setdefault("retries", 1)
         from tools.opsec_session import OPSECSession
         sess = OPSECSession(**kwargs)
+        sess.trust_env = False
         monkeypatch.setattr(sess, "send", _ok_send)
         return sess, calls
 
@@ -129,7 +130,7 @@ class TestOPSECProxyIntegration:
         orig = sess.send
 
         def recording_send(req, **kw):
-            seen.append(kw.get("proxies"))
+            seen.append(dict(kw.get("proxies") or {}))
             return orig(req, **kw)
 
         monkeypatch.setattr(sess, "send", recording_send)

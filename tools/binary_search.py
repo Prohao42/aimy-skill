@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from tools.http_client import build_url
 from tools.log_utils import get_logger
@@ -8,7 +8,7 @@ logger = get_logger("binary_search")
 
 def binary_search_columns(url: str, param: str, sess, timeout: float = 10.0,
                            max_columns: int = 50) -> Dict:
-    result = {"vulnerable": False, "column_count": None, "method": "order_by_binary", "evidence": []}
+    result: Dict[str, Any] = {"vulnerable": False, "column_count": None, "method": "order_by_binary", "evidence": []}
 
     low, high = 1, max_columns
     while low <= high:
@@ -35,7 +35,7 @@ def binary_search_columns(url: str, param: str, sess, timeout: float = 10.0,
 
 def binary_search_sqli_blind(url: str, param: str, sess, timeout: float = 10.0,
                                extract_len: int = 10) -> Dict:
-    result = {"vulnerable": False, "extracted": "", "method": "boolean_blind_binary", "evidence": []}
+    result: Dict[str, Any] = {"vulnerable": False, "extracted": "", "method": "boolean_blind_binary", "evidence": []}
 
     def _test_condition(condition: str) -> bool:
         for prefix in ["' AND %s--", "' OR %s--", "\" AND %s--", "\" OR %s--",
@@ -102,7 +102,7 @@ def binary_search_sqli_blind(url: str, param: str, sess, timeout: float = 10.0,
 
 
 def blind_sqli_extract_data(url: str, param: str, sess, timeout: float = 10.0) -> Dict:
-    result = {"vulnerable": False, "data": {}, "method": "blind_extract", "evidence": []}
+    result: Dict[str, Any] = {"vulnerable": False, "data": {}, "method": "blind_extract", "evidence": []}
 
     queries = [
         ("version", "SELECT VERSION()"),

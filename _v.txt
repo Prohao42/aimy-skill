@@ -1,5 +1,0 @@
-feat: v3.6.3 - 挖洞能力强化 (623 tests green)
-
-- DOM XSS检测(dom-xss命令): 18种sink x 8种source静态配对+验证payload
-- payload扩充: sqli_advanced2(宽字节/二次编码/DBMS变体), xss_csp(CSP绕过/DOM触发)
-- UNION列数探测并行化(ThreadPool6并发, 提速~6x)

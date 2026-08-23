@@ -1,0 +1,6 @@
+docs: SRC 实战教程体系 (v3.6.2)
+
+- docs/vuln_playbooks.md: 8类漏洞实战打法(找点->验证->工具->报告)
+- docs/tool_guide.md: 全部命令实战参考(按SRC场景分类)
+- docs/report_writing.md: SRC报告写作(复现/影响量化/红线/自检清单)
+- src_hunting.md教程索引 + README教程入口

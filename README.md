@@ -301,6 +301,15 @@ list            列出所有工具
 
 ---
 
+## 📚 SRC 挖洞教程
+
+| 文档 | 内容 |
+|------|------|
+| [SRC 全流程总纲](docs/src_hunting.md) | 信息收集→定向检测→验证→报告 |
+| [8 类漏洞打法](docs/vuln_playbooks.md) | 找点→验证→工具→报告（含越权/XSS/SSRF） |
+| [命令实战参考](docs/tool_guide.md) | 全部命令按场景分类+示例 |
+| [报告写作指南](docs/report_writing.md) | 怎么写才被 SRC 采纳 |
+
 ## 🎯 适合谁用
 
 | 角色 | 价值 |

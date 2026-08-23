@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.3] - 挖洞能力强化
+### 新增
+- DOM XSS 检测（dom-xss 命令）：抓取页面 HTML+JS 静态分析 18 种 DOM sink（innerHTML/document.write/eval/location 等）与 8 种可注入 source（location.hash/document.URL 等）配对，输出验证 payload
+- payload 扩充：sqli_advanced2.yml（宽字节/二次编码/DBMS 专属变体）、xss_csp.yml（CSP 绕过/编码/DOM sink 触发 payload）——sqli_error 148 条、xss_html 63 条
+### 优化
+- UNION 列数探测（ORDER BY 与 NULL 两种）并行化（ThreadPool 6 并发），12 列探测提速约 6 倍
+
 ## [3.6.2] - SRC 实战教程体系
 ### 新增
 - docs/vuln_playbooks.md：8 类漏洞实战打法（找点→验证→工具→报告）

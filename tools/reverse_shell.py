@@ -148,7 +148,9 @@ def run(lhost: str = "LHOST", lport: int = 4444, encode: str = "raw") -> Dict:
     }
 
     for name, tpl in SHELLS.items():
-        cmd = tpl.format(lhost=lhost, lport=lport)
+        # .replace() (not str.format): several templates contain code-block
+        # braces ({...}) that format() would misinterpret as placeholders.
+        cmd = tpl.replace("{lhost}", lhost).replace("{lport}", str(lport))
         if encode in ENCODERS:
             try:
                 encoded = ENCODERS[encode](cmd)

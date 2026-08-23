@@ -280,6 +280,7 @@ list            列出所有工具
 > **v3.3 武器化升级**：盲 UNION 检测（列数确定无回显 → union_blind + IF() 盲注模板）、sqli-weaponize 全面增强（union 回显自动提取库名/用户/版本 + 表枚举、布尔盲注二分提取、盲 UNION 行存在性 oracle 提取）、payload 引擎新增 MySQL 版本注释（/*!50000*/）与 0x 十六进制字面量编码器、payload_seeds YAML 外置（修复了 YAML 仅首次生效的缓存 bug）。
 > **v3.4 DBMS 系统化升级**：payload 库按 DBMS 分库（payload_seeds/mysql|mssql|postgresql|oracle|sqlite.yml，跨文件追加合并 + dbms 字段过滤 + generate_for_dbms 接口）、错误型检测无 hint 遍历 5 大 DBMS 家族（补齐 Msg NNN / Conversion failed / ERROR: line / ORA- 等高频错误指纹）、时间盲注按 DBMS 优先选 payload、sqli-weaponize 表枚举按 DBMS 分派查询（INFORMATION_SCHEMA / sys.tables / all_tables / sqlite_master）、smuggler 新增 CL.0 检测 + 10 个混淆变体、auto 命令新增 --save-report（JSON + HTML 报告落盘）。
 > **v3.5 高级水平升级**：payload 量级翻倍（payload_seeds 新增 xss/cmdi/ssti/lfi 分库：事件处理器大全、多引擎 RCE 链、wrapper 扩充）、sqli-weaponize 打通检测→数据全链（自动枚举表→列名→行数据 dump）、新增二阶 SQLi 检测器（sqli-second-order 命令，存储后触发布尔差分）、NoSQLi $where 盲注提取（JSON JS oracle 二分抽字段值）+ ReDoS 时间型检测（$regex 灾难回溯）、smuggler HTTP/2 prior-knowledge 探测、post_exploit/c2_beacon 补测试验证（心跳-指令全链路）、版本同步 3.5.0 + CHANGELOG。
+> **v3.5.1 量化验收**：10 端点靶场量化验收（`python lab_audit.py`）——8 漏洞全检出、2 无漏洞零误报、检测率 100%；修复严重 bug：HTTP 500 误入重试列表导致错误型 SQLi 失效+慢 60 倍、补 DVWA 错误指纹、UNION NULL 列数回退。
 
 | 模块 | 亮点 |
 |------|------|

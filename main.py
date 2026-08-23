@@ -32,7 +32,7 @@ class _TLS12Adapter(HTTPAdapter):
             read=max_retries,
             status=max_retries,
             backoff_factor=0.3,
-            status_forcelist=(429, 500, 502, 503, 504),
+            status_forcelist=(429, 502, 503, 504),
             allowed_methods=frozenset(["GET", "POST", "HEAD", "OPTIONS"]),
             respect_retry_after_header=True,
         )

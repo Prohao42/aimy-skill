@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.5.1] - 量化验收与修复
+### 新增
+- 10 端点漏洞靶场量化验收（lab_audit.py）：8 漏洞 + 2 无漏洞对照，检测率 100% / 误报 0
+- payload_seeds 扩充：nosql.yml（$expr/$text/$jsonSchema 操作符）、oracle_extra.yml（q'[]' 引号/OPENQUERY/PG dollar-quoting）、xss 更多事件处理器
+- reverse_shell / xss_browser_verify 补测试（含真实 beacon 往返）
+### 修复
+- **严重**: make_session/main 的 urllib3 Retry 把 HTTP 500 加入重试列表 -> 错误型 SQLi 检测完全失效（500 被重试耗尽成 RetryError 吞掉信号），且扫描慢 60 倍。500 移出 forcelist
+- 补齐 DVWA 风格 MySQL 错误指纹（you have an error in your sql syntax / near 'x' at line）
+- UNION 列数探测：ORDER BY 被吞时回退 UNION NULL 边界探测 + 识别 "different number of columns" 文本错误
+- reverse_shell: str.format() 误解析代码块花括号（perl/node/golang/awk 模板 KeyError）-> 改 .replace()
+
 ## [3.5.0] - 高级水平升级
 ### 新增
 - payload_seeds 分库扩充：xss.yml（事件处理器大全/编码绕过）、cmdi.yml（更多命令/OOB）、ssti.yml（多引擎 RCE 链）、lfi.yml（iconv/rot13 wrapper）

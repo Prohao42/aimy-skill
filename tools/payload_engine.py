@@ -281,6 +281,16 @@ WAF_STRATEGIES: Dict[Optional[str], Dict] = {
         "priority": ["case_sql", "comment_sql", "whitespace_sql", "url_partial"],
         "skip": [],
     },
+    "baota": {
+        "priority": ["case_sql", "comment_sql", "whitespace_sql", "hex_chars",
+                     "url_partial", "tab_sep", "double_url"],
+        "skip": [],
+    },
+    "btwaf": {
+        "priority": ["case_sql", "comment_sql", "whitespace_sql", "hex_chars",
+                     "url_partial", "tab_sep", "double_url"],
+        "skip": [],
+    },
     None: {
         "priority": ["case_sql", "comment_sql", "whitespace_sql", "hex_chars", "scientific"],
         "skip": [],

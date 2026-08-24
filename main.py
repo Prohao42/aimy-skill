@@ -577,6 +577,17 @@ def cmd_sqli_second_order(args):
     _output(r)
 
 
+def cmd_cms_fingerprint(args):
+    from tools.cms_fingerprint import fingerprint, check_batch
+    urls = [u for u in (getattr(args, "urls", []) or [])]
+    if not urls:
+        r = fingerprint(args.url, sess=_sess(args), timeout=args.timeout)
+        _output(r)
+    else:
+        rs = check_batch(urls, timeout=args.timeout)
+        _output(rs)
+
+
 def cmd_dom_xss(args):
     from tools.dom_xss import check as dom_check
     r = dom_check(args.url, sess=_sess(args), timeout=args.timeout)
@@ -1188,6 +1199,11 @@ def main():
     p.add_argument("url")
     p.add_argument("--param", default="id")
     p.set_defaults(func=cmd_sqli_weaponize)
+
+    p = sub.add_parser("cms-fingerprint", help="CMS版本指纹+已知漏洞映射(74cms等)")
+    p.add_argument("url", nargs="?", default="")
+    p.add_argument("--urls", action="append", default=[], help="批量目标(可多次)")
+    p.set_defaults(func=cmd_cms_fingerprint)
 
     p = sub.add_parser("dom-xss", help="DOM XSS检测(静态分析sink/source配对)")
     p.add_argument("url")

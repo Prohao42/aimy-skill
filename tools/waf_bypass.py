@@ -218,13 +218,17 @@ WAF_BLOCK_SIGNATURES = {
         "text": ["safedog", "安全狗", "请求被拦截", "site cannot be reached"],
     },
     "yundun": {
-        "text": ["yundun", "阿里云盾", "拦截", "notice: your request has been blocked"],
+        "text": ["yundun", "阿里云盾", "notice: your request has been blocked"],
     },
     "360": {
         "text": ["360wzws", "360安全", "拦截提示", "wzws-waf-cgi"],
     },
     "baidu": {
         "text": ["baidu yunjiasu", "百度云加速", "yunjiasu"],
+    },
+    "baota": {
+        "text": ["btwaf", "宝塔", "您的请求已被拦截", "被防火墙拦截",
+                 "安全防火墙", "bt.cn/bbs", "www.bt.cn", "拦截详情"],
     },
     "generic": {
         "text": ["waf", "web application firewall", "blocked by security",

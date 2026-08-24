@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.6.4] - DOM XSS 框架感知 + payload 扩充
+### 新增
+- DOM XSS 框架 sink：Vue v-html / React dangerouslySetInnerHTML / Angular [innerHTML] / jQuery .html().append() 等 10+ 框架 sink
+- DOM XSS Playwright 真实执行验证：hash 注入 payload 触发 alert 即 confirmed
+- payload：ssrf.yml（云元数据/内网段/协议 20 条）、ssti_cmdi_extra.yml（$IFS 混淆等）
+
 ## [3.6.3] - 挖洞能力强化
 ### 新增
 - DOM XSS 检测（dom-xss 命令）：抓取页面 HTML+JS 静态分析 18 种 DOM sink（innerHTML/document.write/eval/location 等）与 8 种可注入 source（location.hash/document.URL 等）配对，输出验证 payload

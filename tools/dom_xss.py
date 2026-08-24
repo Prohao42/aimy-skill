@@ -19,6 +19,46 @@ from tools.log_utils import get_logger
 
 logger = get_logger("dom_xss")
 
+HAS_PLAYWRIGHT = False
+try:
+    from playwright.sync_api import sync_playwright
+    HAS_PLAYWRIGHT = True
+except ImportError:
+    pass
+
+
+def _verify_with_browser(url: str, findings: List[Dict], timeout: float) -> Optional[Dict]:
+    """Playwright execution check: inject the suggested payload via location.hash
+    and watch for an alert() dialog - proof the sink really executes."""
+    if not HAS_PLAYWRIGHT:
+        return None
+    for f in findings:
+        if "hash" not in f.get("source", ""):
+            continue
+        payload = f.get("payload") or "#'-alert(1)-'"
+        test_url = url.split("#")[0] + payload
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page(ignore_https_errors=True)
+                dialog_caught = [False]
+
+                def on_dialog(dialog):
+                    dialog_caught[0] = True
+                    dialog.accept()
+
+                page.on("dialog", on_dialog)
+                page.goto(test_url, wait_until="domcontentloaded",
+                          timeout=int(timeout * 1000))
+                page.wait_for_timeout(800)
+                browser.close()
+                if dialog_caught[0]:
+                    return {"confirmed": True, "url": test_url,
+                            "payload": payload, "sink": f["sink"]}
+        except Exception as e:
+            logger.debug("dom-xss browser verify: %s", e)
+    return None
+
 SINKS = [
     (r"\.innerHTML\s*=", "innerHTML"),
     (r"\.outerHTML\s*=", "outerHTML"),
@@ -38,6 +78,23 @@ SINKS = [
     (r"\.replaceChild\s*\(", "replaceChild"),
     (r"\.appendChild\s*\(", "appendChild"),
     (r"\.textContent\s*=", "textContent"),
+    # --- framework-aware sinks ---
+    (r"v-html\s*=", "vue v-html"),
+    (r"v-html\s*:", "vue v-html"),
+    (r"\[innerHTML\]", "angular innerHTML"),
+    (r"\[outerHTML\]", "angular outerHTML"),
+    (r"\[src\]", "angular src"),
+    (r"\[href\]", "angular href"),
+    (r"dangerouslySetInnerHTML", "react dangerouslySetInnerHTML"),
+    (r"\.html\s*\(", "jquery .html()"),
+    (r"\.append\s*\(", "jquery .append()"),
+    (r"\.prepend\s*\(", "jquery .prepend()"),
+    (r"\.after\s*\(", "jquery .after()"),
+    (r"\.before\s*\(", "jquery .before()"),
+    (r"\.replaceWith\s*\(", "jquery .replaceWith()"),
+    (r"\$\s*\([^)]*\)\.(?:append|prepend|html|after|before)\s*\(", "jquery chained"),
+    (r"\bunescape\s*\(", "unescape"),
+    (r"\bdecodeURIComponent\s*\(", "decodeURIComponent"),
 ]
 
 SOURCES = [
@@ -52,10 +109,10 @@ SOURCES = [
     "location.pathname",
 ]
 
-# sinks that are actually XSS-capable (textContent is not, .src/.href need checks)
-_XSS_SINKS = {"innerHTML", "outerHTML", "insertAdjacentHTML", "document.write",
-              "document.writeln", "eval", "new Function", "setTimeout", "setInterval",
-              "location=", "location.href=", "setAttribute", "execCommand"}
+# sinks that are NOT XSS-capable on their own; everything else is a candidate.
+# (textContent is inert; unescape/decodeURIComponent are only sinks when the
+# result later reaches an HTML-capable sink, so we keep them as candidates.)
+SAFE_SINKS = {"textContent"}
 
 
 def _get_scripts(url: str, sess: requests.Session, timeout: float) -> List[str]:
@@ -65,7 +122,8 @@ def _get_scripts(url: str, sess: requests.Session, timeout: float) -> List[str]:
     except Exception:
         return []
     html = resp.text or ""
-    scripts = []
+    # HTML itself is analyzed too: Vue/React/Angular templates live in markup.
+    scripts = [html]
     inline = re.findall(r"<script[^>]*>(.*?)</script>", html, re.DOTALL | re.IGNORECASE)
     for s in inline:
         if s.strip():
@@ -138,14 +196,24 @@ def check(url: str, sess: Optional[requests.Session] = None,
     result["sinks_found"] = [f["sink"] for f in findings]
     if findings:
         # a source feeding a dangerous sink is a candidate DOM XSS
-        dangerous = [f for f in findings if f["sink"] in _XSS_SINKS]
+        dangerous = [f for f in findings if f["sink"] not in SAFE_SINKS]
         for f in dangerous:
             f["payload"] = _verification_payload(f["source"], f["sink"])
         if dangerous:
             result["vulnerable"] = True
             result["findings"] = dangerous[:8]
-            result["note"] = (
-                "DOM XSS candidate: %s feeds %s. Verify with the suggested "
-                "payload via location.hash / query injection." % (
-                    dangerous[0]["source"], dangerous[0]["sink"]))
+            # Playwright execution proof when available
+            verified = _verify_with_browser(url, dangerous[:4], timeout)
+            if verified:
+                result["confirmed"] = True
+                result["evidence"] = ["executed via %s at %s" % (
+                    verified["sink"], verified["url"])]
+                result["note"] = (
+                    "DOM XSS CONFIRMED: %s feeds %s - alert() executed with %s" % (
+                        verified["source"], verified["sink"], verified["payload"]))
+            else:
+                result["note"] = (
+                    "DOM XSS candidate: %s feeds %s. Verify manually with the "
+                    "suggested payload via location.hash injection." % (
+                        dangerous[0]["source"], dangerous[0]["sink"]))
     return result

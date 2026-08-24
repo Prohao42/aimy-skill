@@ -1,6 +1,6 @@
 [project]
 name = "aimy-skill"
-version = "3.6.4"
+version = "3.6.5"
 description = "轻量级渗透测试辅助工具链 (AI Agent Ready)"
 readme = "README.md"
 requires-python = ">=3.8"

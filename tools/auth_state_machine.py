@@ -42,7 +42,7 @@ def _body_text(resp: Dict) -> str:
 
 def _signature(body: str) -> str:
     norm = re.sub(r"\s+", " ", body or "").strip()
-    return hashlib.sha1(norm.encode("utf-8", errors="replace")).hexdigest()[:16]
+    return hashlib.sha1(norm.encode("utf-8", errors="replace")).hexdigest()[:16]  # nosec B324 - response signature
 
 
 def _denied(status: int, body: str, url: str = "", headers: Optional[Dict] = None) -> bool:

@@ -67,7 +67,7 @@ class ResponseProfiler:
                 status=resp.status_code,
                 length=len(resp.text),
                 headers=dict(resp.headers),
-                body_hash=hashlib.md5(resp.text.encode()).hexdigest()[:16],
+                body_hash=hashlib.md5(resp.text.encode()).hexdigest()[:16],  # nosec B324 - baseline fingerprint
                 content_type=resp.headers.get("Content-Type", ""),
                 elapsed=elapsed,
             )
@@ -138,7 +138,7 @@ class ResponseProfiler:
                 )
                 report.is_anomalous = True
 
-        current_hash = hashlib.md5(resp.text.encode()).hexdigest()[:16]
+        current_hash = hashlib.md5(resp.text.encode()).hexdigest()[:16]  # nosec B324 - fingerprint diff
         if current_hash != baseline.body_hash:
             report.delta_hash = True
             if not report.reasons:

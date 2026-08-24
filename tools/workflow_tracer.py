@@ -41,7 +41,7 @@ class TraceStep:
     @property
     def signature(self) -> str:
         key = f"{self.method}|{self.url.split('?')[0]}|{self.response_status}"
-        return hashlib.md5(key.encode()).hexdigest()[:12]
+        return hashlib.md5(key.encode()).hexdigest()[:12]  # nosec B324 - dedup signature
 
 
 @dataclass

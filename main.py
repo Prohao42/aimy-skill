@@ -6,6 +6,7 @@ import ssl
 import sys
 import urllib.parse as _urlparse
 
+import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry as urllib3_Retry
 
@@ -16,7 +17,7 @@ from tools.settings import settings
 
 logger = get_logger("main")
 
-VERSION = "3.6.5"
+VERSION = "3.7.0"
 
 
 URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
@@ -578,7 +579,7 @@ def cmd_sqli_second_order(args):
 
 
 def cmd_cms_fingerprint(args):
-    from tools.cms_fingerprint import fingerprint, check_batch
+    from tools.cms_fingerprint import check_batch, fingerprint
     urls = [u for u in (getattr(args, "urls", []) or [])]
     if not urls:
         r = fingerprint(args.url, sess=_sess(args), timeout=args.timeout)
@@ -620,7 +621,6 @@ def cmd_idor(args):
 def cmd_login(args):
     """SRC 工作流: 登录 -> 保存 session 文件 -> 后续扫描 --session-file 复用登录态。"""
     from tools.auth_engine import AuthSession
-    from tools.mode import show_banner
     if not (args.auth_url and args.auth_user and args.auth_pass):
         from tools.log_utils import get_logger
         get_logger("main").error("login 需要 --auth-url --auth-user --auth-pass")
@@ -789,6 +789,53 @@ def cmd_payload_mutate(args):
     if args.param:
         result["param_mutations"] = [{"variant": v} for v in mutate_param_name(args.param)]
     _output(result)
+
+
+def cmd_weakpass(args):
+    from tools.weakpass import check as wp_check
+    r = wp_check(args.url, timeout=args.timeout, delay=args.delay,
+                 max_attempts=getattr(args, "max_attempts", 0),
+                 api_url=getattr(args, "api_url", ""),
+                 user_field=getattr(args, "user_field", "username"),
+                 pass_field=getattr(args, "pass_field", "password"))
+    _output(r)
+
+
+def cmd_leak_scan(args):
+    from tools.leak_scanner import check as leak_check
+    paths = None
+    if getattr(args, "paths", ""):
+        paths = [p.strip() for p in args.paths.split(",") if p.strip()]
+    r = leak_check(args.url, paths=paths, timeout=args.timeout)
+    _output(r)
+
+
+def cmd_batch_recon(args):
+    from tools.batch_recon import run as batch_run
+    r = batch_run(args.hosts_file, ports=getattr(args, "ports", ""),
+                  threads=args.threads, timeout=min(args.timeout, 3.0),
+                  unauth=getattr(args, "unauth", False))
+    _output(r)
+
+
+def cmd_unauth(args):
+    from tools.unauth_scan import check as unauth_check
+    hosts = []
+    if getattr(args, "host", ""):
+        hosts.append(args.host)
+    if getattr(args, "hosts_file", ""):
+        try:
+            with open(args.hosts_file, "r") as f:
+                hosts += [line.strip() for line in f if line.strip()]
+        except Exception as e:
+            _output({"success": False, "error": str(e)})
+            return
+    if not hosts:
+        _output({"success": False, "error": "需要 --host 或 --hosts 文件"})
+        return
+    services = [s.strip() for s in args.service.split(",") if s.strip()]
+    r = unauth_check(hosts, services=services, threads=args.threads, timeout=args.timeout)
+    _output(r)
 
 
 def cmd_kali(args):
@@ -1295,6 +1342,33 @@ def main():
 
     p = sub.add_parser("list", help="列出所有可用工具")
     p.set_defaults(func=cmd_list)
+    p = sub.add_parser("unauth", help="未授权中间件检测(Redis/ES/Mongo/MySQL/Postgres)")
+    p.add_argument("--host", default="", help="单目标 host 或 host:port")
+    p.add_argument("--hosts", default="", dest="hosts_file", help="IP列表文件(每行一个 host 或 host:port)")
+    p.add_argument("--service", default="redis,es,mongo,mysql,pg", help="检测服务(逗号分隔)")
+    p.add_argument("--threads", type=int, default=30)
+    p.set_defaults(func=cmd_unauth)
+
+    p = sub.add_parser("leak-scan", help="信息泄露专项扫描(.git/.env/备份/Swagger/actuator)")
+    p.add_argument("url")
+    p.add_argument("--paths", default="", help="自定义路径列表(逗号分隔, 默认全量)")
+    p.set_defaults(func=cmd_leak_scan)
+
+    p = sub.add_parser("weakpass", help="业务系统弱口令/默认凭据检测(低频差分)")
+    p.add_argument("url", help="登录页或系统根 URL")
+    p.add_argument("--delay", type=float, default=0.3, help="每次尝试间隔秒数(防封)")
+    p.add_argument("--max-attempts", type=int, default=0, help="最多尝试组数(0=全部)")
+    p.add_argument("--api-url", default="", help="JSON API 登录端点(SPA/Odoo 等, 跳过表单解析)")
+    p.add_argument("--user-field", default="username", help="API 用户名字段")
+    p.add_argument("--pass-field", default="password", help="API 密码字段")
+    p.set_defaults(func=cmd_weakpass)
+
+    p = sub.add_parser("batch-recon", help="批量资产发现(端口+Web指纹+高价值排序)")
+    p.add_argument("hosts_file", help="IP/域名列表文件(每行一个)")
+    p.add_argument("--ports", default="", help="端口列表(逗号分隔)")
+    p.add_argument("--threads", type=int, default=100)
+    p.add_argument("--unauth", action="store_true", help="对发现的数据库/中间件端口联动未授权检测")
+    p.set_defaults(func=cmd_batch_recon)
 
     # ---- kali sub-command ----
     pk = sub.add_parser("kali", help="Kali Linux 工具调用 (需配置 --kali-host/--kali-local)")
@@ -1401,7 +1475,7 @@ def main():
                 "chain", "sqli-weaponize", "sqli-second-order",
                 "jwt-exploit", "ssrf-pwn", "ssrf-lateral", "deser-weaponize",
                 "xxe", "graphql-abuse", "jwt-attack", "verify",
-                "smuggler", "webshell", "csrf"}
+                "smuggler", "webshell", "csrf", "leak-scan"}
     if args.command in url_cmds:
         u = getattr(args, "url", "") or ""
         if u:

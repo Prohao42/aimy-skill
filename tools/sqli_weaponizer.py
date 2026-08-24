@@ -117,7 +117,7 @@ def _extract_via_union(url: str, param: str, cols: int, reflection_points: List[
 
     # Table enumeration: DBMS-aware query candidates, tried in order.
     dbms = _guess_dbms_from_data(data)
-    _NOISE = ("html", "body", "group", "concat", "table", "name", "information",
+    noise = ("html", "body", "group", "concat", "table", "name", "information",
               "schema", "tables", "from", "where", "select", "null", "database",
               "current", "user", "version", "hostname", "string", "sys", "top")
     table_queries = _table_enum_queries(dbms)
@@ -129,7 +129,7 @@ def _extract_via_union(url: str, param: str, cols: int, reflection_points: List[
         if r is None:
             continue
         tables = re.findall(r"[a-zA-Z_][a-zA-Z0-9_]{2,}", r.text or "")
-        tables = [t for t in tables if t.lower() not in _NOISE]
+        tables = [t for t in tables if t.lower() not in noise]
         tables = list(dict.fromkeys(tables))
         if len(tables) >= 2:
             data.append({"source": "union_tables", "dbms": dbms,
@@ -322,7 +322,7 @@ def _extract_table_data(url: str, param: str, cols: int, reflection_points: List
         return []
     col = reflection_points[0]
     data = []
-    _NOISE2 = ("html", "body", "table", "name", "information", "schema",
+    noise2 = ("html", "body", "table", "name", "information", "schema",
                "columns", "from", "where", "select", "null", "database",
                "column", "group", "concat", "listagg", "pragma", "row")
     col_queries = [
@@ -342,7 +342,7 @@ def _extract_table_data(url: str, param: str, cols: int, reflection_points: List
         if r is None:
             continue
         found = re.findall(r"[a-zA-Z_][a-zA-Z0-9_]{2,}", r.text or "")
-        found = [f for f in found if f.lower() not in _NOISE2]
+        found = [f for f in found if f.lower() not in noise2]
         found = list(dict.fromkeys(found))
         if len(found) >= 1:
             columns = found
@@ -368,7 +368,7 @@ def _extract_table_data(url: str, param: str, cols: int, reflection_points: List
         cells = []
         for token in rows:
             t = token.strip()
-            if t.lower() in _NOISE2 or t.lower() in ("html", "body", "page"):
+            if t.lower() in noise2 or t.lower() in ("html", "body", "page"):
                 continue
             if "|" in t or any(c.isdigit() for c in t):
                 cells.append(t[:60])

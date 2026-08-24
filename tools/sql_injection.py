@@ -12,7 +12,6 @@ from tools.payload_engine import (
     generate_sqli_error,
     generate_sqli_stacked,
     generate_sqli_time,
-    generate_sqli_union,
 )
 from tools.response_profiler import CLEAN_VALUE, ResponseProfiler
 from tools.settings import settings

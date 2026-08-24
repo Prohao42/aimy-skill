@@ -129,8 +129,8 @@ class SemanticDiffEngine:
         if result.length_diff > 0:
             result.has_meaningful_diff = True
 
-        left_hash = hashlib.md5(left.encode()).hexdigest()[:16]
-        right_hash = hashlib.md5(right.encode()).hexdigest()[:16]
+        left_hash = hashlib.md5(left.encode()).hexdigest()[:16]  # nosec B324 - page diff
+        right_hash = hashlib.md5(right.encode()).hexdigest()[:16]  # nosec B324 - page diff
         if left_hash != right_hash:
             result.has_meaningful_diff = True
 

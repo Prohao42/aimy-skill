@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.7.0] - SRC 批量资产实战化：4 大新命令 + 全量修复
+### 新增
+- `unauth` 命令 + tools/unauth_scan.py：未授权中间件批量检测（Redis/ES/Mongo/MySQL/Postgres）+ 回显型蜜罐自动识别（Redis PING 回显 / Mongo OP_QUERY 反射）
+- `batch-recon` 命令 + tools/batch_recon.py：批量资产发现（TCP 端口存活 → Web 技术指纹 → 高价值排序 → 联动未授权检测）
+- `leak-scan` 命令 + tools/leak_scanner.py：信息泄露专项（.git/.env/.svn/备份/Swagger/actuator/phpinfo 等 35 路径），SPA catch-all 与自定义 404 页误报消除
+- `weakpass` 命令 + tools/weakpass.py：业务系统弱口令/默认凭据检测（表单解析+错误凭据差分 / FileBrowser API 登录器 / 通用 JSON API 登录）
+- cms_fingerprint 扩展为 11 产品指纹引擎：新增 SPIP（CVE-2023-27372 RCE 映射）/ Cal.com / Odoo / Matomo / Jitsi / Plesk / FileBrowser / Nextcloud / WordPress / phpMyAdmin
+### 修复
+- 真实 bug：main.py cmd_idor/cmd_login `requests` 未定义 NameError（F821）
+- banner 输出改走 stderr，JSON 输出保持 machine-parseable（AI/脚本可直解析）
+- ruff 全量清零（多余 import / 命名 / 未用变量）、bandit High 312 → 0（指纹哈希与扫描必需项标注 nosec）
+- 测试 631 → 662（新增 unauth/batch_recon/leak_scanner/weakpass/CLI 层测试）
+### 背景
+- 真实 SRC 授权目标实战驱动：60+ 目标批量侦察产出 3 个 Redis 未授权漏洞（212.132.104.109 / 62.116.188.86 / 167.235.142.43），并固化出上述批量实战命令
+
 ## [3.6.5] - SRC 实战化：宝塔 WAF 对抗 + CMS 版本指纹漏洞库
 ### 新增
 - 宝塔 WAF 支持：payload_engine 新增 baota/btwaf 编码策略（双重URL/注释/空白组合），waf_bypass 识别宝塔拦截页（btwaf/您的请求已被拦截 等特征）

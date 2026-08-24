@@ -16,7 +16,7 @@ from tools.settings import settings
 
 logger = get_logger("main")
 
-VERSION = "3.6.4"
+VERSION = "3.6.5"
 
 
 URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")

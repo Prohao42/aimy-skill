@@ -1,5 +1,0 @@
-feat: v3.6.4 - DOM XSS 框架感知 + payload 扩充 (626 tests green)
-
-- DOM XSS框架sink: Vue v-html / React dangerouslySetInnerHTML / Angular / jQuery
-- DOM XSS Playwright执行验证: hash注入触发alert即confirmed
-- payload: ssrf.yml(云元数据/内网段/协议), ssti_cmdi_extra.yml(IFS混淆等)

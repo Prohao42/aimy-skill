@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.6.5] - SRC 实战化：宝塔 WAF 对抗 + CMS 版本指纹漏洞库
+### 新增
+- 宝塔 WAF 支持：payload_engine 新增 baota/btwaf 编码策略（双重URL/注释/空白组合），waf_bypass 识别宝塔拦截页（btwaf/您的请求已被拦截 等特征）
+- cms-fingerprint 命令 + tools/cms_fingerprint.py：无损探测 CMS 版本（74cms v3/v4/v5 特征路径），匹配 data/cms_vulns.json 已知漏洞库
+- data/cms_vulns.json：74cms 全系已知漏洞映射（v3.6 前台SQLi/v4.2.3 文件读取/v5.0.1 SQLi+后台RCE/模板注入/getshell 等 13+ 条）
+### 背景
+- 真实 SRC 目标验证：611 个 74cms 站普遍有宝塔 WAF，公开 POC 批量命中率低 -> 针对性补 WAF 对抗与版本精确指纹
+
 ## [3.6.4] - DOM XSS 框架感知 + payload 扩充
 ### 新增
 - DOM XSS 框架 sink：Vue v-html / React dangerouslySetInnerHTML / Angular [innerHTML] / jQuery .html().append() 等 10+ 框架 sink

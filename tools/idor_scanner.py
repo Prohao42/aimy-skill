@@ -7,10 +7,8 @@
 
 支持 GET 查询参数与 POST JSON body 两种注入点。
 """
-import json
 import re
-from typing import Dict, List, Optional
-from urllib.parse import urlparse
+from typing import Dict, Optional
 
 import requests
 

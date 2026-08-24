@@ -6,7 +6,6 @@ store a marker + boolean pair, fetch, and diff the fetched responses.
 
 Store/fetch endpoints are inferred from common paths; callers can override.
 """
-import re
 from typing import Dict, List, Optional
 
 import requests

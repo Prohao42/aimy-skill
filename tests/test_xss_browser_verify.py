@@ -2,7 +2,7 @@ import re
 
 import responses
 
-from tools.xss_browser_verify import check, _verify_http
+from tools.xss_browser_verify import _verify_http, check
 
 
 class TestXssBrowserVerify:

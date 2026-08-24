@@ -3,7 +3,7 @@ import re
 import requests
 import responses
 
-from tools.idor_scanner import check, check_unauthorized, _looks_like_data
+from tools.idor_scanner import _looks_like_data, check, check_unauthorized
 
 
 class _FakeResp:

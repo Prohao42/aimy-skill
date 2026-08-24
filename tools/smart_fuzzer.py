@@ -300,7 +300,7 @@ class ResponseFingerprint:
             length=len(text),
             line_count=text.count("\n"),
             word_count=len(text.split()),
-            hash_prefix=hashlib.md5(text.encode()).hexdigest()[:8],
+            hash_prefix=hashlib.md5(text.encode()).hexdigest()[:8],  # nosec B324 - response dedup key
             has_error=resp.status_code >= 500,
             error_type="server_error" if resp.status_code >= 500 else "",
         )

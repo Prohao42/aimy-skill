@@ -4,8 +4,7 @@ import urllib.parse
 import responses
 
 from tools.payload_engine import generate, generate_sqli_conditional, generate_sqli_time_for
-from tools.sql_injection import _probe_context
-from tools.sql_injection import check
+from tools.sql_injection import _probe_context, check
 
 
 def _param_from(request):
@@ -282,9 +281,10 @@ class TestNoSqlWhereBlind:
     @responses.activate
     def test_where_blind_extraction(self):
         import json as _json
+
         from tools.nosqli_detector import check as nosql_check
 
-        FIELD = "admin"  # stored field value the $where oracle queries
+        field = "admin"  # stored field value the $where oracle queries
 
         def on_get(request):
             return (200, {}, "normal")
@@ -304,7 +304,7 @@ class TestNoSqlWhereBlind:
                 m = re.search(r"charCodeAt\((\d+)\)>(\d+)", cond)
                 if m:
                     pos, gt = int(m.group(1)), int(m.group(2))
-                    ch = ord(FIELD[pos]) if pos < len(FIELD) else 0
+                    ch = ord(field[pos]) if pos < len(field) else 0
                     if ch > gt:
                         return (200, {}, "x" * 100 + "row")
                 return (200, {}, "x")
@@ -336,6 +336,7 @@ class TestNoSqlRedos:
     @responses.activate
     def test_redos_timing_detection(self):
         import time as _time
+
         from tools.nosqli_detector import _detect_redos
 
         def on_post(request):

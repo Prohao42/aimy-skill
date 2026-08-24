@@ -1,3 +1,5 @@
+import sys
+
 from tools.settings import settings
 
 MODE_BANNER = {
@@ -17,7 +19,8 @@ MODE_BANNER = {
 
 
 def show_banner():
-    print(MODE_BANNER.get(settings.mode, MODE_BANNER["rookie"]))
+    # Banner goes to stderr so JSON output on stdout stays machine-parseable.
+    print(MODE_BANNER.get(settings.mode, MODE_BANNER["rookie"]), file=sys.stderr)
 
 
 def filter_vulnerabilities(results):

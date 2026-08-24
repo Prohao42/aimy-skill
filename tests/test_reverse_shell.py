@@ -1,6 +1,5 @@
 from tools.reverse_shell import (
     WEBSHELLS,
-    deploy_webshell,
     generate_webshell,
     run,
 )

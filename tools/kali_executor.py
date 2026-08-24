@@ -71,7 +71,7 @@ class KaliExecutor:
             return False
         try:
             self._client = paramiko.SSHClient()
-            self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # nosec B507 - user-configured Kali host
             kwargs = {
                 "hostname": self.config.host,
                 "port": self.config.port,
@@ -193,7 +193,7 @@ def _run_local(command: str, timeout: int = 120) -> Dict:
         logger.debug("Kali[LOCAL]: %s", command[:120])
         r = subprocess.run(
             command,
-            shell=True,
+            shell=True,  # nosec B602 - arbitrary user commands are the tool's core purpose
             capture_output=True,
             text=True,
             timeout=timeout,

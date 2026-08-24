@@ -253,8 +253,8 @@ class TypeConfusionDetector:
     def _responses_differ(self, r1: requests.Response, r2: requests.Response) -> bool:
         if r1.status_code != r2.status_code:
             return True
-        h1 = hashlib.md5(r1.text.encode()).hexdigest()
-        h2 = hashlib.md5(r2.text.encode()).hexdigest()
+        h1 = hashlib.md5(r1.text.encode()).hexdigest()  # nosec B324 - response diff
+        h2 = hashlib.md5(r2.text.encode()).hexdigest()  # nosec B324 - response diff
         return h1 != h2
 
     def toctou_risk_assessment(self, param: str, method: str = "GET",

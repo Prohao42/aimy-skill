@@ -206,7 +206,7 @@ class ActiveProber:
         evidence = ""
 
         if probe.get("hash"):
-            body_hash = hashlib.md5(resp.content).hexdigest()
+            body_hash = hashlib.md5(resp.content).hexdigest()  # nosec B324 - fingerprint only
             evidence = "hash:%s" % body_hash[:16]
             matched = self._match_version_hash(tech, body_hash)
             if matched:

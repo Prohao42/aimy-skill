@@ -1,7 +1,0 @@
-feat: v3.6.5 - SRC实战化: 宝塔WAF对抗 + CMS版本指纹漏洞库 (631 tests green)
-
-- payload_engine: baota/btwaf编码策略(双重URL/注释/空白)
-- waf_bypass: 宝塔拦截页识别(btwaf/已被拦截)
-- cms-fingerprint命令: 74cms v3/v4/v5精确指纹+漏洞匹配
-- data/cms_vulns.json: 74cms 13+已知漏洞映射
-- 背景: 611站实战发现宝塔WAF普遍, 针对性补齐

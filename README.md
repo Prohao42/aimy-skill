@@ -217,7 +217,23 @@ payload-mutate  Payload 变异
 list            列出所有工具
 ```
 
-### 🌐 全局选项
+### 👤 模式选择
+
+aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `AIMY_MODE` 切换：
+
+| 模式 | 适用场景 | 输出特点 |
+|------|----------|----------|
+| **rookie** (默认) | 入门学习、首次审计、详细报告 | - 为每个漏洞添加详细解释和修复建议<br>- 不过滤低信号漏洞，全部展示<br>- 启动时显示 "aimy-skill 菜鸟模式 (Rookie)" Banner |
+| **veteran** | 专业渗透测试、快速报告、CI/CD | - 自动过滤低风险漏洞（XSS反射、Open Redirect、信息泄露）<br>- 省略冗余解释，仅保留高价值发现<br>- 启动时显示 "aimy-skill 老鸟模式 (Veteran)" Banner<br>- 输出更精简，聚焦核心风险 |
+
+**切换方式**：
+- 环境变量: `set AIMY_MODE=veteran` (Windows) / `export AIMY_MODE=veteran` (Linux/macOS)
+- CLI 参数: `python main.py auto -u http://target.com --mode veteran`
+- 记忆: 通过 `AIMY_MODE` 环境变量持久化配置
+
+**模式区别示例**：
+- SQL注入：rookie → 附带完整修复建议；veteran → 仅标记为高危漏洞
+- 反射型XSS：rookie → 完整描述+建议；veteran → "低危: 反射型XSS，不展开"
 
 ```
 --timeout SEC       请求超时（默认: 10s）

@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 from typing import Dict, List, Optional
 
@@ -191,9 +192,20 @@ class KaliExecutor:
 def _run_local(command: str, timeout: int = 120) -> Dict:
     try:
         logger.debug("Kali[LOCAL]: %s", command[:120])
+        # 将字符串命令转换为安全的列表形式，避免 shell=True 带来的命令注入风险
+        if isinstance(command, str):
+            # 尝试使用 shlex 分割，如果命令已经是列表则保持不变
+            if not command.startswith(("(", "[", "'", "\"")):
+                cmd_list = shlex.split(command)
+            else:
+                cmd_list = command
+            if not isinstance(cmd_list, list):
+                cmd_list = [command]
+        else:
+            cmd_list = command
+
         r = subprocess.run(
-            command,
-            shell=True,  # nosec B602 - arbitrary user commands are the tool's core purpose
+            cmd_list,
             capture_output=True,
             text=True,
             timeout=timeout,

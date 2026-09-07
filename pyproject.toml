@@ -120,6 +120,10 @@ skips = ["B101", "B311", "B403", "B405"]
 [tool.setuptools.packages.find]
 include = ["tools*", "tools.*", "engine*", "engine.*"]
 
+[tool.setuptools]
+# 顶层模块 main.py 承载 CLI 入口 (aimy = "main:main"),必须随包安装
+py-modules = ["main"]
+
 [build-system]
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"

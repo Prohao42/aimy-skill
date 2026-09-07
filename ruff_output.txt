@@ -1,0 +1,37 @@
+F401 [*] `json` imported but unused
+ --> lab_audit.py:2:8
+  |
+1 | """Quantitative acceptance: run core detectors against the 10-endpoint lab."""
+2 | import json
+  |        ^^^^
+3 | import sys
+4 | import time
+  |
+help: Remove unused import: `json`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> lab_audit.py:8:1
+   |
+ 6 |   sys.path.insert(0, ".")
+ 7 |
+ 8 | / from tools import cmdi_detector, lfi_scanner, nosqli_detector, sql_injection, ssti_detector, xss_detector
+ 9 | | from tools._session import make_session
+   | |_______________________________________^
+10 |
+11 |   BASE = "http://127.0.0.1:18774"
+   |
+help: Organize imports
+
+F401 [*] `time` imported but unused
+ --> lab_server.py:2:8
+  |
+1 | import re
+2 | import time
+  |        ^^^^
+3 | from http.server import BaseHTTPRequestHandler, HTTPServer
+4 | from urllib.parse import parse_qs, urlparse
+  |
+help: Remove unused import: `time`
+
+Found 3 errors.
+[*] 3 fixable with the `--fix` option.

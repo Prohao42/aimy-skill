@@ -48,6 +48,8 @@ def _is_low_value(result):
 
 
 def enrich_result(result):
+    from tools._finding import Finding, VulnType
+
     explanations = {
         "sql_injection": {
             "rookie": "SQL注入漏洞: 攻击者可通过注入SQL语句操纵数据库。\n  修复建议: 使用参数化查询(PreparedStatement)或ORM框架。",
@@ -66,8 +68,17 @@ def enrich_result(result):
             "veteran": "",
         },
     }
-    if settings.is_rookie() and isinstance(result, dict):
+    # 支持统一 Finding 模型
+    if isinstance(result, Finding):
+        vuln_type = (result.vuln_type or VulnType.INFO).value.lower()
+    elif isinstance(result, dict):
         vuln_type = (result.get("type") or "").lower()
-        if vuln_type in explanations:
-            result["_explanation"] = explanations[vuln_type]["rookie"]
+    else:
+        return result
+
+    if settings.is_rookie() and vuln_type in explanations:
+        result["_explanation"] = explanations[vuln_type]["rookie"]
+    elif settings.is_rookie() and isinstance(result, Finding):
+        # 为 Finding 对象添加解释 (兼容模式)
+        pass  # Finding 对象有自己的 evidence，无需额外字段
     return result

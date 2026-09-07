@@ -10,7 +10,6 @@ from tools.log_utils import get_logger
 
 logger = get_logger("orchestrator")
 
-# Security tools ( kept for backward compatibility )
 from tools import auth_bypass, crawler, jwt_exploiter, param_miner, sqli_weaponizer, waf_bypass
 from tools.adaptive_fuzzer import AdaptiveFuzzer
 from tools.adaptive_payload import suggest_additional_tests
@@ -21,15 +20,15 @@ from tools.context_memory import get_memory
 from tools.cross_validator import run_cross_validation
 from tools.dual_session import DualSessionManager
 from tools.oob_server import OOBServer
-from tools.orchestrator_engine.recon.recon_engine import (
+from tools.playwright_engine import PlaywrightEngine
+from tools.reasoning_engine import ReasoningEngine
+from tools.recon import (
     check_git_leak,
     enum_subdomains,
     fingerprint_tech,
     fuzz_directories,
     scan_ports,
 )
-from tools.playwright_engine import PlaywrightEngine
-from tools.reasoning_engine import ReasoningEngine
 from tools.response_profiler import ResponseProfiler
 from tools.robust_verifier import verify_finding as robust_verify
 from tools.second_order_verifier import SecondOrderVerifier

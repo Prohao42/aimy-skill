@@ -1,0 +1,1045 @@
+============================= test session starts =============================
+platform win32 -- Python 3.9.13, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\Python\aimy-skill
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.12.1, cov-7.1.0, timeout-2.4.0, requests-mock-1.12.1
+collected 662 items
+
+<Dir aimy-skill>
+  <Package tests>
+    <Module test_attack_graph.py>
+      <Class TestAttackGraph>
+        <Function test_add_node>
+        <Function test_add_edge>
+        <Function test_build_graph_from_findings>
+        <Function test_propagate_probabilities>
+        <Function test_best_paths>
+        <Function test_empty_graph>
+        <Function test_cycle_detection>
+    <Module test_auth_bypass.py>
+      <Class TestAuthBypass>
+        <Function test_path_bypass_found>
+        <Function test_header_injection_bypass>
+        <Function test_no_bypass>
+    <Module test_auth_engine.py>
+      <Class TestDetectFormFields>
+        <Function test_detects_csrf_token_input>
+        <Function test_detects_csrf_token_underscore>
+        <Function test_detects_csrf_authenticity_token>
+        <Function test_detects_csrf_meta>
+        <Function test_detects_csrf_token_short>
+        <Function test_detects_csrf_token_private>
+        <Function test_detects_password_field>
+        <Function test_detects_form_action>
+        <Function test_no_form_action_fallback>
+        <Function test_text_input_extracted>
+        <Function test_email_input_extracted>
+        <Function test_hidden_input_without_value>
+        <Function test_input_with_name_before_type>
+        <Function test_empty_html_returns_defaults>
+        <Function test_hidden_input_with_value>
+      <Class TestAuthSession>
+        <Function test_default_user_agent_set>
+        <Function test_custom_session_preserves_headers>
+        <Function test_login_form_success>
+        <Function test_login_form_failure_status>
+        <Function test_login_form_short_response>
+        <Function test_login_form_with_csrf>
+        <Function test_login_form_with_extra_hidden_inputs>
+        <Function test_login_form_network_error_returns_false>
+        <Function test_login_form_exception_during_post>
+        <Function test_login_api_success_bearer_token>
+        <Function test_login_api_access_token>
+        <Function test_login_api_nested_token>
+        <Function test_login_api_no_token_in_response>
+        <Function test_login_api_failure_status>
+        <Function test_login_api_non_json_response>
+        <Function test_login_api_network_error_returns_false>
+        <Function test_login_basic_success>
+        <Function test_login_basic_failure>
+        <Function test_login_basic_redirect>
+        <Function test_login_basic_network_error_returns_false>
+        <Function test_set_cookies>
+        <Function test_set_header_token_default>
+        <Function test_set_header_token_custom_scheme>
+        <Function test_login_browser_playwright_not_available>
+        <Function test_save_and_load_session>
+        <Function test_load_session_file_not_found>
+        <Function test_load_session_corrupted>
+        <Function test_save_session_preserves_all_cookies>
+        <Function test_login_api_malformed_json_no_exception>
+        <Function test_login_action_url_from_form>
+        <Function test_login_form_defaults_user_pass_field_names>
+    <Module test_auth_state_machine.py>
+      <Class TestHelpers>
+        <Function test_denied_status>
+        <Function test_denied_body_marker>
+        <Function test_signature_normalizes_whitespace>
+        <Function test_signature_empty>
+      <Class TestReplay>
+        <Function test_returns_role_rows>
+        <Function test_denied_flag_set>
+        <Function test_post_json_supported>
+      <Class TestFindings>
+        <Function test_authz_inversion>
+        <Function test_privilege_gap>
+        <Function test_bola_same_rank_identities>
+        <Function test_anon_access>
+        <Function test_no_findings_when_properly_gated>
+        <Function test_redirect_to_login_denied>
+      <Class TestBatch>
+        <Function test_replay_batch_counts>
+        <Function test_auth_replay_fn>
+    <Module test_batch_recon.py>
+      <Class TestBatchRecon>
+        <Function test_run_basic>
+        <Function test_db_port_high_priority>
+        <Function test_unauth_link>
+    <Module test_biz_logic_scanner.py>
+      <Class TestMfaBypass>
+        <Function test_direct_dashboard_access>
+        <Function test_mfa_required>
+      <Class TestPriceManipulation>
+        <Function test_price_param_detected>
+        <Function test_non_price_param>
+      <Class TestMassAssignment>
+        <Function test_mass_assignment_detected>
+      <Class TestCouponAbuse>
+        <Function test_coupon_accepted>
+        <Function test_coupon_rejected>
+      <Class TestWorkflowBypass>
+        <Function test_skip_step_detected>
+      <Class TestIdorChain>
+        <Function test_idor_chain_detection>
+      <Class TestBizLogicMain>
+        <Function test_main_check_aggregates>
+    <Module test_biz_logic_v2.py>
+      <Class TestRunAuthzScan>
+        <Function test_basic_flow>
+        <Function test_default_auth_url>
+        <Function test_custom_auth_url>
+        <Function test_multiple_identities>
+        <Function test_no_identities>
+        <Function test_identity_uses_username_as_label_fallback>
+      <Class TestRunWorkflowScan>
+        <Function test_no_vulnerabilities>
+        <Function test_skip_step_detected>
+        <Function test_skip_step_not_accessible>
+        <Function test_replay_detected>
+        <Function test_resource_ids_extracted>
+      <Class TestRunRaceScan>
+        <Function test_race_window_found>
+        <Function test_no_race_window>
+        <Function test_default_param_body>
+        <Function test_custom_concurrency>
+      <Class TestRunConstraintScan>
+        <Function test_no_constraints>
+        <Function test_constraints_detected>
+        <Function test_constraint_breaker_findings>
+        <Function test_request_exception_handled>
+      <Class TestCheck>
+        <Function test_both_not_vulnerable>
+        <Function test_constraint_vulnerable>
+        <Function test_race_vulnerable>
+        <Function test_both_vulnerable>
+        <Function test_custom_timeout>
+    <Module test_c2_beacon.py>
+      <Class TestBeaconAgent>
+        <Function test_task_lifecycle>
+        <Function test_task_failure_recorded>
+      <Class TestC2Server>
+        <Function test_beacon_roundtrip>
+        <Function test_generate_agent_payload>
+    <Module test_cmdi_detector.py>
+      <Class TestCMDIDetector>
+        <Function test_output_detection>
+        <Function test_no_cmdi>
+    <Module test_cms_fingerprint.py>
+      <Class TestCmsFingerprint>
+        <Function test_v5_74cms_detected>
+        <Function test_v3_74cms_detected>
+      <Class TestProductFingerprints>
+        <Function test_spip_detected>
+        <Function test_matomo_body_only>
+        <Function test_plesk_body_only>
+        <Function test_phpmyadmin_body_only>
+      <Class TestBaotaSupport>
+        <Function test_baota_strategy_in_payload_engine>
+        <Function test_baota_block_signature>
+        <Function test_baota_generation>
+    <Module test_context_memory.py>
+      <Class TestContextMemory>
+        <Function test_singleton>
+        <Function test_set_get>
+        <Function test_has>
+        <Function test_delete>
+        <Function test_clear>
+        <Function test_cleanup>
+        <Function test_snapshot>
+        <Function test_get_suggestions>
+        <Function test_get_stats>
+        <Function test_all_keys>
+    <Module test_cors_scanner.py>
+      <Class TestCORSScanner>
+        <Function test_origin_reflection>
+        <Function test_wildcard_origin>
+        <Function test_credentialed_reflection>
+        <Function test_no_cors_vuln>
+        <Function test_check_single_origin_function_exists>
+    <Module test_deserialization_detector.py>
+      <Class TestDeserializationDetector>
+        <Function test_source_code_leak>
+        <Function test_php_unserialize_post>
+        <Function test_java_deser_post>
+        <Function test_no_deser>
+    <Module test_dom_xss.py>
+      <Class TestDomXss>
+        <Function test_innerhtml_hash_sink_detected>
+        <Function test_no_sinks>
+        <Function test_analyze_scripts_direct>
+      <Class TestFrameworkSinks>
+        <Function test_vue_vhtml>
+        <Function test_react_dangerously_set_inner_html>
+        <Function test_jquery_html>
+        <Function test_safe_sink_not_flagged>
+    <Module test_domain_attacks.py>
+      <Class TestBuilders>
+        <Function test_as_req_structure>
+        <Function test_as_req_msg_type>
+        <Function test_tgs_req_structure>
+        <Function test_tgs_req_sname>
+      <Class TestParseKdc>
+        <Function test_as_rep_extracts_hash_material>
+        <Function test_krb_error_preauth_required>
+        <Function test_krb_error_unknown_principal>
+        <Function test_garbage_input>
+      <Class TestAsrepRoast>
+        <Function test_roastable_user_returns_hash>
+        <Function test_preauth_required_not_roastable>
+        <Function test_unknown_principal>
+        <Function test_sender_exception_recorded>
+        <Function test_empty_userlist>
+      <Class TestLdap>
+        <Function test_bind_and_search_roundtrip>
+        <Function test_ldap_anonymous_enum>
+        <Function test_ldap_anonymous_bind_fail>
+        <Function test_base_dn_derivation>
+      <Class TestSpnEnum>
+        <Function test_anonymous_spn_enum>
+        <Function test_credential_bind_used>
+      <Class TestKerberoastSkeleton>
+        <Function test_skeleton_builds_requests>
+        <Function test_skeleton_bind_fail_falls_back>
+      <Class TestRun>
+        <Function test_run_requires_dc_and_domain>
+        <Function test_run_with_userlist_roast>
+    <Module test_false_positive_filter.py>
+      <Class TestFalsePositiveFilter>
+        <Function test_low_confidence_filtered>
+        <Function test_high_confidence_passes>
+        <Function test_insufficient_evidence_filtered>
+        <Function test_error_page_filtered>
+        <Function test_short_response_filtered>
+        <Function test_noise_keywords_filtered>
+        <Function test_stale_data_filtered>
+        <Function test_fresh_data_not_stale>
+        <Function test_batch_filter>
+        <Function test_batch_filter_single_convenience>
+        <Function test_not_vulnerable_not_filtered>
+        <Function test_custom_threshold>
+        <Function test_raw_response_check>
+      <Class TestConfidenceVoter>
+        <Function test_empty_voter>
+        <Function test_single_vote>
+        <Function test_multiple_votes_high_confidence>
+        <Function test_vote_status_code>
+        <Function test_vote_length_diff>
+        <Function test_vote_body_hash>
+        <Function test_vote_body_hash_same>
+        <Function test_vote_time_elapsed>
+        <Function test_vote_evidence_keywords>
+        <Function test_vote_oob_callback>
+        <Function test_vote_multiple_payloads>
+        <Function test_vote_multiple_payloads_low>
+        <Function test_evidence>
+    <Module test_graphql_abuser.py>
+      <Class TestGraphQLAbuser>
+        <Function test_introspection_detected>
+        <Function test_depth_abuse>
+        <Function test_batch_abuse>
+        <Function test_no_graphql>
+        <Function test_field_suggestions>
+    <Module test_graphql_scanner.py>
+      <Class TestHasGraphqlSchema>
+        <Function test_valid_schema>
+        <Function test_no_schema>
+      <Class TestGraphQLScanner>
+        <Function test_introspection_enabled>
+        <Function test_mutation_accepted>
+        <Function test_no_graphql>
+    <Module test_http_client.py>
+      <Class TestBuildUrl>
+        <Function test_simple>
+        <Function test_with_existing_query>
+        <Function test_special_chars_encoded>
+        <Function test_quote_in_payload>
+        <Function test_empty_param_value>
+    <Module test_idor_scanner.py>
+      <Class TestLooksLikeData>
+        <Function test_data>
+        <Function test_blocked>
+      <Class TestIdorCheck>
+        <Function test_horizontal_escalation>
+        <Function test_no_escalation_when_blocked>
+        <Function test_post_json_idor>
+      <Class TestUnauthorized>
+        <Function test_unauth_data_leak>
+        <Function test_unauth_blocked>
+    <Module test_jwt_attacker.py>
+      <Class TestJWTAttacker>
+        <Function test_jwt_found>
+        <Function test_jwt_not_found>
+        <Function test_jwt_none_algorithm>
+        <Function test_jwt_weak_secret>
+    <Module test_jwt_detector.py>
+      <Class TestJWTDecode>
+        <Function test_decode_valid_token>
+        <Function test_decode_invalid_token>
+      <Class TestCheckJwtNone>
+        <Function test_alg_none_token_generated>
+        <Function test_alg_none_accepted>
+      <Class TestCheckJwtWeakSecret>
+        <Function test_weak_secret_found>
+        <Function test_no_weak_secret>
+      <Class TestJWTCheck>
+        <Function test_jwt_found_in_body>
+        <Function test_no_jwt_found>
+    <Module test_leak_scanner.py>
+      <Class TestLeakScanner>
+        <Function test_git_config_critical>
+        <Function test_env_detected>
+        <Function test_no_false_positive_on_404>
+        <Function test_custom_paths_filter>
+        <Function test_redirect_not_followed>
+    <Module test_lfi_scanner.py>
+      <Class TestLFIScanner>
+        <Function test_traversal_detection>
+        <Function test_no_lfi>
+    <Module test_main.py>
+      <Class TestCmdLogin>
+        <Function test_missing_args_exits>
+        <Function test_success_saves_session>
+        <Function test_failure_exits>
+      <Class TestCmdIdor>
+        <Function test_no_auth>
+        <Function test_with_session_file_b>
+    <Module test_nosqli_detector.py>
+      <Class TestNoSQLIDetector>
+        <Function test_boolean_detection>
+        <Function test_no_nosqli>
+    <Module test_opsec_session.py>
+      <Class TestUA>
+        <Function test_rotates_through_pool>
+      <Class TestJitter>
+        <Function test_jitter_before_request>
+        <Function test_zero_jitter_no_sleep>
+      <Class TestRetry>
+        <Function test_retries_transient_status>
+        <Function test_exhausts_retries_then_returns_last_status>
+        <Function test_retries_on_connection_error>
+        <Function test_raises_after_exhausting_exception_retries>
+        <Function test_backoff_grows_with_attempt>
+      <Class TestWrap>
+        <Function test_wrap_copies_cookies_and_headers>
+        <Function test_wrap_preserves_verify>
+      <Class TestOpsecSessionFn>
+        <Function test_disabled_returns_original>
+        <Function test_disabled_none_returns_new>
+        <Function test_enabled_wraps>
+        <Function test_enabled_passthrough_when_already_opsec>
+      <Class TestOrchestratorOpsec>
+        <Function test_opsec_flag_wraps_session>
+        <Function test_default_no_session_stays_none>
+    <Module test_orchestrator.py>
+      <Class TestTestSinglePoint>
+        <Function test_confidence_merging_detector_higher>
+        <Function test_confidence_merging_oracle_higher>
+        <Function test_false_positive_low_confidence_skipped>
+        <Function test_high_confidence_passes_filter>
+        <Function test_non_vulnerable_skipped>
+        <Function test_oracle_not_verified_skipped>
+        <Function test_evidence_passed_through>
+        <Function test_confidence_votes_passed_through>
+        <Function test_error_page_finding_filtered>
+        <Function test_backtrack_chain_skipped_for_filtered>
+        <Function test_backtrack_chain_called_for_unfiltered>
+        <Function test_timestamp_in_finding>
+        <Function test_vulnerable_field_overridden_by_fpf>
+        <Function test_cross_verify_called_when_vulnerable>
+        <Function test_cross_verify_not_called_when_not_vulnerable>
+        <Function test_detector_exception_handled>
+        <Function test_unknown_detector_skipped>
+        <Function test_thread_lock_prevents_race>
+        <Function test_multiple_detectors_run>
+        <Function test_lock_initialized_in_init>
+        <Function test_budget_exhausted_skips>
+      <Class TestOrchestratorIntegration>
+        <Function test_phase_recon_runs>
+        <Function test_phase_detect_no_points>
+        <Function test_phase_attack_plan_empty>
+        <Function test_select_detectors_default_order>
+        <Function test_recon_stores_state>
+        <Function test_build_test_points_with_crawl_data>
+        <Function test_budget_tracking>
+      <Class TestFalsePositiveFilter>
+        <Function test_fpf_filters_low_confidence>
+        <Function test_fpf_passes_high_confidence>
+        <Function test_fpf_filters_insufficient_evidence>
+        <Function test_fpf_filters_error_page>
+        <Function test_fpf_filter_sets_vulnerable_false>
+        <Function test_fpf_not_vulnerable_not_filtered>
+        <Function test_fpf_batch_filter>
+        <Function test_stale_data_filtered>
+      <Class TestBenchmarkHelpers>
+        <Function test_skip_params_defined>
+        <Function test_detector_risk_order_has_all>
+        <Function test_all_detectors_lambdas_are_callable>
+    <Module test_payload_engine.py>
+      <Class TestPayloadGenerate>
+        <Function test_sqli_error_returns_payloads>
+        <Function test_sqli_boolean_true_returns_payloads>
+        <Function test_sqli_boolean_false_returns_payloads>
+        <Function test_sqli_time_mysql_contains_sleep>
+        <Function test_sqli_union_contains_union>
+        <Function test_sqli_error_contains_quote>
+        <Function test_xss_html_returns_payloads>
+        <Function test_xss_attr_returns_payloads>
+        <Function test_xss_js_returns_payloads>
+        <Function test_xss_angular_returns_payloads>
+        <Function test_cmdi_output_contains_id>
+        <Function test_cmdi_time_contains_sleep_or_ping>
+        <Function test_lfi_traversal_contains_passwd>
+        <Function test_lfi_php_wrappers_contains_php>
+        <Function test_ssti_detect_contains_operator>
+        <Function test_ssti_blind_contains_os>
+        <Function test_nosqli_boolean_returns_payloads>
+        <Function test_nosqli_where_time_contains_sleep>
+        <Function test_nosqli_json_contains_operator>
+        <Function test_nosqli_boolean_filtered_by_context>
+        <Function test_generate_sqli_error_helper>
+        <Function test_waf_strategy_affects_output>
+        <Function test_payload_not_double_encoded>
+        <Function test_seed_groups_has_all_keys>
+        <Function test_max_payloads_limit>
+        <Function test_unknown_group_returns_empty>
+        <Function test_versioned_comment_encoder>
+        <Function test_hex_str_encoder>
+        <Function test_yaml_seeds_appended>
+    <Module test_pipeline.py>
+      <Class TestCrownJewels>
+        <Function test_infer_from_admin_path>
+        <Function test_infer_from_db_port>
+        <Function test_infer_from_high_value_tech>
+        <Function test_override_wins>
+      <Class TestAssetGraph>
+        <Function test_build_has_host_service_endpoint>
+        <Function test_same_host_endpoints_interconnect>
+        <Function test_same_host_service_linked_to_endpoint>
+        <Function test_finding_adds_evidence>
+        <Function test_bfs_shortest_path_to_crown>
+        <Function test_empty_state>
+      <Class TestScoring>
+        <Function test_admin_outranks_assets>
+        <Function test_vulnerable_endpoint_scores_high>
+        <Function test_critical_service_scores_high>
+        <Function test_scores_capped_at_ten>
+      <Class TestBfsToCrownJewel>
+        <Function test_finds_chain_from_proven_surface>
+        <Function test_no_jewels_no_chains>
+      <Class TestDifferentialVerify>
+        <Function test_confirmed_high_value_detected>
+      <Class TestRunPipeline>
+        <Function test_report_section>
+        <Function test_empty_state_graceful>
+        <Function test_override_crown_jewels>
+      <Class TestCrossHost>
+        <Function test_subdomain_host_nodes_added>
+        <Function test_subdomain_edges_connect_to_parent>
+        <Function test_endpoint_on_subdomain_wired_to_its_host>
+        <Function test_bfs_crosses_hosts>
+        <Function test_same_host_interconnect_still_per_host>
+    <Module test_post_exploit.py>
+      <Class TestPostExploit>
+        <Function test_ssh_persistence>
+        <Function test_ssh_persistence_rejects_empty>
+        <Function test_cron_persistence>
+        <Function test_ld_preload_persistence>
+        <Function test_webshell_persistence>
+        <Function test_enum_system>
+        <Function test_enum_system_no_func>
+    <Module test_proto_pollution.py>
+      <Class TestProtoPollution>
+        <Function test_get_param_pollution>
+        <Function test_post_body_pollution>
+        <Function test_no_pollution>
+    <Module test_protocol_fuzzer.py>
+      <Class TestFamily>
+        <Function test_normalizes_service_name>
+        <Function test_port_fallback_for_unknown_service>
+        <Function test_payload_tables_cover_all_families>
+        <Function test_repr_payload_is_bounded>
+      <Class TestJudgment>
+        <Function test_connection_dropped_is_interesting>
+        <Function test_reply_gone_is_interesting>
+        <Function test_oversized_reply_is_interesting>
+        <Function test_benign_response_not_interesting>
+      <Class TestFuzzService>
+        <Function test_aggregates_probes>
+        <Function test_counts_interesting>
+        <Function test_custom_payloads>
+      <Class TestDefaultSender>
+        <Function test_send_and_receive>
+        <Function test_connection_refused>
+      <Class TestFuzzState>
+        <Function test_consumes_recon_open_ports>
+        <Function test_host_extraction>
+        <Function test_empty_state>
+      <Class TestFuzzPortsFn>
+        <Function test_state_mode>
+        <Function test_direct_ports_mode>
+        <Function test_no_args>
+    <Module test_proxy_pool.py>
+      <Class TestProxyPool>
+        <Function test_add_and_next_round_robin>
+        <Function test_empty_pool>
+        <Function test_report_failure_marks_down>
+        <Function test_success_recovers_down_proxy>
+        <Function test_round_robin_skips_loaded_proxies>
+        <Function test_dict_init_with_weights>
+        <Function test_unknown_report_ignored>
+        <Function test_latency_recorded>
+      <Class TestThrottle>
+        <Function test_no_limit_no_wait>
+        <Function test_rate_limit_enforces_gap>
+        <Function test_concurrency_cap>
+      <Class TestOPSECProxyIntegration>
+        <Function test_proxy_rotation_per_request>
+        <Function test_failed_proxy_reported_down>
+        <Function test_pool_session_factory>
+    <Module test_race_condition.py>
+      <Class TestRaceCondition>
+        <Function test_race_detection>
+        <Function test_no_race>
+    <Module test_reporter.py>
+      <Class TestReporter>
+        <Function test_to_json_handles_datetime_and_bytes>
+        <Function test_generate_html>
+        <Function test_save_report_writes_json_and_html>
+    <Module test_retry.py>
+      <Class TestRetrySync>
+        <Function test_returns_immediately_on_success>
+        <Function test_retries_then_succeeds>
+        <Function test_raises_last_exception_after_exhaustion>
+        <Function test_only_retries_on_configured_error>
+        <Function test_custom_retry_tuple>
+        <Function test_custom_logger_name>
+      <Class TestRetryAsync>
+        <Function test_success>
+        <Function test_retry_then_success>
+        <Function test_exhaustion>
+      <Class TestIsRetryable>
+        <Function test_network_and_timeout>
+        <Function test_other_exceptions>
+    <Module test_reverse_shell.py>
+      <Class TestReverseShell>
+        <Function test_generate_shells_covers_major_languages>
+        <Function test_shell_command_contains_host_port>
+        <Function test_webshell_types>
+        <Function test_generate_webshell_unknown_type_falls_back>
+    <Module test_second_order_sqli.py>
+      <Class TestSecondOrderSqli>
+        <Function test_store_and_fetch_diff>
+        <Function test_no_diff_not_vulnerable>
+    <Module test_second_order_verifier.py>
+      <Class TestSecondOrderVerifier>
+        <Function test_verifier_init>
+        <Function test_sqli_verification>
+        <Function test_xss_verification>
+        <Function test_unsupported_vuln_type>
+        <Function test_ssrf_verification>
+        <Function test_lfi_verification>
+    <Module test_semantic_diff.py>
+      <Class TestDiffJson>
+        <Function test_identical_json>
+        <Function test_non_json>
+        <Function test_type_mismatch>
+        <Function test_noise_key_ignored>
+        <Function test_noise_value_ignored>
+        <Function test_sensitive_key_critical>
+        <Function test_numeric_medium_diff>
+        <Function test_small_numeric_is_noise>
+        <Function test_missing_field_is_high>
+        <Function test_summary_counts>
+      <Class TestDiffText>
+        <Function test_identical>
+        <Function test_length_diff>
+        <Function test_moderate_diff>
+        <Function test_minor_diff>
+      <Class TestHelpers>
+        <Function test_noise_keys_covered>
+        <Function test_noise_values_regex>
+        <Function test_nested_list_keys>
+    <Module test_service_mapping.py>
+      <Class TestFamily>
+        <Function test_service_name>
+        <Function test_port_fallback>
+      <Class TestVersion>
+        <Function test_extract>
+        <Function test_window>
+      <Class TestCves>
+        <Function test_vsftpd_backdoor>
+        <Function test_ghostcat>
+        <Function test_weblogic_critical>
+        <Function test_no_match_returns_empty>
+      <Class TestCreds>
+        <Function test_known_defaults>
+        <Function test_unknown_service_no_creds>
+        <Function test_tables_populated>
+      <Class TestMapService>
+        <Function test_full_mapping>
+        <Function test_low_risk_plain_service>
+      <Class TestMapOpenPorts>
+        <Function test_consumes_recon>
+        <Function test_empty_state>
+    <Module test_smart_fuzzer.py>
+      <Class TestSmartFuzzer>
+        <Function test_fuzz_point_sqli_detection>
+        <Function test_fuzz_point_no_findings>
+        <Function test_check_sqli_error_match>
+        <Function test_check_sqli_length_diff>
+        <Function test_reflection_check>
+        <Function test_infer_role_from_context>
+        <Function test_strategy_fallback>
+      <Class TestResponseFingerprint>
+        <Function test_from_response>
+        <Function test_server_error_flag>
+        <Function test_diff_score_status_change>
+        <Function test_diff_score_blocked_status_penalty>
+      <Class TestLearningFuzzer>
+        <Function test_fuzz_param_finds_interesting>
+        <Function test_learn_and_refine>
+        <Function test_top_params_ordering>
+        <Function test_top_findings_threshold>
+    <Module test_smuggler.py>
+      <Class TestHelpers>
+        <Function test_extract_host_port>
+        <Function test_has_marker_in_response>
+        <Function test_payload_tables_nonempty>
+        <Function test_cl0_detection_function_exists>
+        <Function test_smuggling_marker_defined>
+      <Class TestCheck>
+        <Function test_detects_smuggling>
+        <Function test_no_findings_on_silent_server>
+      <Class TestDetectHelpers>
+        <Function test_detect_te_te_via_monkeypatch>
+        <Function test_detect_te_te_no_marker>
+        <Function test_detect_via_delay>
+        <Function test_detect_te_cl_triggered>
+      <Class TestExploit>
+        <Function test_unknown_type>
+        <Function test_cl_te_exploit_against_server>
+        <Function test_connection_refused>
+    <Module test_sql_injection.py>
+      <Class TestBuildUrl>
+        <Function test_basic_url>
+        <Function test_existing_query>
+        <Function test_special_chars>
+      <Class TestGuessDbms>
+        <Function test_mysql>
+        <Function test_postgres>
+        <Function test_oracle>
+        <Function test_sqlite>
+        <Function test_mssql>
+        <Function test_unknown>
+      <Class TestSqlInjectionCheck>
+        <Function test_error_based_detection>
+        <Function test_time_based_detection>
+        <Function test_no_vulnerability>
+      <Class TestSqlInjectionPost>
+        <Function test_post_error_based>
+    <Module test_sqli_advanced.py>
+      <Class TestUnionInjection>
+        <Function test_union_column_count_and_reflection>
+        <Function test_union_no_reflection_not_vulnerable>
+      <Class TestUnionBlind>
+        <Function test_union_blind_detected>
+      <Class TestContextProbe>
+        <Function test_numeric_context>
+        <Function test_string_context>
+      <Class TestTimeControl>
+        <Function test_clean_delay_detected>
+        <Function test_timeout_noise_rejected>
+      <Class TestBooleanRobust>
+        <Function test_boolean_multipair_confirmation>
+      <Class TestDbmsAware>
+        <Function test_error_retry_with_mssql_specific_payload>
+        <Function test_weaponizer_dbms_aware_tables>
+      <Class TestTableDataExtraction>
+        <Function test_extract_columns_and_rows>
+      <Class TestNoSqlWhereBlind>
+        <Function test_where_blind_extraction>
+      <Class TestNoSqlRedos>
+        <Function test_redos_timing_detection>
+      <Class TestPayloadEngineExpansion>
+        <Function test_sqli_error_payloads_expanded>
+        <Function test_sqli_time_per_dbms>
+        <Function test_sqli_conditional>
+        <Function test_xss_new_contexts>
+        <Function test_encoders_available>
+        <Function test_waf_strategies_expanded>
+        <Function test_cmdi_oob_payloads_have_placeholders>
+        <Function test_lfi_wrappers_expanded>
+        <Function test_nosqli_json_operators_expanded>
+        <Function test_render_oob_payload>
+    <Module test_sqli_blind.py>
+      <Class TestResponseClassifier>
+        <Function test_calibrate_success>
+        <Function test_is_true_returns_true>
+        <Function test_is_true_returns_false>
+        <Function test_is_true_not_calibrated>
+        <Function test_is_true_ambiguous>
+        <Function test_calibrate_with_baseline>
+        <Function test_network_error_is_true_returns_none>
+      <Class TestBlindInjector>
+        <Function test_auto_detect_dbms_mysql_by_error>
+        <Function test_auto_detect_dbms_mssql_by_error>
+        <Function test_auto_detect_dbms_postgres_by_error>
+        <Function test_auto_detect_dbms_oracle_by_error>
+        <Function test_auto_detect_dbms_returns_none_without_signals>
+        <Function test_measure_baseline>
+        <Function test_extract_via_error_mysql>
+        <Function test_extract_via_error_no_pattern>
+        <Function test_extract_via_error_unknown_dbms>
+      <Class TestCheckFunction>
+        <Function test_check_returns_dict_with_required_keys>
+        <Function test_check_waf_auto_detect>
+      <Class TestConfidenceIntegration>
+        <Function test_extract_via_error_adds_confidence>
+        <Function test_check_confidence_fields_default>
+    <Module test_sqli_weaponizer.py>
+      <Class TestSqliWeaponizer>
+        <Function test_probe_column_count_union_works>
+        <Function test_check_union_reflection_extracts_database>
+        <Function test_check_always_probes_columns>
+        <Function test_blind_boolean_extraction>
+        <Function test_blind_union_extraction>
+    <Module test_src_report.py>
+      <Class TestSrcReport>
+        <Function test_boolean_template>
+        <Function test_unknown_type_falls_back>
+        <Function test_markdown_output>
+        <Function test_all_templates_valid>
+    <Module test_ssrf_detector.py>
+      <Class TestSSRFDetector>
+        <Function test_cloud_metadata_disclosure>
+        <Function test_internal_reachable>
+        <Function test_no_ssrf>
+    <Module test_ssti_detector.py>
+      <Class TestSSTIDetector>
+        <Function test_expression_reflection>
+        <Function test_alt_engine_detection>
+        <Function test_no_ssti>
+        <Function test_time_based_fallback>
+    <Module test_storage.py>
+      <Class TestPaths>
+        <Function test_db_path_creates_dir>
+        <Function test_store_is_singleton>
+      <Class TestContextKV>
+        <Function test_roundtrip_string>
+        <Function test_roundtrip_dict>
+        <Function test_overwrite>
+        <Function test_isolated_sessions>
+      <Class TestFindings>
+        <Function test_save_and_load>
+        <Function test_filter_by_type>
+        <Function test_detail_roundtrip>
+      <Class TestPhaseState>
+        <Function test_save_load>
+        <Function test_missing_phase>
+        <Function test_all_phases>
+      <Class TestVulnContext>
+        <Function test_save_load>
+        <Function test_none_skipped>
+      <Class TestSessionMgmt>
+        <Function test_list_sessions>
+        <Function test_report_roundtrip>
+    <Module test_tunnel_agent.py>
+      <Class TestCommandGenerators>
+        <Function test_socks5_over_webshell>
+        <Function test_chisel_tunnel>
+        <Function test_ssh_tunnel_simple>
+        <Function test_ssh_tunnel_with_jump>
+        <Function test_forward_port>
+      <Class TestEnvironment>
+        <Function test_detect_environment_linux>
+        <Function test_detect_environment_unknown>
+        <Function test_detect_environment_exception>
+        <Function test_auto_tunnel_python_shell>
+        <Function test_auto_tunnel_port_forward>
+        <Function test_auto_tunnel_no_tools>
+      <Class TestCascade>
+        <Function test_socks_cascade_two_hops>
+        <Function test_socks_cascade_single_hop>
+        <Function test_ssh_jump_chain>
+        <Function test_cascade_deploy>
+        <Function test_cascade_deploy_error>
+      <Class TestSocks5Proxy>
+        <Function test_start_stop>
+        <Function test_full_socks5_handshake>
+    <Module test_unauth_scan.py>
+      <Class TestRedis>
+        <Function test_unauth>
+        <Function test_auth_required>
+        <Function test_echo_back_honey>
+      <Class TestMongo>
+        <Function test_echo_back_honey>
+        <Function test_anonymous_ok>
+      <Class TestBatch>
+        <Function test_filters_honeypots>
+    <Module test_waf_bypass.py>
+      <Class TestFingerprintWaf>
+        <Function test_cloudflare_detected>
+        <Function test_aws_waf_detected>
+        <Function test_no_waf>
+      <Class TestGenerateSqliPayloads>
+        <Function test_returns_payloads>
+        <Function test_waf_aware>
+      <Class TestEncoderChains>
+        <Function test_chains_defined>
+      <Class TestNewEncoders>
+        <Function test_versioned_comment>
+        <Function test_redundant_url_encode>
+        <Function test_new_chains_present>
+      <Class TestWafBlock>
+        <Function test_cloudflare_block_headers>
+        <Function test_safedog_text>
+        <Function test_is_blocked_status>
+        <Function test_not_blocked>
+      <Class TestCheck>
+        <Function test_basic_request>
+    <Module test_weakpass.py>
+      <Class TestParseForm>
+        <Function test_login_form_extracted>
+        <Function test_no_password_form_ignored>
+      <Class TestWeakpass>
+        <Function test_weak_cred_detected>
+        <Function test_no_weak_cred>
+        <Function test_no_form_reports_error>
+        <Function test_filebrowser_api_login>
+        <Function test_custom_api_url>
+      <Class TestLikelySuccess>
+        <Function test_redirect_out_of_login>
+    <Module test_weaponize_engine.py>
+      <Class TestSqliOutfile>
+        <Function test_detects_webshell>
+        <Function test_no_shell>
+        <Function test_exception_handled>
+      <Class TestDeployLfi>
+        <Function test_log_poison>
+      <Class TestWebshell>
+        <Function test_run_command_get>
+        <Function test_run_command_post_fallback>
+        <Function test_run_command_failure>
+        <Function test_upload_via_webshell>
+        <Function test_upload_missing_file>
+      <Class TestAwsTakeover>
+        <Function test_full_chain>
+        <Function test_cli_not_found>
+    <Module test_workflow.py>
+      <Class TestWorkflowStep>
+        <Function test_interpolate>
+        <Function test_condition_operators>
+        <Function test_skip_when_condition_false>
+        <Function test_execute_get>
+        <Function test_execute_post_data_and_body>
+        <Function test_execute_put_delete>
+        <Function test_retry_then_success>
+        <Function test_retry_exhausted>
+      <Class TestWorkflow>
+        <Function test_add_step_and_run>
+        <Function test_from_json>
+        <Function test_sample_workflows_defined>
+      <Class TestRunFn>
+        <Function test_unknown_workflow>
+        <Function test_nonexistent_file>
+    <Module test_xss_browser_verify.py>
+      <Class TestXssBrowserVerify>
+        <Function test_http_fallback_confirms_reflection>
+        <Function test_no_reflection>
+        <Function test_check_returns_playwright_status>
+    <Module test_xss_detector.py>
+      <Class TestXSSDetector>
+        <Function test_reflected_xss>
+        <Function test_no_reflection>
+      <Class TestXSSJSONContext>
+        <Function test_json_context_reflection>
+      <Class TestXSSDetectorPost>
+        <Function test_post_xss>
+    <Module test_xss_validator.py>
+      <Class TestXSSValidator>
+        <Function test_returns_browser_verify_result>
+        <Function test_passes_session_through>
+        <Function test_creates_session_when_none>
+    <Module test_xxe_detector.py>
+      <Class TestXXEDetector>
+        <Function test_xxe_file_read_detected>
+        <Function test_xxe_error_based>
+        <Function test_no_xxe>
+        <Function test_svg_upload_xxe>
+        <Function test_xinclude_xxe>
+        <Function test_soap_xxe>
+        <Function test_xslt_injection>
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.9.13-final-0 _______________
+
+Name                                Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------
+tools\__init__.py                      46      0   100%
+tools\_context.py                      62     62     0%   1-80
+tools\_enrich.py                       80     80     0%   1-120
+tools\_session.py                      17      9    47%   18-29, 33-38
+tools\active_prober.py                136    111    18%   149-150, 153-184, 187-192, 196-243, 247-252, 255, 258-267, 271-298
+tools\adaptive_fuzzer.py              164    140    15%   198-199, 202-211, 214-265, 269-299, 302-331, 334-362, 366-384, 389-407
+tools\adaptive_payload.py             134    134     0%   1-162
+tools\ai_vuln_hunter.py               148    148     0%   1-256
+tools\attack_graph.py                 278    218    22%   46, 72, 92, 206-210, 213-214, 219-229, 235-243, 246-279, 282-334, 337-352, 356-370, 374-410, 413-418, 423-451, 455-464, 467-487, 490-492, 505-508
+tools\attack_surface.py               136    120    12%   249-263, 276-324, 328-340, 344, 348-429, 433-502
+tools\attack_tree.py                  224    183    18%   42, 168-169, 172-173, 176, 180-240, 244-294, 299-316, 321-346, 349-364, 367-370, 373-376, 379-381, 384-395, 399-413, 416-435, 439-472, 475-480, 488
+tools\auth_bypass.py                  168    147    12%   227-240, 245-258, 263-287, 292-310, 315-333, 338-365, 370-394, 399-436
+tools\auth_engine.py                  179    156    13%   28-46, 51-53, 57-71, 75-92, 95-102, 105-106, 109, 115-146, 151-174, 177-182, 185-195, 199-241
+tools\auth_state_machine.py            94     74    21%   39-40, 44-45, 49-54, 59-72, 79-81, 85-89, 101-155, 161-165, 175-187, 196-197
+tools\auto_pwn.py                     185    185     0%   1-261
+tools\batch_recon.py                   84     61    27%   42-43, 47-58, 62-87, 93-136
+tools\binary_analyzer.py              188    188     0%   1-296
+tools\binary_search.py                152    152     0%   1-197
+tools\biz_logic_scanner.py            307    280     9%   65-117, 133-192, 212-258, 298-338, 348-402, 422-453, 486-521, 530-566, 575-616, 638-682
+tools\biz_logic_v2.py                  86     72    16%   18-34, 39-83, 93-101, 123-148, 162-165
+tools\c2_beacon.py                    184    152    17%   21-26, 29, 42-51, 54-58, 61-62, 65-67, 70-79, 82-118, 121-136, 142-148, 151-209, 212-214, 217-221, 224, 227-228, 233-274
+tools\chain_engine.py                 555    506     9%   87-114, 119-147, 152-194, 199-230, 235-268, 273-313, 318-355, 360-387, 392-418, 424-488, 493-543, 547-557, 561-598, 603-620, 625-628, 631-635, 638-650, 653-668, 671-719, 722-742, 745-761, 764-768, 771-786, 789-796, 799-822, 825-837, 841-883, 908-924, 928-937, 940, 956-974, 979-980
+tools\cloud_pwn.py                    141    141     0%   1-173
+tools\cmdi_detector.py                190    164    14%   66-74, 77-84, 87-91, 94-112, 115-122, 125-129, 133-143, 150-273
+tools\cms_fingerprint.py              119    100    16%   29-35, 140-143, 148-187, 205-222, 227-240, 246-265, 270-283
+tools\code_audit.py                    67     67     0%   1-387
+tools\constraint_graph.py             186    150    19%   31-35, 39-56, 59-65, 68-76, 79-92, 95-103, 106-137, 140-185, 188-193, 196, 199, 214, 217-262, 266-289
+tools\context_memory.py               263    220    16%   35, 38, 75-79, 82-90, 93-94, 97-111, 116-139, 142-148, 151-155, 158-160, 163-164, 167-169, 172-176, 179-180, 183-184, 190-261, 264-280, 286-299, 302-315, 318-341, 344-355, 358-372, 375-376, 389
+tools\cors_scanner.py                  57     48    16%   34-46, 51-59, 64-98
+tools\crawler.py                      320    285    11%   17-24, 65-66, 73-88, 91-97, 100-108, 111-118, 121-124, 127-132, 135-162, 165-177, 180-213, 216-248, 251-261, 264-270, 273-308, 311-340, 343-427, 450-451
+tools\cross_validator.py              127    127     0%   1-176
+tools\csrf_scanner.py                 109    109     0%   1-188
+tools\db_lateral.py                   175    175     0%   1-217
+tools\deser_weaponizer.py             190    190     0%   1-338
+tools\deserialization_detector.py     128    101    21%   65-79, 85-92, 97-112, 117-131, 136-197
+tools\deviation_oracle.py             162    138    15%   15-21, 24-30, 37-49, 60-95, 98-138, 141-148, 162-183, 186-211, 214-226, 229-238, 243-245, 248-251, 254, 258-263
+tools\dom_xss.py                      114     95    17%   26-27, 33-60, 120-144, 149-171, 176-182, 187-219
+tools\domain_attacks.py               367    312    15%   35-38, 42, 46-52, 56, 60, 64, 68, 72, 76-86, 90-95, 99-101, 108-120, 126-129, 140-144, 148-152, 157-183, 189-208, 216-242, 249-250, 253-259, 262-278, 290-295, 298-302, 305-311, 314-321, 324-333, 338-368, 372-390, 394-395, 399, 403, 407, 412, 418-440, 447-477, 484-513, 522-538
+tools\domain_hunt.py                  287    287     0%   1-397
+tools\dual_session.py                  95     95     0%   1-184
+tools\evasion_engine.py                63     63     0%   1-111
+tools\exceptions.py                    38      8    79%   9-11, 14-16, 47-48
+tools\false_positive_filter.py        130    107    18%   37-40, 43-46, 49-61, 64-73, 76-89, 92-93, 96-113, 116-122, 125-128, 131-145, 148-159, 162-166, 171-173, 178-180
+tools\fuzz_engine.py                  141    141     0%   1-284
+tools\graphql_abuser.py               166    137    17%   209-212, 215-233, 237-254, 257-272, 282-326, 329-360, 363-422, 425-451, 454-468, 471-493, 497-498
+tools\graphql_scanner.py               79     68    14%   28-39, 44-109
+tools\html_context_parser.py           90     78    13%   19-38, 42-65, 69-71, 75-86, 90-100, 104, 112-137
+tools\http_client.py                  165    134    19%   23-35, 39-65, 69-75, 80-81, 85-151, 156-158, 161-162, 165-174, 177-193, 196, 199, 202, 205, 208-210, 215-220, 227-231
+tools\idor_scanner.py                  91     79    13%   25-31, 36-58, 63-69, 83-144, 150-162
+tools\interactive_shell.py            115    115     0%   1-150
+tools\internal_scan.py                 97     97     0%   1-121
+tools\jwt_attacker.py                 214    172    20%   34-35, 42-43, 73, 77-78, 82-91, 106-107, 110-131, 134-148, 151-165, 174-187, 190-220, 223-245, 248-282, 285-324, 327-385, 388-393, 396, 399-421, 425-426
+tools\jwt_detector.py                 130    113    13%   20, 24-32, 36-42, 47-67, 72-93, 98-162
+tools\jwt_exploiter.py                 97     97     0%   1-128
+tools\kali_capture.py                 175    175     0%   1-256
+tools\kali_executor.py                183    150    18%   13-14, 29-40, 47-54, 57, 62-64, 67-93, 96-103, 106-125, 128-143, 146-158, 161-167, 170-178, 181-184, 187-188, 192-210, 220-225, 230-237, 241, 245-249, 253-255
+tools\kali_toolset.py                 358    358     0%   1-647
+tools\knowledge_graph.py              114     67    41%   13-20, 24-28, 292-297, 300-307, 310-319, 323-364, 367, 370, 373, 376, 379-393
+tools\lateral_move.py                 152    152     0%   1-211
+tools\leak_scanner.py                  52     40    23%   101-105, 109-113, 119-168
+tools\lfi_scanner.py                  201    171    15%   66-70, 73-88, 91-110, 113-149, 152-162, 165-177, 180-190, 193-216, 219-232, 235-284, 287, 292-293
+tools\log_utils.py                     44     29    34%   26-27, 32-43, 48-59, 63-67
+tools\mitm_proxy.py                   286    286     0%   1-445
+tools\mobile_scanner.py               149    149     0%   1-293
+tools\mode.py                          27     19    30%   23, 27-31, 41-47, 51-73
+tools\nosqli_detector.py              219    201     8%   55-83, 94-143, 148-302
+tools\oob_server.py                   182    137    25%   31-40, 44-48, 51-67, 70-87, 90-108, 112-136, 139-141, 145, 148-151, 154-158, 162-166, 170-174, 177-178, 181-182, 185-192, 196-203, 207-227
+tools\opsec_session.py                101     80    21%   59-73, 80-88, 91-93, 96-99, 102-103, 106-117, 120-152, 158-162
+tools\orchestrator.py                1462   1462     0%   1-1990
+tools\packet_capture.py                96     96     0%   1-135
+tools\param_classifier.py             103     76    26%   91, 95-117, 122, 128-139, 142-147, 151-166, 170-201, 204, 207
+tools\param_miner.py                  129    106    18%   41-46, 49-54, 57-66, 69-102, 106-131, 134-136, 139-141, 144-154, 157-176, 179-181, 187-188
+tools\payload_engine.py               296    251    15%   11-12, 24-56, 60-80, 84-99, 103-106, 110-124, 128, 132, 136-148, 152, 156, 160-167, 171, 185-188, 197-203, 838-840, 845-854, 860-949, 956-1004, 1009, 1014-1019, 1023-1028, 1033, 1038, 1043, 1047-1056, 1060-1062
+tools\payload_mutator.py               22     12    45%   16, 28, 42-43, 46-53, 56
+tools\pipeline.py                     428    360    16%   76-77, 81-89, 93-97, 101, 105, 109, 128, 152-155, 159-169, 172-180, 184-195, 199-220, 223-235, 238-254, 257, 274-277, 281-284, 288-291, 295-296, 300-301, 306-319, 324-332, 337-438, 448-490, 498-503, 507-508, 512-513, 519-560, 569-582, 598-605, 613-641, 649-662, 668-680, 696-701
+tools\playwright_auth.py              183    183     0%   1-311
+tools\playwright_engine.py            124    124     0%   1-200
+tools\post_exploit.py                  65     54    17%   13-29, 33-48, 52-82, 86-108, 112-140
+tools\proto_pollution.py               68     57    16%   34-100
+tools\protocol_fuzzer.py              136    113    17%   150-156, 160-164, 170-202, 206, 211-212, 215-218, 223-253, 267-273, 284-292, 301-318, 325-335
+tools\proxy_pool.py                    99     79    20%   24-36, 39-45, 48-51, 54, 57-64, 67-83, 86-87, 95-99, 107-112, 115-125, 128-129, 132, 140-147
+tools\race_condition.py               107     91    15%   41-43, 47-68, 72-119, 123-168, 173-175
+tools\race_profiler.py                143    111    22%   26-28, 31-37, 40-45, 56-58, 63-82, 86-100, 104-124, 129-160, 165-167, 170-175, 178-197, 201-211
+tools\reasoning_engine.py             450    382    15%   35, 50-58, 62-88, 92-96, 99-135, 139-165, 170, 183-232, 235-242, 246-253, 256-281, 284-318, 322, 326, 330-333, 337, 341, 345-379, 383-402, 406-430, 441-450, 454-473, 477-479, 489-491, 501-511, 515-526, 530-546, 550-570, 574-584, 588-596, 600-611, 621-623, 633-654, 658-666, 670-674, 684-687, 697-707, 711-721, 725-739, 743-745, 755-757, 767-786, 790-800, 804-812, 816-824, 828-838, 842-852, 856-924
+tools\recon\__init__.py                 6      0   100%
+tools\recon\dir_fuzzer.py              49     40    18%   81-99, 108-141
+tools\recon\git_leak.py                64     55    14%   46-53, 58-127
+tools\recon\port_scanner.py            57     48    16%   58-90, 96-125
+tools\recon\subdomain.py               54     42    22%   40-43, 47-62, 68-96
+tools\recon\tech_fingerprint.py        40     33    18%   85-140
+tools\reporter.py                     151    132    13%   14-23, 27, 33-38, 43-58, 62-90, 94-107, 111, 115-163, 218-225, 229-237
+tools\responder_kit.py                129    129     0%   1-168
+tools\response_analyzer.py            190    141    26%   63, 67-87, 91-116, 119-151, 155-185, 188-210, 213-216, 219-229, 232-236, 239-253, 257-279, 283-289
+tools\response_profiler.py             97     63    35%   48-78, 86-106, 115-147, 150, 153, 157
+tools\retry.py                         50     39    22%   31-53, 65-87, 92
+tools\reverse_shell.py                 66     52    21%   102-128, 132-140, 144-175
+tools\robust_verifier.py              210    210     0%   1-305
+tools\second_order_sqli.py             56     44    21%   38-49, 53-57, 63-96
+tools\second_order_verifier.py        600    561     6%   43, 66-68, 72-90, 93, 96-100, 103-105, 108-110, 114-127, 132-219, 224-305, 310-383, 388-477, 482-560, 565-661, 666-729, 734-805, 810-812
+tools\semantic_analyzer.py            148    148     0%   1-214
+tools\semantic_diff.py                152    117    23%   46, 54-122, 127-145, 148-154, 157-170, 173-187, 190-193, 197-206
+tools\service_mapping.py               83     66    20%   199-210, 214-217, 221-222, 226-236, 241-255, 259-260, 265-275, 284-297
+tools\session_matrix.py               175    139    21%   30-33, 37-40, 43, 46, 50-92, 95-106, 111-131, 134-151, 154-176, 181, 185-198, 208-219, 225-255, 259
+tools\settings.py                      44     19    57%   23, 26-28, 31, 34, 38-41, 45-48, 52, 59, 64, 69, 72
+tools\smart_fuzzer.py                 214    159    26%   107-111, 118-142, 148-164, 171-237, 241-260, 263, 266-277, 297-298, 309-320, 325-329, 332-339, 343-368, 371, 374, 378-384
+tools\smb_lateral.py                  111    111     0%   1-157
+tools\smuggler.py                     244    218    11%   121-125, 129-147, 151-154, 158-164, 168-197, 201-210, 214-226, 230-255, 261-280, 286-314, 319-353, 358-401
+tools\spa_crawler.py                  173    173     0%   1-260
+tools\sql_injection.py                449    412     8%   22-23, 92-107, 111-117, 121-124, 128-129, 133-189, 197-204, 209-216, 220-233, 245-263, 272-296, 303-326, 330-333, 347-409, 414-422, 427-498, 502-522, 531-540, 544-556, 561-634, 641-701
+tools\sqli_blind.py                   468    415    11%   19-20, 129-140, 144-179, 183-189, 192-222, 233-243, 247-259, 262-296, 299-310, 313-316, 320-357, 361-397, 401-407, 411-417, 421-459, 462-476, 481-551, 554-578, 586-621, 631-671, 683-712
+tools\sqli_oob.py                      91     91     0%   1-137
+tools\sqli_weaponizer.py              288    267     7%   13-14, 19-23, 33-48, 54-65, 70-79, 88-138, 143-154, 159-188, 193-215, 219-228, 234-256, 261-263, 273-313, 321-380, 385-442
+tools\src_report.py                    53     50     6%   129-151, 168-194
+tools\ssrf_chain.py                   231    231     0%   1-406
+tools\ssrf_detector.py                257    223    13%   115-130, 134-140, 146-152, 155-166, 169-170, 174-184, 189-195, 198-212, 215-225, 229-252, 255-260, 265-329, 334-409
+tools\ssrf_pwn.py                     229    229     0%   1-393
+tools\ssti_detector.py                128    114    11%   32-42, 47-176
+tools\storage.py                      158    126    20%   16, 20-21, 29-33, 36-46, 49-104, 107-118, 121, 127-134, 137-155, 162-169, 172-187, 191-197, 200-210, 213-223, 227-239, 242-252, 256-259, 262-271, 274-275, 278-281
+tools\tool_registry.py                114    114     0%   1-163
+tools\tunnel_agent.py                 207    184    11%   13-30, 34-51, 56-66, 71-93, 115-126, 132-196, 201-204, 207-215, 218-223, 226-231, 234-265, 268-284, 292-307, 313-328, 332-357
+tools\type_confusion.py               156    156     0%   1-290
+tools\unauth_scan.py                  174    153    12%   43-63, 67-94, 98-113, 117-148, 152-163, 167-179, 192-212, 222-257
+tools\verification_oracle.py          300    247    18%   28-34, 44, 47, 51-52, 56, 59, 63-69, 73-82, 86, 90-92, 96-101, 105, 109-116, 121-122, 127-144, 149-169, 172-233, 236-273, 276-316, 319-338, 341-353, 356-366
+tools\version_fingerprint.py          105    105     0%   1-228
+tools\vuln_context.py                 152    152     0%   1-174
+tools\waf_bypass.py                   456    366    20%   243-253, 258-262, 266-317, 321, 330-363, 373, 377, 381-387, 391-399, 403-411, 415, 419, 423-439, 443, 447, 451, 455, 459, 463-468, 472-478, 482-486, 490-498, 502-504, 510-514, 519, 556-562, 568-572, 576-583, 587-590, 594-595, 599-604, 608, 632-638, 643-688, 843-888, 892-915, 920-954, 959-978, 983-1047, 1052-1085, 1090-1134
+tools\weakpass.py                     166    144    13%   48-78, 82-90, 95-119, 126-141, 147-149, 160-177, 181, 187-200, 213-276
+tools\weaponize_engine.py             220    205     7%   17-90, 95-135, 141-232, 237-252, 257-280, 285-301
+tools\workflow.py                     126    104    17%   17-22, 25-43, 46-49, 52-63, 66-91, 101-102, 105, 108-119, 123-135, 200-225
+tools\workflow_tracer.py              181    117    35%   43-44, 56, 59, 75-78, 81-85, 94-110, 113-120, 123, 126, 131-132, 135-159, 162-175, 179-205, 208-223, 228-229, 232-238, 241-245, 252, 256-286, 290-299
+tools\xss_browser_verify.py            76     61    20%   15-16, 20-25, 45-87, 92-106, 111-126
+tools\xss_detector.py                 179    154    14%   68-70, 74-79, 83-88, 92-100, 104-111, 116-126, 132-265
+tools\xss_validator.py                 16      9    44%   14-26
+tools\xxe_detector.py                 182    151    17%   133-136, 139, 142-146, 150-165, 168-183, 194-287, 290-305, 308-327, 330-346, 349-365, 368-387, 391-392
+-----------------------------------------------------------------
+TOTAL                               22799  20281    11%
+======================== 662 tests collected in 11.35s ========================

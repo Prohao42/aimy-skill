@@ -959,13 +959,44 @@ def cmd_list(args):
 
 
 def _output(result):
+    from tools._finding import Finding, OldFormatFinding
     from tools.mode import enrich_result, filter_vulnerabilities
+
+    # 将旧格式/vulnerabilities 列表转换为统一 Finding
     if isinstance(result, dict) and "vulnerabilities" in result:
-        result["vulnerabilities"] = filter_vulnerabilities(result["vulnerabilities"])
+        vulns = result["vulnerabilities"]
+        # 处理旧格式列表
+        if isinstance(vulns, list) and len(vulns) > 0 and isinstance(vulns[0], dict):
+            findings = [OldFormatFinding.adapt(v) for v in vulns]
+        elif isinstance(vulns, list) and len(vulns) > 0 and isinstance(vulns[0], Finding):
+            findings = vulns
+        else:
+            findings = []
+
+        # 转换为统一格式并 enrich
+        result["vulnerabilities"] = filter_vulnerabilities(findings)
         result["vulnerabilities"] = [enrich_result(v) for v in result["vulnerabilities"]]
+        # 确保每个 finding 都有 to_dict 方法 (用于 JSON 输出)
+        for v in result["vulnerabilities"]:
+            if not isinstance(v, Finding):
+                v = OldFormatFinding.adapt(v.__dict__ if hasattr(v, '__dict__') else v)
+        result_json = json.dumps(result, ensure_ascii=False)
     elif isinstance(result, list):
-        result = filter_vulnerabilities([enrich_result(r) for r in result])
-    print(json.dumps(result, ensure_ascii=False))
+        # 直接是 finding 列表
+        if len(result) > 0 and isinstance(result[0], Finding):
+            findings = result
+        elif len(result) > 0 and isinstance(result[0], dict):
+            findings = [OldFormatFinding.adapt(v) for v in result]
+        else:
+            findings = []
+
+        filtered = filter_vulnerabilities(findings)
+        enriched = [enrich_result(v) for v in filtered]
+        result_json = json.dumps({"vulnerabilities": enriched}, ensure_ascii=False)
+    else:
+        result_json = json.dumps(result, ensure_ascii=False)
+
+    print(result_json)
 
 
 def main():

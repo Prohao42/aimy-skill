@@ -1,11 +1,17 @@
 """Quantitative acceptance: run core detectors against the 10-endpoint lab."""
-import json
 import sys
 import time
 
 sys.path.insert(0, ".")
 
-from tools import cmdi_detector, lfi_scanner, nosqli_detector, sql_injection, ssti_detector, xss_detector
+from tools import (
+    cmdi_detector,
+    lfi_scanner,
+    nosqli_detector,
+    sql_injection,
+    ssti_detector,
+    xss_detector,
+)
 from tools._session import make_session
 
 BASE = "http://127.0.0.1:18774"

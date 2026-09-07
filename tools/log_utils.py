@@ -65,3 +65,66 @@ def mode_echo(mode: str, msg: str, rookie_msg: str = None):
     if settings.is_veteran() and rookie_msg:
         return
     print("%s %s" % (prefix, msg if settings.is_rookie() else (rookie_msg or msg)))
+
+
+def classify_error(error: Exception) -> str:
+    """根据错误类型分类错误以便统一处理。"""
+    msg = str(error).lower()
+    if any(kw in msg for kw in ["timeout", "timed out"]):
+        return "timeout"
+    if any(kw in msg for kw in ["connection", "refused", "network"]):
+        return "network"
+    if any(kw in msg for kw in ["permission", "access denied"]):
+        return "permission"
+    if any(kw in msg for kw in ["not found", "missing"]):
+        return "not_found"
+    if any(kw in msg for kw in ["unauthorized", "auth", "invalid"]):
+        return "authentication"
+    if any(kw in msg for kw in ["memory", "heap", "allocation"]):
+        return "memory"
+    if any(kw in msg for kw in ["file", "path", "io"]):
+        return "io"
+    return "general"
+
+
+def safe_try(func: Callable, default: Any = None, log: bool = True) -> Any:
+    """安全执行封装：捕获异常，记录错误并返回默认值。"""
+    import traceback
+    try:
+        return func()
+    except Exception as e:
+        if log:
+            logger = logging.getLogger(__name__)
+            logger.debug("safe_try caught %s: %s", classify_error(e), e)
+            logger.debug(traceback.format_exc())
+        return default
+
+
+def handle_errors(
+    operation: str,
+    logger: logging.Logger,
+    task_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+) -> Callable:
+    """装饰器：统一错误处理，为操作添加 session_id、task_id 上下文。"""
+
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            start = time.perf_counter()
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                error_type = classify_error(e)
+                log_msg = (
+                    f"[{operation}] error: {e} "
+                    f"(type: {error_type})"
+                )
+                if task_id:
+                    log_msg += f" [task_id: {task_id}]"
+                if session_id:
+                    log_msg += f" [session_id: {session_id}]"
+                logger.error(log_msg)
+                raise
+        return wrapper
+    return decorator

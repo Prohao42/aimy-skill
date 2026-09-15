@@ -6,8 +6,6 @@ from urllib3.util.retry import Retry
 
 from tools.settings import settings
 
-_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-
 
 def _build_http_adapter(total: int = 2, backoff_factor: float = 0.3) -> HTTPAdapter:
     """带指数退避的 HTTP 适配器：自动重试连接/超时/部分 5xx。
@@ -32,7 +30,7 @@ def _build_http_adapter(total: int = 2, backoff_factor: float = 0.3) -> HTTPAdap
 def make_session(verify: Optional[bool] = None, retry_total: int = 2) -> requests.Session:
     sess = requests.Session()
     sess.verify = settings.verify_ssl if verify is None else verify
-    sess.headers["User-Agent"] = _USER_AGENT
+    sess.headers["User-Agent"] = settings.user_agent
     sess.mount("http://", _build_http_adapter(total=retry_total))
     sess.mount("https://", _build_http_adapter(total=retry_total))
     return sess

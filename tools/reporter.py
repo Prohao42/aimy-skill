@@ -223,15 +223,3 @@ def generate_html_report(report: Dict, output_path: Optional[str] = None) -> str
         f.write(html)
     logger.info("HTML report saved to %s", output_path)
     return output_path
-
-
-def _output(data: Any):
-    if isinstance(data, dict) and "summary" in data:
-        print_summary(data)
-        try:
-            hpath = generate_html_report(data)
-            print("HTML report: %s" % hpath)
-        except Exception as e:
-            logger.debug("html report: %s", e)
-    else:
-        print(to_json(data, indent=2))

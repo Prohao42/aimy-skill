@@ -1,8 +1,9 @@
-"""CLI 入口层测试: 覆盖 main.py 的 cmd_login / cmd_idor 完整路径。
+"""CLI 入口层测试: 覆盖 main.py 的 cmd_login / cmd_idor 完整路径 + 数据驱动分发。
 
 重点回归: main.py 曾因顶层缺失 `import requests` 导致 cmd_idor / cmd_login
 走到 requests.Session() 时 NameError (F821)。这两个测试确保该路径可执行。
 """
+
 import argparse
 import re
 import unittest.mock
@@ -11,6 +12,7 @@ import pytest
 import responses
 
 import main
+from cli.check_commands import _SESS, COMMAND_SPECS, CheckSpec, build_dispatcher
 from tools.auth_engine import AuthSession
 
 
@@ -107,3 +109,58 @@ class TestCmdIdor:
         main.cmd_idor(args)
         out = capsys.readouterr().out
         assert '"type": "idor"' in out
+
+
+class TestCheckCommandDispatch:
+    """Verify that data-driven check commands dispatch to the right tool."""
+
+    def test_specs_cover_known_commands(self):
+        expected = {
+            "sqlcheck",
+            "xsscheck",
+            "cmdi",
+            "ssrf",
+            "jwt",
+            "reverse-shell",
+            "weakpass",
+            "crawl",
+            "race",
+            "workflow-trace",
+            "constraint",
+            "xss-verify",
+        }
+        assert expected.issubset(COMMAND_SPECS.keys())
+
+    def test_all_specs_have_module_and_func(self):
+        for name, spec in COMMAND_SPECS.items():
+            assert spec.module.startswith("tools."), f"{name}: bad module"
+            assert spec.func, f"{name}: missing func"
+
+    def test_reverse_shell_spec_has_no_session(self):
+        spec = COMMAND_SPECS["reverse-shell"]
+        assert not any(v is _SESS for v in spec.args)
+        assert not any(v is _SESS for v in spec.kwargs.values())
+
+    def test_dispatcher_calls_check(self):
+        spec = CheckSpec(
+            "tools.sql_injection", "check", args=["url", "param", _SESS, "timeout"], kwargs={}
+        )
+        args = argparse.Namespace(
+            url="http://x",
+            param="id",
+            timeout=5,
+            auth_type="",
+            auth_url="",
+            auth_user="",
+            auth_pass="",
+            session_file="",
+        )
+        with unittest.mock.patch("tools.sql_injection.check") as mock_check:
+            mock_check.return_value = {"vulnerable": False}
+            dispatcher = build_dispatcher(spec, main._sess, main._output)
+            dispatcher(args)
+            mock_check.assert_called_once()
+            call_args = mock_check.call_args
+            assert call_args.args[0] == "http://x"
+            assert call_args.args[1] == "id"
+            assert call_args.args[3] == 5

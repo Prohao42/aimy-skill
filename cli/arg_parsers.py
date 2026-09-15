@@ -356,6 +356,38 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     _add_url_arg(p, default_param=None)
     p.set_defaults(func=dispatchers["smuggle"])
 
+    p = sub.add_parser("clickjacking", help="Clickjacking检测")
+    p.add_argument("url")
+    p.set_defaults(func=dispatchers["clickjacking"])
+
+    p = sub.add_parser("crlf-injection", help="CRLF注入检测")
+    _add_url_arg(p, default_param="q")
+    p.set_defaults(func=dispatchers["crlf-injection"])
+
+    p = sub.add_parser("open-redirect", help="开放重定向检测")
+    _add_url_arg(p, default_param="next")
+    p.set_defaults(func=dispatchers["open-redirect"])
+
+    p = sub.add_parser("hpp", help="HTTP参数污染检测")
+    _add_url_arg(p, default_param="q")
+    p.set_defaults(func=dispatchers["hpp"])
+
+    p = sub.add_parser("web-cache", help="Web缓存反解/投毒检测")
+    p.add_argument("url")
+    p.set_defaults(func=dispatchers["web-cache"])
+
+    p = sub.add_parser("file-upload", help="文件上传漏洞检测")
+    p.add_argument("url")
+    _add_url_arg(p, default_param="file")
+    p.add_argument("--param", default="file", help="上传参数名")
+    p.set_defaults(func=dispatchers["file-upload"])
+
+    p = sub.add_parser("saml-sso", help="SAML SSO漏洞检测")
+    p.add_argument("url")
+    _add_url_arg(p, default_param="SAMLResponse")
+    p.add_argument("--param", default="", help="SAML参数名(可选)")
+    p.set_defaults(func=dispatchers["saml-sso"])
+
     # ---- Scan orchestration ----
     p = sub.add_parser("recon", help="全面信息收集(指纹/端口/git/目录)")
     p.add_argument("target")

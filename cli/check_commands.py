@@ -221,4 +221,15 @@ COMMAND_SPECS: Dict[str, CheckSpec] = {
         args=["url", "param", _SESS, "timeout"],
     ),
     "smuggle": CheckSpec("tools.smuggler", "check", args=["url", "param", _SESS, "timeout"]),
+    "clickjacking": CheckSpec("tools.clickjacking", "check", args=["url", _SESS, "timeout"]),
+    "crlf-injection": CheckSpec(
+        "tools.crlf_injection", "check", args=["url", "param", _SESS, "timeout"]
+    ),
+    "open-redirect": CheckSpec(
+        "tools.open_redirect", "check", args=["url", "param", _SESS, "timeout"]
+    ),
+    "hpp": CheckSpec("tools.hpp", "check", args=["url", "param", _SESS, "timeout"]),
+    "web-cache": CheckSpec("tools.web_cache", "check", args=["url", _SESS, "timeout"]),
+    "file-upload": CheckSpec("tools.file_upload", "check", args=["url", "param", _SESS, "timeout"]),
+    "saml-sso": CheckSpec("tools.saml_sso", "check", args=["url", "param", _SESS, "timeout"]),
 }

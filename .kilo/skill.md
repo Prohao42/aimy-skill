@@ -163,8 +163,8 @@ main.py                →  main() orchestrates: build dispatchers → build par
 - 33 one-liner `cmd_*` functions eliminated from `main.py` (reduced 1567 → 820 lines)
 - Sentinel values: `_SESS` → session, `"attr"` → `getattr(args, attr)`, `None` → literal
 
-### Security Skills Coverage: 21/28 skill categories
+### Security Skills Coverage: 25/28 skill categories
 
-**Covered**: SQLi | XSS | SSTI | CmdI | SSRF | LFI/Path Traversal | XXE | Deserialization | JWT | CORS | CSRF | GraphQL | Prototype Pollution | Race Condition | IDOR/BOLA | Auth Bypass | Business Logic | WAF | Request Smuggling
+**Covered**: SQLi | XSS | SSTI | CmdI | SSRF | LFI/Path Traversal | XXE | Deserialization | JWT | CORS | CSRF | GraphQL | Prototype Pollution | Race Condition | IDOR/BOLA | Auth Bypass | Business Logic | WAF | Request Smuggling | Clickjacking | CRLF Injection | Open Redirect | HTTP Parameter Pollution | Web Cache Deception | File Upload | SAML SSO
 
-**Not yet covered** (no tool module): Clickjacking | CRLF Injection | Open Redirect | HTTP Parameter Pollution | Web Cache | File Upload | SAML SSO | OIDC/OAuth | Expression Language | XSLT Injection | Dependency Confusion | Source Code Management
+**Not yet covered** (no tool module): OIDC/OAuth Misconfiguration | Expression Language Injection | XSLT Injection | Dependency Confusion | Insecure Source Code Management

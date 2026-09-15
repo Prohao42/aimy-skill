@@ -6,12 +6,13 @@ from typing import Any, Callable, Optional
 
 import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from tools.settings import settings
 
-LOG_LEVEL = os.environ.get("AIMY_LOG_LEVEL", "WARNING").upper()
+if os.environ.get("AIMY_DISABLE_SSL_WARNING", "").lower() in ("1", "true", "yes"):
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL, logging.WARNING),
+    level=getattr(logging, settings.log_level, logging.WARNING),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -116,9 +117,10 @@ def handle_errors(
                 return func(*args, **kwargs)
             except Exception as e:
                 error_type = classify_error(e)
+                elapsed = time.perf_counter() - start
                 log_msg = (
                     f"[{operation}] error: {e} "
-                    f"(type: {error_type})"
+                    f"(type: {error_type}, elapsed: {elapsed:.2f}s)"
                 )
                 if task_id:
                     log_msg += f" [task_id: {task_id}]"

@@ -26,6 +26,7 @@ class Severity(str, Enum):
 
 class VulnType(str, Enum):
     """漏洞类型枚举 (与 Skill 类目一致)"""
+    INFO = "info"
     SQLI = "sqli"
     BLIND_SQLI = "sqli-blind"
     OOB_SQLI = "sqli-oob"
@@ -69,6 +70,17 @@ class Evidence:
     payload: Optional[str] = None  # 触发漏洞的 payload
     indicator: Optional[str] = None  # 关键指标 (keyword, pattern, etc)
     timestamp: Optional[float] = None
+
+    def to_dict(self) -> Dict:
+        """转换为字典（与 Finding.from_dict 的读取字段对称）"""
+        return {
+            "request": self.request,
+            "response": self.response,
+            "headers": self.headers,
+            "payload": self.payload,
+            "indicator": self.indicator,
+            "timestamp": self.timestamp,
+        }
 
 
 @dataclass

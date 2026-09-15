@@ -377,15 +377,11 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p.set_defaults(func=dispatchers["web-cache"])
 
     p = sub.add_parser("file-upload", help="文件上传漏洞检测")
-    p.add_argument("url")
     _add_url_arg(p, default_param="file")
-    p.add_argument("--param", default="file", help="上传参数名")
     p.set_defaults(func=dispatchers["file-upload"])
 
     p = sub.add_parser("saml-sso", help="SAML SSO漏洞检测")
-    p.add_argument("url")
     _add_url_arg(p, default_param="SAMLResponse")
-    p.add_argument("--param", default="", help="SAML参数名(可选)")
     p.set_defaults(func=dispatchers["saml-sso"])
 
     # ---- Scan orchestration ----

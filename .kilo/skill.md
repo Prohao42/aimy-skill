@@ -1,6 +1,6 @@
 # Aimy-Skill Security Toolkit - Skill Guide
 
-Penetration testing helper toolkit with 49 vulnerability scanners and exploitation modules.
+Penetration testing helper toolkit with 56 vulnerability scanners and exploitation modules.
 
 ## Quick Start
 
@@ -9,7 +9,7 @@ python main.py --help
 python main.py sqlcheck --url http://target.com --param id -v 2
 ```
 
-## Command Categories (49 data-driven commands)
+## Command Categories (56 data-driven commands)
 
 ### Injection Scanners
 | Command | Tool | Vulnerabilities |
@@ -155,7 +155,7 @@ python main.py recon --target http://target.com --deep --full-ports
 ### Data-Driven Dispatch System
 
 ```
-cli/check_commands.py  →  CheckSpec dataclass + COMMAND_SPECS table (49 entries)
+cli/check_commands.py  →  CheckSpec dataclass + COMMAND_SPECS table (56 entries)
 cli/arg_parsers.py     →  build_parser() + validate_args()
 main.py                →  main() orchestrates: build dispatchers → build parser → dispatch
 ```

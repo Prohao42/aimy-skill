@@ -226,8 +226,8 @@ def check(url: str, param: str, sess: Optional[requests.Session] = None,
 
     if result["vulnerable"] and not result["confirmed"] and not post_body:
         try:
-            r = sess.get(build_url(url, param, result.get("vector", "xss")), timeout=timeout)
-            if _check_dom_sink(r.text, result.get("vector", "")):
+            r = sess.get(build_url(url, param, str(result.get("vector") or "xss")), timeout=timeout)
+            if _check_dom_sink(r.text, str(result.get("vector") or "")):
                 result["confirmed"] = True
                 result["evidence"].append("dom_sink_detected")
         except Exception as e:

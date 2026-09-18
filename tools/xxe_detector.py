@@ -170,7 +170,7 @@ class XXEDetector:
         post_data = kwargs.get("data")
 
         if param:
-            findings.extend(self._check_param_based(url, param, is_post, post_data))
+            findings.extend(self._check_param_based(url, param, is_post, post_data or {}))
         findings.extend(self._check_endpoint_xml(url))
         findings.extend(self._check_svg_upload(url))
         findings.extend(self._check_xinclude(url))

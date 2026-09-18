@@ -140,7 +140,9 @@ class PlaywrightAuth:
                 try:
                     two_factor_callback(page)
                     time.sleep(1)
-                    result["success"] = "2fa" in page.url.lower() or len(self.engine.get_cookies()) > len(result.get("cookies", {}))
+                    _prev = result.get("cookies")
+                    _prev_n = len(_prev) if isinstance(_prev, (dict, list, tuple)) else 0
+                    result["success"] = "2fa" in page.url.lower() or len(self.engine.get_cookies()) > _prev_n
                 except Exception as e:
                     logger.debug("2fa callback: %s", e)
 

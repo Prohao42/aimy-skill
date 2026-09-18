@@ -1,144 +1,21 @@
 #!/usr/bin/env python3
 import json
-import ssl
 import sys
 
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry as urllib3_Retry
 
 from cli.arg_parsers import build_parser, validate_args
 from cli.check_commands import COMMAND_SPECS, build_dispatcher
 from tools.kali_executor import get_kali
 from tools.kali_executor import is_available as kali_avail
 from tools.log_utils import get_logger
+from tools.output import output as _output
+from tools.session import build_session as _sess
 from tools.settings import settings
 
 logger = get_logger("main")
 
-VERSION = "3.7.0"
-
-
-class _TLS12Adapter(HTTPAdapter):
-    """强制 TLS1.2 + 指数退避自动重试 (连接/超时/5xx)。"""
-
-    def __init__(self, max_retries=2, **kwargs):
-        retries = urllib3_Retry(
-            total=max_retries,
-            connect=max_retries,
-            read=max_retries,
-            status=max_retries,
-            backoff_factor=0.3,
-            status_forcelist=(429, 502, 503, 504),
-            allowed_methods=frozenset(["GET", "POST", "HEAD", "OPTIONS"]),
-            respect_retry_after_header=True,
-        )
-        super().__init__(max_retries=retries, **kwargs)
-
-    def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
-        ctx = ssl.create_default_context()
-        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        if not settings.verify_ssl:
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-        kwargs["ssl_context"] = ctx
-        return super().init_poolmanager(connections, maxsize=max(100, maxsize), block=block, **kwargs)
-
-
-_ADAPTER_CACHE = None
-def _tls12_adapter():
-    global _ADAPTER_CACHE
-    if _ADAPTER_CACHE is None:
-        _ADAPTER_CACHE = _TLS12Adapter()
-    return _ADAPTER_CACHE
-
-
-_CHALLENGE_PATTERN = None
-_AES_JS_CACHE = None
-
-def _detect_challenge(html):
-    global _CHALLENGE_PATTERN
-    if _CHALLENGE_PATTERN is None:
-        import re
-        _CHALLENGE_PATTERN = re.compile(
-            r'toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\).*?toNumbers\("([a-f0-9]+)"\)',
-            re.DOTALL,
-        )
-    return _CHALLENGE_PATTERN.search(html[:2000])
-
-
-def _solve_with_node(match, base_url):
-    import subprocess
-    a, b, c = match.group(1), match.group(2), match.group(3)
-    global _AES_JS_CACHE
-    if _AES_JS_CACHE is None:
-        try:
-            import requests as _req
-            resp = _req.get(base_url.rstrip("/") + "/aes.js",
-                            timeout=10, verify=settings.verify_ssl)
-            if resp.status_code == 200 and len(resp.text) > 1000:
-                text = resp.text
-                forbidden = ["require(", "import ", "fs.", "child_process",
-                             "process.", "eval(", "Function("]
-                if not any(tok in text for tok in forbidden):
-                    _AES_JS_CACHE = text
-                else:
-                    logger.warning("aes.js contains suspicious patterns, skipping")
-                    _AES_JS_CACHE = ""
-            else:
-                _AES_JS_CACHE = ""
-        except Exception:
-            _AES_JS_CACHE = ""
-    if not _AES_JS_CACHE:
-        return None
-    safe_a = "".join(c for c in a if c in "0123456789abcdef")
-    safe_b = "".join(c for c in b if c in "0123456789abcdef")
-    safe_c = "".join(c for c in c if c in "0123456789abcdef")
-    js_code = _AES_JS_CACHE + f"""
-function toNumbers(d){{var e=[];d.replace(/(..)/g,function(d){{e.push(parseInt(d,16))}});return e}}
-function toHex(){{for(var d=[],d=1==arguments.length&&arguments[0].constructor==Array?arguments[0]:arguments,e='',f=0;f<d.length;f++)e+=(16>d[f]?'0':'')+d[f].toString(16);return e.toLowerCase()}}
-try {{ console.log(toHex(slowAES.decrypt(toNumbers("{safe_c}"),2,toNumbers("{safe_a}"),toNumbers("{safe_b}")))); }} catch(e) {{ console.error(e.message); }}
-"""
-    try:
-        result = subprocess.run(["node", "-e", js_code], capture_output=True, text=True, timeout=15)
-        val = result.stdout.strip()
-        if val and len(val) == 32 and all(c in "0123456789abcdef" for c in val):
-            return val
-    except Exception:
-        pass
-    return None
-
-
-def _sess(args):
-    from tools.auth_engine import auth_from_args
-    sess = auth_from_args(args)
-    sess.mount("https://", _tls12_adapter())
-    sess.verify = settings.verify_ssl
-    if "User-Agent" not in sess.headers:
-        sess.headers["User-Agent"] = settings.user_agent
-
-    _orig_send = sess.send
-    _challenge_solved = [False]
-
-    def _patched_send(req, **kwargs):
-        resp = _orig_send(req, **kwargs)
-        if not _challenge_solved[0]:
-            body = resp.text[:2000]
-            if "slowAES" in body:
-                m = _detect_challenge(body)
-                if m:
-                    cookie_val = _solve_with_node(m, req.url)
-                    if cookie_val:
-                        logger.info("Anti-bot challenge solved, retrying %s %s", req.method, req.url)
-                        _challenge_solved[0] = True
-                        # Add cookie to the prepared request and retry
-                        existing = req.headers.get("Cookie", "")
-                        req.headers["Cookie"] = ("%s; __test=%s" % (existing, cookie_val)).strip("; ")
-                        resp = _orig_send(req, **kwargs)
-        return resp
-
-    sess.send = _patched_send
-    return sess
+VERSION = "3.7.5"
 
 
 def cmd_portscan(args):
@@ -567,7 +444,7 @@ def cmd_mobile_scan(args):
         result = scan_ios(args.path)
         print("  iOS scan: %d findings" % result.get("total_findings", 0))
     else:
-        result = {"error": "Unsupported format: %s (use .apk or .ipa)" % args.path}
+        result = {"error": "Unsupported format: %s (use .apk or .ipa)" % path}
         print(result["error"])
         _output(result)
         return
@@ -747,47 +624,6 @@ def cmd_list(args):
         print(json.dumps(tools, indent=2, ensure_ascii=False))
     else:
         print("  ".join(tools.keys()))
-
-
-def _output(result):
-    from tools._finding import Finding, OldFormatFinding
-    from tools.mode import enrich_result, filter_vulnerabilities
-
-    # 将旧格式/vulnerabilities 列表转换为统一 Finding
-    if isinstance(result, dict) and "vulnerabilities" in result:
-        vulns = result["vulnerabilities"]
-        # 处理旧格式列表
-        if isinstance(vulns, list) and len(vulns) > 0 and isinstance(vulns[0], dict):
-            findings = [OldFormatFinding.adapt(v) for v in vulns]
-        elif isinstance(vulns, list) and len(vulns) > 0 and isinstance(vulns[0], Finding):
-            findings = vulns
-        else:
-            findings = []
-
-        # 转换为统一格式并 enrich
-        result["vulnerabilities"] = filter_vulnerabilities(findings)
-        result["vulnerabilities"] = [enrich_result(v) for v in result["vulnerabilities"]]
-        # 确保每个 finding 都有 to_dict 方法 (用于 JSON 输出)
-        for v in result["vulnerabilities"]:
-            if not isinstance(v, Finding):
-                v = OldFormatFinding.adapt(v.__dict__ if hasattr(v, '__dict__') else v)
-        result_json = json.dumps(result, ensure_ascii=False)
-    elif isinstance(result, list):
-        # 直接是 finding 列表
-        if len(result) > 0 and isinstance(result[0], Finding):
-            findings = result
-        elif len(result) > 0 and isinstance(result[0], dict):
-            findings = [OldFormatFinding.adapt(v) for v in result]
-        else:
-            findings = []
-
-        filtered = filter_vulnerabilities(findings)
-        enriched = [enrich_result(v) for v in filtered]
-        result_json = json.dumps({"vulnerabilities": enriched}, ensure_ascii=False)
-    else:
-        result_json = json.dumps(result, ensure_ascii=False)
-
-    print(result_json)
 
 
 def main():

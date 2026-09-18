@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.7.5] - 未提交重构修复 + 全量静态清零
+### 修复（阻塞级）
+- **CLI 启动即崩**：file-upload / saml-sso 子命令重复注册 `--param`（argparse 冲突），全部命令不可用 → 删除重复注册
+- **auto 流水线崩溃**：orchestrator 拆分时误删 `SKIP_PARAMS` / `SIGNATURE_PLACEHOLDER` 常量（8 处引用 NameError）→ 恢复定义
+- **recon 引擎契约断裂**：recon_engine 简化版返回结构与 orchestrator 期望不符（interesting/resolved/open_count 等），且 `enum_subdomains(threads=/wordlist=)`、`fuzz_directories(follow_redirects=)` 签名不匹配（TypeError / 子域名枚举静默失效）→ recon_engine 重写为 tools/recon/ 真实现的薄委托
+- **auto-pwn 检测器注册失败**（33 名 vs 32 实现）：auto_pwn 模块级 import orchestrator 形成循环导入 → Orchestrator 延迟到方法内导入
+- **统一 Finding 模型四处崩溃**：`VulnType.INFO` 枚举成员被删（6 处引用）、`Evidence` 缺 `to_dict()`、`OldFormatFinding.adapt` 的 type_map 仅 12/32 且兜底值非法、output.py 死循环导致 Finding 无法 JSON 序列化 → 全部修复，type_map 扩充别名、evidence 可选化
+### 优化
+- ruff 25 错 → 0（F821×9 / F401×13 / F841 / I001×2）；mypy 62 → 26（剩余为武器化/横向模块的类型噪音，非运行时错误）
+- tools/session.py：http:// 目标也挂 TLS1.2+重试适配器（与 https 行为一致）
+- tools/challenge.py：远程 aes.js 执行黑名单加固（constructor 链/动态导入/网络外联/编码执行等逃逸姿势）
+- 删除死代码 tools/sqli_adapter.py（全仓零引用）
+### 仓库卫生
+- .gitignore 白名单 data 功能数据（cms_vulns / cms_map / fingerprint / backup_leaks*），此前 clone 后 CMS 指纹漏洞库静默缺失
+- data/src_targets.txt 停止跟踪并加入 ignore（敏感目标清单，历史中仍存在，需 git filter-repo 清理）
+- 补根目录 LICENSE（MIT）；README 徽章校准（147 modules / 93 commands / 663 tests）+ hack-skills (yaklang/VillanCh) 致谢；版本号三处对齐 3.7.5
+
 ## [3.7.0] - SRC 批量资产实战化：4 大新命令 + 全量修复
 ### 新增
 - `unauth` 命令 + tools/unauth_scan.py：未授权中间件批量检测（Redis/ES/Mongo/MySQL/Postgres）+ 回显型蜜罐自动识别（Redis PING 回显 / Mongo OP_QUERY 反射）

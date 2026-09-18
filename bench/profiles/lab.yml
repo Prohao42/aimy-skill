@@ -1,0 +1,18 @@
+# 内置 mock 靶场 (lab_server.py) ground-truth —— 用于 harness 自身冒烟验证
+# 起靶场: python lab_server.py  (监听 127.0.0.1:18774)
+
+profile: lab
+requires_login: false
+base_url: http://127.0.0.1:18774
+
+cases:
+  - {name: sqli_error,  vuln_class: sqli,  level: any, path: /sqli_error,  param: id,   expected: true}
+  - {name: sqli_bool,   vuln_class: sqli,  level: any, path: /sqli_bool,   param: id,   expected: true}
+  - {name: sqli_union,  vuln_class: sqli,  level: any, path: /sqli_union,  param: id,   expected: true}
+  - {name: xss_reflect, vuln_class: xss,   level: any, path: /xss_reflect, param: q,    expected: true}
+  - {name: cmdi,        vuln_class: cmdi,  level: any, path: /cmdi,        param: cmd,  expected: true}
+  - {name: ssti,        vuln_class: ssti,  level: any, path: /ssti,        param: name, expected: true}
+  - {name: lfi,         vuln_class: lfi,   level: any, path: /lfi,         param: file, expected: true}
+  - {name: nosql,       vuln_class: nosqli, level: any, path: /nosql,      param: id,   expected: true}
+  - {name: clean_sqli,  vuln_class: sqli,  level: any, path: /clean_sqli,  param: q,    expected: false, note: 参数化查询, 必须 TN}
+  - {name: clean_xss,   vuln_class: xss,   level: any, path: /clean_xss,   param: q,    expected: false, note: HTML 转义回显, 必须 TN}

@@ -1,0 +1,181 @@
+# DVWA (Damn Vulnerable Web App) ground-truth 清单
+# 官方文档级基准: https://github.com/digininja/DVWA
+# 每个 case 的 expected 标注基于 DVWA 公开的安全级别语义:
+#   low    = 无防护
+#   medium = 部分防护 (通常仍可绕过)
+#   high   = 强防护 (部分级别才真正安全, 其余仍可绕过)
+# status=skipped 的用例保留在清单中以声明完整覆盖意图, 并注明跳过原因。
+
+profile: dvwa
+requires_login: true
+base_url: http://127.0.0.1:8080
+auth:
+  username: admin
+  password: password
+
+cases:
+  # ---------- SQL Injection (GET) ----------
+  - name: sqli_low
+    vuln_class: sqli
+    level: low
+    path: /vulnerabilities/sqli/
+    param: id
+    extra_query: {Submit: Submit}
+    expected: true
+    note: 无防护 MySQLi, 错误型+UNION 均可
+
+  - name: sqli_medium
+    vuln_class: sqli
+    level: medium
+    path: /vulnerabilities/sqli/
+    param: id
+    method: POST
+    post_data: {id: "1", Submit: Submit}
+    expected: true
+    note: 仅 mysql_real_escape_string, 数字型注入不受影响
+
+  - name: sqli_high
+    vuln_class: sqli
+    level: high
+    expected: true
+    status: skipped
+    skip_reason: 注入点在 $_SESSION['id'] cookie, 需要会话级注入, 超出当前 GET/POST 参数检测契约
+
+  # ---------- SQL Injection (Blind) ----------
+  - name: sqli_blind_low
+    vuln_class: sqli
+    level: low
+    path: /vulnerabilities/sqli_blind/
+    param: id
+    extra_query: {Submit: Submit}
+    expected: true
+    note: 布尔盲注/时间盲注, 正对照必测项
+
+  - name: sqli_blind_medium
+    vuln_class: sqli
+    level: medium
+    path: /vulnerabilities/sqli_blind/
+    param: id
+    method: POST
+    post_data: {id: "1", Submit: Submit}
+    expected: true
+    note: 数字型, escape 无效
+
+  - name: sqli_blind_high
+    vuln_class: sqli
+    level: high
+    expected: true
+    status: skipped
+    skip_reason: 注入点在 cookie, 同上
+
+  # ---------- XSS (Reflected, GET) ----------
+  - name: xss_r_low
+    vuln_class: xss
+    level: low
+    path: /vulnerabilities/xss_r/
+    param: name
+    expected: true
+    note: 原始回显
+
+  - name: xss_r_medium
+    vuln_class: xss
+    level: medium
+    path: /vulnerabilities/xss_r/
+    param: name
+    expected: true
+    note: 仅过滤 <script>, img/svg/onerror 等可绕过, 衡量 payload 广度
+
+  - name: xss_r_high
+    vuln_class: xss
+    level: high
+    path: /vulnerabilities/xss_r/
+    param: name
+    expected: false
+    note: htmlspecialchars 全量转义, 不可注入 -> 必须是 TN, 衡量误报
+
+  - name: xss_s_stored
+    vuln_class: xss
+    level: low
+    expected: true
+    status: skipped
+    skip_reason: 存储型 XSS 需要 POST 入库 + 二次访问触发, 需要二阶检测器接入
+
+  # ---------- Command Injection (GET) ----------
+  - name: exec_low
+    vuln_class: cmdi
+    level: low
+    path: /vulnerabilities/exec/
+    param: ip
+    extra_query: {Submit: Submit}
+    expected: true
+
+  - name: exec_medium
+    vuln_class: cmdi
+    level: medium
+    path: /vulnerabilities/exec/
+    param: ip
+    extra_query: {Submit: Submit}
+    expected: true
+    note: 黑名单仅 && 和 ;, | & 换行符等均可绕过
+
+  - name: exec_high
+    vuln_class: cmdi
+    level: high
+    path: /vulnerabilities/exec/
+    param: ip
+    extra_query: {Submit: Submit}
+    expected: true
+    note: 黑名单扩充但 & 与换行仍可绕过, 最难档
+
+  # ---------- File Inclusion (GET) ----------
+  - name: fi_low
+    vuln_class: lfi
+    level: low
+    path: /vulnerabilities/fi/
+    param: page
+    expected: true
+
+  - name: fi_medium
+    vuln_class: lfi
+    level: medium
+    path: /vulnerabilities/fi/
+    param: page
+    expected: true
+    note: str_replace 一次替换, ....// 可绕过
+
+  - name: fi_high
+    vuln_class: lfi
+    level: high
+    path: /vulnerabilities/fi/
+    param: page
+    expected: false
+    note: 白名单(仅 include.php), 不可注入 -> 必须是 TN
+
+  # ---------- 明确不覆盖的模块 ----------
+  - name: csrf
+    vuln_class: csrf
+    level: low
+    expected: true
+    status: skipped
+    skip_reason: CSRF 判定需要分析表单 token 语义而非注入, 走 csrf 专项命令单独评估
+
+  - name: brute
+    vuln_class: weakpass
+    level: low
+    expected: true
+    status: skipped
+    skip_reason: 弱口令爆破属另一能力域, 用 weakpass 命令单独评估
+
+  - name: captcha
+    vuln_class: biz
+    level: low
+    expected: true
+    status: skipped
+    skip_reason: CAPTCHA 绕过属业务逻辑域, 无对应 GET 参数检测器
+
+  - name: weak_id
+    vuln_class: session
+    level: low
+    expected: true
+    status: skipped
+    skip_reason: 会话 ID 可预测性需要多次采样统计, 属会话安全专项

@@ -1,6 +1,6 @@
 <picture>
-    <source media="(prefers-color-scheme: light)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.0;AI-Ready+Penetration+Test+Kit;65+Modules+%C2%B7+35%2B+CLI+Commands" alt="aimy-skill typing banner">
+    <source media="(prefers-color-scheme: light)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.5;AI-Ready+Penetration+Test+Kit;147+Modules+%C2%B7+93+CLI+Commands">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.5;AI-Ready+Penetration+Test+Kit;147+Modules+%C2%B7+93+CLI+Commands" alt="aimy-skill typing banner">
   </picture>
 
 <h1 align="center">🚀 aimy-skill</h1>
@@ -23,12 +23,12 @@
 <br>
 
 <div align="center">
-    <img src="https://img.shields.io/badge/version-3.7.0-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
+    <img src="https://img.shields.io/badge/version-3.7.5-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
     <img src="https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python">
-    <img src="https://img.shields.io/badge/modules-65-orange?style=for-the-badge" alt="modules">
+    <img src="https://img.shields.io/badge/modules-147-orange?style=for-the-badge" alt="modules">
     <img src="https://img.shields.io/badge/skills-80%2B-8B5CF6?style=for-the-badge" alt="skills">
     <img src="https://img.shields.io/badge/license-MIT-red?style=for-the-badge" alt="license">
-    <img src="https://img.shields.io/badge/tests-220%2B-22C55E?style=for-the-badge" alt="tests">
+    <img src="https://img.shields.io/badge/tests-663-22C55E?style=for-the-badge" alt="tests">
     <img src="https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-64748B?style=for-the-badge" alt="os">
   </div>
 
@@ -77,6 +77,12 @@ result = checker.check(
 知识星球：https://t.zsxq.com/FGUeq
 
 知识星球有更强版本，更多渗透技能的skill
+
+### 🙏 致谢
+
+`ai-mian/hack-skills/` 目录收录的 101 个安全测试 Skill 来自开源项目
+[hack-skills](https://github.com/yaklang/hack-skills)（作者 VillanCh，MIT License），
+本仓库仅作整合分发，版权归原作者所有。
 
 ### 🚀 三行命令，从零到报告
 

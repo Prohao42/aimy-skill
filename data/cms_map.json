@@ -1,0 +1,5994 @@
+[
+ {
+  "host": "0523zp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "0715job.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "0757zp.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "0759job.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "110zp.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "116.204.239.163",
+  "cms": "74cms",
+  "version": "v3.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台 SQL 注入（布尔盲注）",
+   "XXE 二次注入",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "121.40.24.233",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "122.114.14.199",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "123.57.147.221",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "152.136.161.188",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "24h.fun",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "74cms.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "81.70.146.222",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "ahouread.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "anhuiyuanrun.top",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "biyejob.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "bohuitalent.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "dahuarl.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "ddjob.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "demo.74cms.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "dgz580.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "dgzwap.scduke.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "diankouw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "drjyw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "dt.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "dzjzrc.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "eszpw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "gmzp.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "hainanjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "hc669.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://0523zp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://0594zyhr.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://0715job.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://07371.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://0757zp.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://0759job.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://101.37.24.107",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://106.15.201.161",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://110zp.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://112.126.92.219",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://112.74.172.211",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://113.204.138.157",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://114.215.204.223",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://114.55.6.195",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://115.223.34.130",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://116.255.247.34",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://118.195.234.68",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://118.31.65.232",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://119.29.41.97",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://119.45.169.40",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://119.45.209.252",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://119.91.137.17",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://120.25.173.55",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://120.26.91.218",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://120.77.24.25",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://120.79.169.241",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://121.36.67.234",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://121.40.176.148",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://121.40.24.233",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://121.40.255.110",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://122.114.14.199",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://122.114.79.205",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://123.56.254.240",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://123.56.78.128",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://123.57.147.221",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://123.57.176.174",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://124.226.66.38",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://129.211.0.119",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://139.224.68.237",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://14.116.254.70",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://14.22.74.169",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://152.136.161.188",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://152.136.197.79",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://154.219.109.79",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://154.8.232.95",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://159.75.226.110",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://171.111.196.143",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://175.178.95.188",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://175.27.137.233",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://182.247.239.183",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://192.144.140.183",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://192.144.141.132",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://203.86.124.95",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://218.58.205.194",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://220.154.132.191",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://220.154.133.79",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://221.203.89.187",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://221.204.39.192",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://24h.fun",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://2kai4.74cms.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://39.98.126.10",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://39.99.255.152",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://39.99.81.95",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://42.192.127.94",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://43.137.4.190",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://43.140.224.84",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.100.204.85",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.104.75.168",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://47.105.39.21",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://47.105.39.50",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.108.117.47",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.108.119.69",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.108.232.204",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.111.111.158",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.111.122.174",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.113.203.163",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://47.115.91.244",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.93.243.100",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.94.200.252",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://47.94.76.116",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.96.138.238",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.98.144.34",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.98.42.99",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://47.99.141.93",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://47.99.55.128",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://49.232.158.47",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://60.247.155.49",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://60.247.158.32",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://74cms.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.131.224.95",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://8.131.227.230",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.134.72.221",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.136.22.168",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.136.96.245",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.137.60.51",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.138.197.225",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://8.140.235.183",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://8.145.55.130",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.146.209.59",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://8.152.2.226",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://8.156.80.213",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://82.156.151.110",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://82.156.57.15",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://82.157.176.236",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://agrencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://ahouread.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://andsle.brdhr.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://anhuiyuanrun.top",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://anqing.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://baoying.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://bengbu.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://biyejob.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://bohuitalent.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://bozhou.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://ca.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://chinajxhr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://chizhou.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://chuzhou.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://cz.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://dagonghr.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://dahuarl.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://db0912.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://ddjob.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://demo.74cms.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://dg.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://dgz580.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://dgzwap.scduke.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://diankouw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://dongtai.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://drjyw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://dt.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://dzjzrc.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://eszpw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://fjly.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://fjlyrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://fuyang.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://ganyu.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://gaoyou.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://gdmz.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://gmzp.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://guannan.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://guigang.gongzhou.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://guiping.gongzhou.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://gz-rcsc.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://ha.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://haimen.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://hainanjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://hangzhou.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://hc669.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://house.wmzzbao.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://hr.gaojobs.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://huaibei.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://huainan.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://huangshan.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://huoyixmt.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://hzbl.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://hzhc.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://hzhd.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://hzhy.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://hzlm.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://j.jxh101.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://jiangyan.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jiangyin.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jiawang.xuzhouzhipin.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jiayu.0715job.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jiicai.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jimeng.rencaijie.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://jingjiang.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jintan.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jiuzhiwang.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jjtl.com.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://jk.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://job.jsjlcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://job.nhzj.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://job.wmxx.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://job.zzlthr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jobshaigui.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://jpwjob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://jr91.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jsdfl.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jsjlcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://jurong.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://knowvoy.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://kphrs.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://kpzhipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://lianshui.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://lichuan.0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://ligongzhijia.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://lishui.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://liuan.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://lyct.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://lylc.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://lyqzzp.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://lysh.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://lywp.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://lyxl.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://lyyd.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://lyzp.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://m.0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://m.0759job.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://m.24h.fun",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://m.nxrc.com.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://m.snjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://m.wmxx.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://m.xintairencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://m.yczhaopin.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://m.zmjob.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://maanshan.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://mcycw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://mczp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://mzjl.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://ncrcw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://new.ybrc.org",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://nt.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://nxrc.com.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://o69iay0p.andsle.brdhr.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://panguzhipin.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://pingnan.gongzhou.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://pizhou.xuzhouzhipin.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://qdxrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://qidong.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://rc.lywww.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://rc.yx090.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://rc775.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://rz.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://sailtob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://sczfrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://sfjrzx.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://shuyang.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://sihong.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://sihong.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://siyang.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://snjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://sq.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://sqrcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://suzhou.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://sz.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://sz.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://szba.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szdpq.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szft.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szgm.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szlg.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szlh.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szluohu.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szns.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szps.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://szsshzq.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://taixing.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://tcjob.cc",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://tongling.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://v2.jobshaigui.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://waipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://wanshanghr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://wuhu.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://wujin.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://wuxi.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.021a.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.0349.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.0523zp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.0576rcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.058091.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.0594zyhr.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.0715job.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.07371.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.0757zp.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.0759job.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.0855hr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.110zp.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.24h.fun",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.5zhr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.60574.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.74cms.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.81jdjt.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.91rczpw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.agrencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.ahouread.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.aqrcw.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.bgrcw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.biyejob.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.bocaircw.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.bohuitalent.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.brdhr.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.bsrczpw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.ch565.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.changdejob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.chinajxhr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.clrencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.cqfskhr.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.cxlm.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.dachangjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.dagonghr.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.dahuarl.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.db0912.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.ddjob.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.dgz580.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.diankouw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.dingzhourencai.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.donghaijob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.drjyw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.dzjzp.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.eszpw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.fcrcw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.fjlyrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.gbdrc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.gmrencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.gmzp.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.grjob.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.gz-rcsc.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.gzjob.net",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.haiguirencai.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.hainanjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.hejianzhipin.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.hjzp.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.hongyuzhihe.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.huoyixmt.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.jiicai.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.jiuzhiwang.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.jjtl.com.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.job0755.net",
+  "cms": "74cms",
+  "version": "v3.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台 SQL 注入（布尔盲注）",
+   "XXE 二次注入",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.job510.com",
+  "cms": "74cms",
+  "version": "v4.x",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.jpwjob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.jr91.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.jsdfl.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.jsjlcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.jyzpw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.knowvoy.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.kphrs.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.larczpw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.ligongzhijia.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.liyangrc.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.llrc.com.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.longkoubaicheng.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.lqrcw.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.lvgo.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.lyqzzp.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.lyzpxx.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.mcycw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.mczp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.miaopin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.njrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.nxrc.com.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.panguzhipin.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.qdxrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.qingzhouzhaopin.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.qyzpcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.qzdyrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.rc775.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.rencaijie.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.rencaiyinjin.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.ruodianjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.sanherc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.sanzhijiao.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.sczfrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.sfjrzx.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.sgrc0751.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.shuaipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.shuzijob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.sihongjob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.sjzrcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.snjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.tcjob.cc",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.telojob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.tjdgyj.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.txrz.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.tyrc.com.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.tzwxqrc.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.waipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.wanganxia.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.wanshanghr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.wmxx.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.xcltrcw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.xm51.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.xuyijob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.yanjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.ybrc.org",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.yczhaopin.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.yipinrc.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.yqzp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.ysrencai.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.yxrc510.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.yxrcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.zcrcw.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.zegongyi.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.zgrczpw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.zhihairenli.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.zhongpinmao.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.zhuwaizhijia.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://www.zunyihr.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://www.zzrcw.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://wzrc.net",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://xiangshui.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://xinghua.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://xintairencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://xinyi.xuzhouzhipin.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://xuancheng.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yanghe.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yantai.zgrczpw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yc.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yczhaopin.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yipinrc.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://yixing.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://ylrc.ylnet.com.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://youqizp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yqzp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yxrc510.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://yyrenshe.imshike.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://yz.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://zegongyi.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://zgrczpw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://zhongpinmao.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "https://zj.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://zjg.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://zmjob.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "https://zunyihr.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "huoyixmt.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "j.jxh101.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "jiuzhiwang.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "jjtl.com.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "jk.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "job.0575xs.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "job.jsjlcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "job.nhzj.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "job.wmxx.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "job.zzlthr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "jobshaigui.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "jpwjob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "jr91.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "jsdfl.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "jsjlcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "jz.sjzrcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "kphrs.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "kpzhipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "lichuan.0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "ligongzhijia.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "lyqzzp.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "m.0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "m.0759job.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "m.24h.fun",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "m.xintairencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "m.zmjob.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "mcycw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "ncrcw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "qdxrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "rc.lywww.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "rc775.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "rz.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "sailtob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "sczfrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "sfjrzx.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "sihong.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "siyang.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "v2.jobshaigui.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "waipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "wanshanghr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.021a.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.0349.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.0523zp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.0576rcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.058091.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.05job.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.0715job.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.0718rc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.0757zp.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.0855hr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.110zp.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.24h.fun",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.5zhr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.60574.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.74cms.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.81jdjt.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.ahouread.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.aqrcw.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.bgrcw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.biyejob.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.bohuitalent.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.bsrczpw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.ch565.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.clrencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.cqfskhr.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.cxlm.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.cyrencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.dachangjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.dahuarl.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.ddjob.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.dgz580.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.diankouw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.dingzhourencai.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.donghaijob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.drjyw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.dzjzp.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.eszpw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.fcrcw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.gbdrc.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.gmrencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.gmzp.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.grjob.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.haiguirencai.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.hainanjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.hjzp.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.hongyuzhihe.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.hshczp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.huoyixmt.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.jiangningjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.jiuzhiwang.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.jjtl.com.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.job0755.net",
+  "cms": "74cms",
+  "version": "v3.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台 SQL 注入（布尔盲注）",
+   "XXE 二次注入",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.job510.com",
+  "cms": "74cms",
+  "version": "v4.x",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.jpwjob.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.jr91.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.jsdfl.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.jsjlcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.jyzpw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.knowvoy.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.kphrs.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.larczpw.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.ligongzhijia.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.linqurencai.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.liyangrc.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.longkoubaicheng.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.lqrcw.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.lyqzzp.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.lyzpxx.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.mcycw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.miaopin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.njrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.peixianjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.qdxrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.qingzhoujob.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.qingzhouzhaopin.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.qyzpcn.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.qzdyrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.qzrencai.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.rc775.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.rencaijie.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.rencaiyinjin.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.ruodianjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.sczfrcw.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.sgrc0751.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.shuaipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.shuzijob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.sqrcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.sqrcxxw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.supinjob.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.txrz.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.tyrc.com.cn",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.waipin.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.wanganxia.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.wanshanghr.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.xcltrcw.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.xm51.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.yanjob.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.ybrc.org",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.yczhaopin.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.yqzp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.ysrencai.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.yxrcw.com",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.zcrcw.net",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.zegongyi.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.zgrczpw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.zhihairenli.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.zhuwaizhijia.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "www.zjrcw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "www.zzrcw.net",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "wzrc.net",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "xintairencai.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "yantai.zgrczpw.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "yczhaopin.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "yqzp.com",
+  "cms": "74cms",
+  "version": "v5.x",
+  "confidence": 0.8,
+  "vuln_names": [
+   "前台文件包含 getshell",
+   "前台账号审核 getshell",
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ },
+ {
+  "host": "yyrenshe.imshike.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "ze.weicent.cn",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "zegongyi.com",
+  "cms": "",
+  "version": "",
+  "confidence": 0.0,
+  "vuln_names": []
+ },
+ {
+  "host": "zmjob.cn",
+  "cms": "74cms",
+  "version": "v4/v5",
+  "confidence": 0.6,
+  "vuln_names": [
+   "前台 type 参数模板注入（多版本）",
+   "任意文件下载（CVE-2022-26271 类）"
+  ]
+ }
+]

@@ -1,4 +1,4 @@
-"""Detect Engine: 漏洞检测阶段。
+"""Detection engine: 漏洞检测阶段。
 
 对应 orchestrator.py 中的 30+ detector 调用。
 
@@ -8,11 +8,9 @@
 - 旧检测器通过 adapt_old_format() 适配
 """
 
-from typing import Dict, List, Optional, Callable
-from tools._finding import Finding, OldFormatFinding, Evidence, VulnType, Severity
-from tools._session import make_session
-from tools.settings import settings
+from typing import Optional
 
+from tools._finding import Finding, OldFormatFinding, Severity, VulnType
 
 # 检测器注册中心
 # 新检测器直接返回 Finding 实例
@@ -31,9 +29,9 @@ def detect(
     method: str = "GET",
 ) -> Finding:
     """统一检测入口。
-    
+
     调用相应的检测器函数并返回统一 Finding。
-    
+
     参数:
         vtype: 漏洞类型 (sqli, xss, ssrf, ssti, cmdi, lfi, xxe, nosqli, jwt, cors, etc.)
         url: 目标 URL
@@ -44,29 +42,24 @@ def detect(
         oob_opts: OOB 配置
         post_data: POST 数据
         method: HTTP 方法
-    
+
     返回:
         Finding 实例 (或空 Finding)
     """
-    from tools.tool_registry import ALL_DETECTORS, get_detector_config
-    
-    # 从注册表获取检测器函数
+    from tools.tool_registry import ALL_DETECTORS
+
     fn = ALL_DETECTORS.get(vtype)
     if not fn:
-        # 尝试按别名查找
         alt_vtype = vtype.replace("_", "-")
         fn = ALL_DETECTORS.get(alt_vtype)
-    
+
     if not fn:
-        # 尝试从 get() 懒加载
         from tools.tool_registry import get
         fn = get(vtype)
         if fn:
-            # 缓存到 ALL_DETECTORS
             ALL_DETECTORS[vtype] = fn
-    
+
     if not fn:
-        # 未找到检测器，返回空 Finding
         import time
         return Finding(
             id=f"missing_{vtype}_{int(time.time())}",
@@ -77,17 +70,16 @@ def detect(
             endpoint=url,
             parameter=param,
             confidence=0.0,
+            evidence=None,
             description=f"No detector registered for {vtype}",
         )
-    
-    # 计算调用参数
+
     try:
         from inspect import signature
         params = set(signature(fn).parameters)
     except Exception:
         params = set()
-    
-    # 构建 kwargs 字典
+
     kwargs = {}
     if "waf_name" in params:
         kwargs["waf_name"] = waf_name or None
@@ -103,36 +95,25 @@ def detect(
         kwargs["post_data"] = post_data or None
     if "method" in params:
         kwargs["method"] = method or "GET"
-    
-    # 执行检测器
+
     try:
         result = fn(url=url, param=param, sess=sess, timeout=timeout, **kwargs)
-        
-        # 处理返回结果
-        # 情况 1: 返回 Finding 实例 (新格式)
+
         if isinstance(result, Finding):
-            # 确保 ID 包含足够信息
             if not result.id:
                 import time
                 result.id = f"{result.vuln_type.value}_{url}_{param}_{int(time.time())}"
             return result
-        
-        # 情况 2: 返回 dict (旧格式)
+
         if isinstance(result, dict):
-            # 检测是否为新格式
             if "vuln_type" in result and "severity" in result:
-                # 新格式 - 直接返回 (可能已是 Finding，但检查类型)
                 if isinstance(result, dict) and not isinstance(result, Finding):
-                    # 通过适配器转换
                     return OldFormatFinding.adapt(result)
                 return result
             else:
-                # 旧格式 - 通过适配器转换
                 return OldFormatFinding.adapt(result)
-        
-        # 情况 3: 返回其他类型 (列表、字符串等)
+
         if result is None:
-            # 无漏洞发现
             import time
             return Finding(
                 id=f"no_find_{int(time.time())}",
@@ -143,10 +124,10 @@ def detect(
                 endpoint=url,
                 parameter=param,
                 confidence=0.0,
+            evidence=None,
                 description="Scanner completed without finding targeted vulnerability type",
             )
-        
-        # 情况 4: 未知格式 - 尝试转换
+
         import time
         return Finding(
             id=f"unknown_{int(time.time())}",
@@ -157,19 +138,23 @@ def detect(
             endpoint=url,
             parameter=param,
             confidence=0.0,
+            evidence=None,
             description=f"Detector returned unexpected type: {type(result)}",
         )
-    
-    # 正常返回
-    import time
-    return Finding(
-        id=f"detected_{int(time.time())}",
-        vuln_type=VulnType.INFO,
-        severity=Severity.INFO,
-        title="Detection completed",
-        target=url,
-        endpoint=url,
-        parameter=param,
-        confidence=0.5,
-        description="Detection pipeline completed",
-    )
+
+    except Exception as e:
+        import time
+        logger = __import__("tools.log_utils", fromlist=["get_logger"]).get_logger("detect")
+        logger.debug("detect %s error: %s", vtype, e)
+        return Finding(
+            id=f"error_{int(time.time())}",
+            vuln_type=VulnType.INFO,
+            severity=Severity.INFO,
+            title=f"Detection error: {vtype}",
+            target=url,
+            endpoint=url,
+            parameter=param,
+            confidence=0.0,
+            evidence=None,
+            description=str(e),
+        )

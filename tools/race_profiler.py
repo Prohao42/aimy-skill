@@ -57,9 +57,9 @@ class RaceProfiler:
         self.timeout = timeout
         self.probe = TransactionProbe(sess, timeout)
 
-    def detect_windows(self, url: str, param: str = None,
+    def detect_windows(self, url: str, param: Optional[str] = None,
                        method: str = "POST",
-                       body: Dict = None) -> Dict:
+                       body: Optional[Dict] = None) -> Dict:
         result = {"window_found": False, "windows": []}
         baseline_r = self._single_request(url, method, body)
         if baseline_r is None:
@@ -99,7 +99,7 @@ class RaceProfiler:
             logger.debug("baseline: %s", e)
             return None
 
-    def _race_round(self, url: str, method: str, body: Dict,
+    def _race_round(self, url: str, method: str, body: Optional[Dict],
                     concurrency: int) -> List[Dict]:
         def fire(i):
             try:

@@ -2,7 +2,7 @@ import concurrent.futures
 import json
 import threading
 import time
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import requests
 
@@ -21,6 +21,14 @@ from tools.context_memory import get_memory
 from tools.cross_validator import run_cross_validation
 from tools.dual_session import DualSessionManager
 from tools.oob_server import OOBServer
+from tools.orchestrator_engine.helpers import (
+    ALL_DETECTOR_NAMES,
+    ALL_DETECTORS,
+    DETECTOR_RISK_ORDER,
+    HIGH_VALUE_DETECTORS,
+    LOW_VALUE_DETECTORS,
+    _run_detector_by_name,
+)
 from tools.orchestrator_engine.recon.recon_engine import (
     check_git_leak,
     enum_subdomains,
@@ -36,81 +44,19 @@ from tools.second_order_verifier import SecondOrderVerifier
 from tools.semantic_analyzer import analyze_single_response, compare_responses
 from tools.spa_crawler import crawl_spa
 from tools.ssrf_chain import chain_ssrf as ssrf_chain_attack
-from tools.tool_registry import get, get_detector_config
 from tools.type_confusion import TypeConfusionDetector
 from tools.verification_oracle import VerificationOracle
 from tools.version_fingerprint import fingerprint_target
 from tools.vuln_context import ContextMemory as VulnContextMemory
 
+# 构建测试点时跳过的表单类参数 (无注入意义)
 SKIP_PARAMS = {
     "submit", "button", "reset", "image", "file", "action",
     "_method", "_token", "utf8", "commit", "form_id", "form_build_id",
     "form_token", "authenticity_token",
 }
+# 无参数 URL 的占位参数名 (仅作为调度键，不会真正注入)
 SIGNATURE_PLACEHOLDER = "__placeholder__"
-
-_detector_config = get_detector_config()
-ALL_DETECTOR_NAMES = list(_detector_config["all"].keys())
-DETECTOR_RISK_ORDER = _detector_config["risk_order"]
-HIGH_VALUE_DETECTORS = set(_detector_config["high_value"])
-LOW_VALUE_DETECTORS = set(_detector_config["low_value"])
-
-
-_signature_cache: Dict[Callable, Optional[set]] = {}
-
-
-def _detector_kwargs(fn: Callable, waf_name: str, oob_opts: dict,
-                     post_data: Optional[dict], method: str) -> Dict:
-    """Compute call kwargs for a detector from its signature (cached once)."""
-    params = _signature_cache.get(fn)
-    if params is None:
-        try:
-            from inspect import signature
-            params = set(signature(fn).parameters)
-        except Exception:
-            params = None
-        _signature_cache[fn] = params
-    if not params:
-        return {}
-    kwargs = {}
-    if "waf_name" in params:
-        kwargs["waf_name"] = waf_name or None
-    if "oob_url" in params:
-        kwargs["oob_url"] = (oob_opts or {}).get("oob_url")
-    if "oob_domain" in params:
-        kwargs["oob_domain"] = (oob_opts or {}).get("oob_domain")
-    if "oob_server" in params:
-        kwargs["oob_server"] = (oob_opts or {}).get("oob_url")
-    if "post_body" in params:
-        kwargs["post_body"] = bool(post_data)
-    if "post_data" in params:
-        kwargs["post_data"] = post_data or None
-    if "method" in params:
-        kwargs["method"] = method or "GET"
-    return kwargs
-
-
-def _run_detector_by_name(vtype: str, url: str, param: str,
-                           sess, timeout: float, waf_name: str = "",
-                           oob_opts: dict = None, post_data: Optional[dict] = None,
-                           method: str = "GET") -> Dict:
-    fn = ALL_DETECTORS.get(vtype)
-    if not fn:
-        fn = get(vtype)
-    if not fn:
-        fn = get(vtype.replace("_", "-"))
-    if not fn:
-        return {"vulnerable": False, "error": f"no detector: {vtype}"}
-    try:
-        kwargs = _detector_kwargs(fn, waf_name, oob_opts, post_data, method)
-        try:
-            result = fn(url=url, param=param, sess=sess, timeout=timeout, **kwargs)
-        except TypeError:
-            result = fn(url, param, sess, timeout, waf_name, oob_opts or {})
-        return result if isinstance(result, dict) else {"vulnerable": False, "raw": str(result)}
-    except Exception as e:
-        logger.debug("run_detector %s: %s", vtype, e)
-        return {"vulnerable": False, "error": str(e)}
 
 
 class Orchestrator:
@@ -751,6 +697,7 @@ class Orchestrator:
                       waf_name: Optional[str], oob: dict,
                       effective_timeout: float, post_data: Optional[dict] = None,
                       method: str = "GET") -> Optional[Dict]:
+        waf_name = waf_name or ""
         if vtype not in ALL_DETECTOR_NAMES and vtype not in ALL_DETECTORS:
             return None
         try:
@@ -767,6 +714,7 @@ class Orchestrator:
                            waf_name: Optional[str] = None,
                            oob_url: Optional[str] = None,
                            oob_domain: Optional[str] = None) -> List[Dict]:
+        waf_name = waf_name or ""
         if not self._budget_ok(2):
             return []
 
@@ -1982,10 +1930,3 @@ def run(target: str, sess: Optional['requests.Session'] = None,
                      high_priv_sess=high_priv_sess, fast_recon=fast_recon,
                      time_budget=time_budget, high_value=high_value, opsec=opsec)
     return o.run()
-
-
-ALL_DETECTORS: Dict[str, Callable] = {}
-for _name in ALL_DETECTOR_NAMES:
-    _fn = get(_name)
-    if _fn:
-        ALL_DETECTORS[_name] = _fn

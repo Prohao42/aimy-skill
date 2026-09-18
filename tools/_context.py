@@ -21,7 +21,7 @@ class ScanContext:
         self._findings: Dict[str, Dict] = {}
         self._state: Dict[str, Any] = {}
         self._lock = threading.Lock()
-        self._cross_context: Dict[str, List[str]] = {}
+        self._cross_context: Dict[str, List[Dict]] = {}
         self._tech_stack: List[str] = []
 
     def add_finding(self, key: str, finding: Dict):

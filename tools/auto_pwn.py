@@ -6,8 +6,12 @@ from tools.attack_surface import rank_attack_paths, visualize_attack_paths
 from tools.chain_engine import ChainEngine
 from tools.internal_scan import full_network_scan
 from tools.log_utils import get_logger
-from tools.orchestrator import Orchestrator
 from tools.reasoning_engine import Hypothesis, ReasoningEngine
+
+# 注意: 不要在模块级 import tools.orchestrator ——
+# orchestrator -> orchestrator_engine.helpers 会在导入期回溯 import 本模块，
+# 形成循环导入导致 auto-pwn 检测器注册失败 (helpers.ALL_DETECTORS 缺 auto-pwn)。
+# Orchestrator 延迟到 run() 内部导入。
 
 logger = get_logger("auto_pwn")
 
@@ -49,6 +53,7 @@ class HypothesisDrivenAgent:
         logger.info("[AutoPwn] Phase 1: Intelligence gathering")
         intel: Dict[str, Any] = {"target": self.target, "techs": [], "ports": [], "attack_paths": []}
         try:
+            from tools.orchestrator import Orchestrator
             orch = Orchestrator(self.target, self.sess, self.timeout, fast_recon=True)
             orch.init_storage()
             recon = orch.phase_recon()

@@ -66,6 +66,14 @@ except ImportError:
     pass
 
 
+
+def _first(value) -> Optional[str]:
+    """bs4 多值属性可能返回 list, 统一取第一个字符串。"""
+    if isinstance(value, list):
+        return str(value[0]) if value else None
+    return value if isinstance(value, str) else None
+
+
 class Crawler:
     def __init__(self, base_url: str, max_depth: int = 3, max_pages: int = 50,
                  sess: Optional['requests.Session'] = None, timeout: float = 10.0,
@@ -181,14 +189,14 @@ class Crawler:
             try:
                 soup = BeautifulSoup(html, "html.parser")
                 for form in soup.find_all("form"):
-                    action = form.get("action", "")
+                    action = _first(form.get("action")) or ""
                     if action:
                         action_url = self._normalize(action, current) or current
                     else:
                         action_url = current
                     inputs = []
                     for inp in form.find_all("input"):
-                        name = inp.get("name")
+                        name = _first(inp.get("name"))
                         if name:
                             inputs.append({
                                 "name": name,
@@ -217,7 +225,7 @@ class Crawler:
             try:
                 soup = BeautifulSoup(html, "html.parser")
                 for tag in soup.find_all("a"):
-                    href = tag.get("href")
+                    href = _first(tag.get("href"))
                     if href:
                         next_url = self._normalize(href, current)
                         if next_url and self._should_crawl(next_url):
@@ -323,7 +331,7 @@ class Crawler:
             try:
                 soup = BeautifulSoup(html, "html.parser")
                 for tag in soup.find_all("a"):
-                    href = tag.get("href")
+                    href = _first(tag.get("href"))
                     if href:
                         next_url = self._normalize(href, url)
                         if next_url and self._should_crawl(next_url):

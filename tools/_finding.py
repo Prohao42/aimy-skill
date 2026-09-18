@@ -58,6 +58,8 @@ class VulnType(str, Enum):
     CMS_FINGERPRINT = "cms-fingerprint"
     GRAPHQL = "graphql"
     GRAPHQL_ABUSE = "graphql-abuse"
+    # 兜底类型: 旧格式/未知类型统一归入, 避免适配层崩溃
+    INFO = "info"
 
 
 @dataclass
@@ -69,6 +71,17 @@ class Evidence:
     payload: Optional[str] = None  # 触发漏洞的 payload
     indicator: Optional[str] = None  # 关键指标 (keyword, pattern, etc)
     timestamp: Optional[float] = None
+
+    def to_dict(self) -> Dict:
+        """转换为字典 (用于 JSON 序列化)"""
+        return {
+            "request": self.request,
+            "response": self.response,
+            "headers": self.headers,
+            "payload": self.payload,
+            "indicator": self.indicator,
+            "timestamp": self.timestamp,
+        }
 
 
 @dataclass
@@ -92,7 +105,7 @@ class Finding:
     # 置信度与证据
     confidence: float  # 0.0 - 1.0
     description: str  # 人类可读描述
-    evidence: Evidence  # 关键证据 (请求/响应/payload)
+    evidence: Optional[Evidence] = None  # 关键证据 (请求/响应/payload), 兜底路径可为空
     verification: Optional[Dict] = None  # 验证信息
 
     # 元数据
@@ -261,13 +274,26 @@ class OldFormatFinding:
         }
         severity = Severity(severity_map.get(severity_str, "medium"))
 
-        # 映射漏洞类型 (简易映射)
+        # 映射漏洞类型 (含旧检测器的 snake_case 别名)
         type_map = {
             "sqli": "sqli",
+            "sql_injection": "sqli",
+            "sqli-blind": "sqli-blind",
+            "sqli-blind-union": "sqli-blind",
+            "sqli-oob": "sqli-oob",
+            "sqli-weaponize": "sqli-weaponize",
             "xss": "xss",
+            "xss_reflected": "xss",
+            "xss_stored": "xss",
+            "dom-xss": "dom-xss",
+            "dom_xss": "dom-xss",
+            "xss-validate": "xss-validate",
             "ssrf": "ssrf",
+            "ssrf-pwn": "ssrf-pwn",
+            "ssrf-chain": "ssrf-chain",
             "ssti": "ssti",
             "cmdi": "cmdi",
+            "command_injection": "cmdi",
             "lfi": "lfi",
             "xxe": "xxe",
             "nosqli": "nosqli",
@@ -276,7 +302,23 @@ class OldFormatFinding:
             "auth-bypass": "auth-bypass",
             "cors": "cors",
             "waf": "waf-bypass",
+            "waf-bypass": "waf-bypass",
+            "waf-heavy": "waf-heavy",
+            "proto-pollution": "proto-pollution",
+            "type-confusion": "type-confusion",
+            "biz-logic": "biz-logic",
+            "bizlogic": "biz-logic",
+            "race": "race",
+            "idor": "idor",
+            "deser": "deser-weaponize",
+            "deser-weaponize": "deser-weaponize",
+            "reverse-shell": "reverse-shell",
+            "cloud-pwn": "cloud-pwn",
+            "cms-fingerprint": "cms-fingerprint",
+            "graphql": "graphql",
+            "graphql-abuse": "graphql-abuse",
         }
+        # 未知类型统一兜底为 INFO (不再抛 ValueError)
         vuln_type = VulnType(type_map.get(vuln_type_str, "info"))
 
         # 构建证据

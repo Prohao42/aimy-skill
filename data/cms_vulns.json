@@ -1,0 +1,167 @@
+{
+  "74cms": {
+    "description": "骑士人才招聘系统 (PHP/ThinkPHP)",
+    "versions": {
+      "v3.6": {
+        "detect": [
+          "/plus/ajax_user.php"
+        ],
+        "vulns": [
+          {
+            "name": "前台 SQL 注入（布尔盲注）",
+            "cve": "",
+            "type": "sqli",
+            "endpoint": "/plus/ajax_user.php",
+            "param": "username",
+            "detail": "POST username=a'or <cond> and '1'='1&act=get_pass_check，布尔差分确认。无需登录。",
+            "condition": "无需登录，前台可触发"
+          }
+        ]
+      },
+      "v3.x": {
+        "detect": [
+          "/plus/ 目录结构"
+        ],
+        "vulns": [
+          {
+            "name": "前台 SQL 注入（布尔盲注）",
+            "cve": "",
+            "type": "sqli",
+            "endpoint": "/plus/ajax_user.php",
+            "param": "username",
+            "detail": "POST username=a'or <cond> and '1'='1&act=get_pass_check，布尔差分确认。无需登录。",
+            "condition": "无需登录，前台可触发"
+          },
+          {
+            "name": "XXE 二次注入",
+            "cve": "wooyun-2016-0195271",
+            "type": "xxe",
+            "detail": "20160329 及之前版本存在 XXE 二次注入",
+            "condition": "老版本"
+          }
+        ]
+      },
+      "v4.2.3": {
+        "detect": [
+          "/Application/",
+          "/data/ 目录"
+        ],
+        "vulns": [
+          {
+            "name": "前台任意文件读取（注册头像路径穿越）",
+            "cve": "",
+            "type": "lfi",
+            "endpoint": "/index.php?m=&c=members&a=register",
+            "detail": "Cookie members_bind_info[temp_avatar]=../../../../Application/Common/Conf/db.php 注册触发，可读数据库配置文件",
+            "condition": "需注册测试账号"
+          },
+          {
+            "name": "前台任意文件下载",
+            "cve": "",
+            "type": "lfi",
+            "detail": "v4.2.3 前台任意文件下载",
+            "condition": "需确认端点"
+          }
+        ]
+      },
+      "v4.x": {
+        "detect": [
+          "/Application/Common/Conf/"
+        ],
+        "vulns": [
+          {
+            "name": "前台 type 参数模板注入",
+            "cve": "ssvid-92697",
+            "type": "ssti",
+            "endpoint": "/index.php?m=&c=M&a=index",
+            "param": "type",
+            "detail": "type 参数拼入模板引擎，可注入模板语法",
+            "condition": "前台可触发"
+          }
+        ]
+      },
+      "v5.0.1": {
+        "detect": [
+          "/index/safe/index.html"
+        ],
+        "vulns": [
+          {
+            "name": "前台 SQL 注入（关注公司）",
+            "cve": "",
+            "type": "sqli",
+            "endpoint": "/index.php?m=&c=AjaxPersonal&a=company_focus",
+            "param": "company_id",
+            "detail": "company_id 数组参数 updatexml 报错注入",
+            "condition": "需登录 + debug 模式开启"
+          },
+          {
+            "name": "后台配置注入 RCE",
+            "cve": "",
+            "type": "rce",
+            "endpoint": "/index.php?m=Admin&c=config&a=edit",
+            "param": "site_domain",
+            "detail": "site_domain 写入配置后可二次利用 RCE",
+            "condition": "需后台权限"
+          },
+          {
+            "name": "后台 CSRF",
+            "cve": "CVE-2019-11374",
+            "type": "csrf",
+            "detail": "v5.0.1 后台跨站请求伪造",
+            "condition": "需后台"
+          }
+        ]
+      },
+      "v5.x": {
+        "detect": [
+          "/index/safe/index.html"
+        ],
+        "vulns": [
+          {
+            "name": "前台文件包含 getshell",
+            "cve": "",
+            "type": "rce",
+            "endpoint": "/index.php?m=home&a=assign_resume_tpl",
+            "param": "type",
+            "detail": "简历模板 type 参数文件包含，配合上传可 getshell",
+            "condition": "需注册用户"
+          },
+          {
+            "name": "前台账号审核 getshell",
+            "cve": "",
+            "type": "rce",
+            "endpoint": "/index.php?m=home&c=m&a=index",
+            "param": "type",
+            "detail": "上传 word_resume 路径可控 getshell",
+            "condition": "需注册用户"
+          }
+        ]
+      }
+    },
+    "generic": [
+      {
+        "name": "前台 type 参数模板注入（多版本）",
+        "type": "ssti",
+        "param": "type",
+        "detail": "c=M&a=index type 参数拼模板",
+        "condition": "前台可触发"
+      },
+      {
+        "name": "任意文件下载（CVE-2022-26271 类）",
+        "type": "lfi",
+        "detail": "/index/download/index url 参数路径穿越",
+        "condition": "特定版本"
+      }
+    ]
+  },
+  "qscms": {
+    "description": "QSCMS 招聘系统（X-Powered-By: QSCMS）",
+    "versions": {
+      "": {
+        "detect": [],
+        "vulns": []
+      }
+    },
+    "generic": []
+  }
+}

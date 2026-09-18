@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import urllib.parse as _urlparse
+from typing import Optional
 
 from tools.log_utils import get_logger
 
@@ -30,7 +31,7 @@ def _validate_url(url: str, name: str = "url") -> None:
 
 def _add_url_arg(
     p,
-    default_param: str = "id",
+    default_param: Optional[str] = "id",
     include_post: bool = False,
     include_data: bool = False,
     context: bool = False,
@@ -377,15 +378,11 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p.set_defaults(func=dispatchers["web-cache"])
 
     p = sub.add_parser("file-upload", help="文件上传漏洞检测")
-    p.add_argument("url")
     _add_url_arg(p, default_param="file")
-    p.add_argument("--param", default="file", help="上传参数名")
     p.set_defaults(func=dispatchers["file-upload"])
 
     p = sub.add_parser("saml-sso", help="SAML SSO漏洞检测")
-    p.add_argument("url")
     _add_url_arg(p, default_param="SAMLResponse")
-    p.add_argument("--param", default="", help="SAML参数名(可选)")
     p.set_defaults(func=dispatchers["saml-sso"])
 
     # ---- Scan orchestration ----

@@ -1,7 +1,7 @@
 import json
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from urllib.parse import urlparse
 
 from tools.log_utils import get_logger
@@ -156,7 +156,7 @@ class PlaywrightEngine:
         self,
         page: Page,
         url: str,
-        wait_until: str = "networkidle",
+        wait_until: Literal["commit", "domcontentloaded", "load", "networkidle"] = "networkidle",
         timeout: int = 30000,
     ):
         page.goto(url, wait_until=wait_until, timeout=timeout)

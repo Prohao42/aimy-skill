@@ -78,12 +78,6 @@ result = checker.check(
 
 知识星球有更强版本，更多渗透技能的skill
 
-### 🙏 致谢
-
-`ai-mian/hack-skills/` 目录收录的 101 个安全测试 Skill 来自开源项目
-[hack-skills](https://github.com/yaklang/hack-skills)（作者 VillanCh，MIT License），
-本仓库仅作整合分发，版权归原作者所有。
-
 ### 🚀 三行命令，从零到报告
 
 ```bash

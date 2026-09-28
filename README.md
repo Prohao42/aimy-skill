@@ -70,27 +70,19 @@ result = checker.check(
 ## ✨ 联系方式
 
 推特：https://x.com/Fakerrf5
+
 飞机：https://t.me/Prohao42
 
-抖音：https://www.douyin.com/user/self?from_tab_name=main&showSubTab=video&showTab=post
+抖音：https://v.douyin.com/CyuKg0eT7sM/ 8@5.com :8pm
+炸炸酥~🐷
 
 知识星球：https://t.zsxq.com/FGUeq
 
-知识星球有更强版本，更多渗透技能的skill
+知识星球有更强版本的移机版本，更多渗透技能的skill  更新渗透文档、更多的学习技巧。
 
-### 🚀 三行命令，从零到报告
+微信号：ylki-372
 
-```bash
-# 全自动渗透（爬虫 → 检测 → 武器化 → 报告）
-python main.py auto -u http://target.com
-
-# 带认证的深度扫描
-python main.py deepscan -u http://target.com/admin \
-  --auth-type form --auth-user admin --auth-pass secret
-
-# 单点快速检测
-python main.py sqlcheck -u "http://target.com/page?id=1"
-```
+### 🚀 AI智能体聊天，从零到报告
 
 ---
 
@@ -98,10 +90,7 @@ python main.py sqlcheck -u "http://target.com/page?id=1"
 
 ### 1️⃣ 安装
 
-```bash
-pip install -r requirements.txt
-playwright install chromium        # 可选：SPA 爬虫 & XSS 浏览器验证
-```
+让AI智能体给你安装技能
 
 ### 2️⃣ 安装 AI Agent 提示词
 
@@ -113,14 +102,7 @@ https://github.com/Prohao42/aimy-skill  完整安装项目
 ### 3️⃣ 跑一个全自动扫描
 
 ```bash
-python main.py auto -u http://target.com
-```
-
-### 4️⃣ 极速模式（跳过验证层）
-
-```bash
-# 跳过所有验证层，极速扫描
-python main.py auto -u http://target.com --skip-verify
+目标网络地址   信息收集 （输入到AI智能体中）
 ```
 
 ### 环境要求
@@ -227,8 +209,8 @@ aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `
 
 | 模式                    | 适用场景                      | 输出特点                                                                                                                                                                          |
 | ----------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **rookie** (默认) | 入门学习、首次审计、详细报告  | - 为每个漏洞添加详细解释和修复建议<br>- 不过滤低信号漏洞，全部展示<br>- 启动时显示 "aimy-skill 菜鸟模式 (Rookie)" Banner                                                          |
-| **veteran**       | 专业渗透测试、快速报告、CI/CD | - 自动过滤低风险漏洞（XSS反射、Open Redirect、信息泄露）<br>- 省略冗余解释，仅保留高价值发现<br>- 启动时显示 "aimy-skill 老鸟模式 (Veteran)" Banner<br>- 输出更精简，聚焦核心风险 |
+| **rookie** (默认) | 入门学习、首次审计、详细报告  | - 为每个漏洞添加详细解释和修复建议- 不过滤低信号漏洞，全部展示- 启动时显示 "aimy-skill 菜鸟模式 (Rookie)" Banner                                                          |
+| **veteran**       | 专业渗透测试、快速报告、CI/CD | - 自动过滤低风险漏洞（XSS反射、Open Redirect、信息泄露）- 省略冗余解释，仅保留高价值发现- 启动时显示 "aimy-skill 老鸟模式 (Veteran)" Banner- 输出更精简，聚焦核心风险 |
 
 **切换方式**：
 
@@ -259,7 +241,7 @@ aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `
 ## 🏗 架构
 
 ```
-                    ┌──────────────┐
+┌──────────────┐
                     │   AI Agent   │   ← Claude Code / AutoGPT / Cursor
                     │  (ai-mian/)  │   ← 80+ Attack Skill 文件
                     └──────┬───────┘
@@ -358,14 +340,14 @@ pytest --cov=tools        # 覆盖率报告
 
 ## 🌐 项目宣传网站
 
-https://aimy-skill.netlify.app/
+https://aimy-skill.netlify.app/   项目官网
 
 ---
 
 ## ⚖️ 法律声明
 
 > **⚠️ 重要提醒**
->
+> 
 > 本工具仅限 **已获得明确授权** 的环境中进行安全测试、CTF 竞赛或漏洞研究使用。未经授权使用可能违反法律法规。**使用者自行承担所有责任。**
 
 ---

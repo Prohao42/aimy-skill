@@ -77,7 +77,7 @@ result = checker.check(
 炸炸酥~🐷
 
 知识星球：https://t.zsxq.com/FGUeq
-![图片](https://yangdada873.ggff.net/file/1790961077516_7e6b8fe85a9a6c7c6040b281f049902d.jpg)
+![图片](https://yangdada873.ggff.net/file/1790961984947_7e6b8fe85a9a6c7c6040b281f049902d.jpg)
 
 知识星球有更强版本的移机版本，更多渗透技能的skill  更新渗透文档、更多的学习技巧。
 

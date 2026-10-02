@@ -82,7 +82,6 @@ result = checker.check(
 知识星球有更强版本的移机版本，更多渗透技能的skill  更新渗透文档、更多的学习技巧。
 
 微信号：ylki-372
-https://yangdada873.ggff.net/file/1790961077516_7e6b8fe85a9a6c7c6040b281f049902d.jpg
 
 ### 🚀 AI智能体聊天，从零到报告
 

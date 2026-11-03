@@ -7,7 +7,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ENV = dict(os.environ, NO_PROXY="127.0.0.1,localhost")
+# Pin the child process to UTF-8: the harness decodes with encoding="utf-8",
+# so a cp936 child (Windows default) would produce undecodable bytes.
+ENV = dict(
+    os.environ,
+    NO_PROXY="127.0.0.1,localhost",
+    PYTHONIOENCODING="utf-8",
+    PYTHONUTF8="1",
+)
 
 
 def test_json_mode_keeps_stdout_pure():
@@ -15,7 +22,7 @@ def test_json_mode_keeps_stdout_pure():
         [sys.executable, "main.py", "--json", "list"],
         cwd=str(ROOT),
         capture_output=True,
-        text=True,
+        encoding="utf-8",
         timeout=60,
         env=ENV,
     )
@@ -32,7 +39,7 @@ def test_quiet_flag_hides_progress():
         [sys.executable, "main.py", "--quiet", "--json", "list"],
         cwd=str(ROOT),
         capture_output=True,
-        text=True,
+        encoding="utf-8",
         timeout=60,
         env=ENV,
     )

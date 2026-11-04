@@ -95,12 +95,15 @@ def list_commands(parser=None) -> List[Dict[str, Any]]:
     parser = parser or _build_parser()
     sub = _subparsers_action(parser)
     choices = getattr(sub, "choices", {}) if sub is not None else {}
+    helps = (
+        {a.dest: a.help for a in getattr(sub, "_choices_actions", [])} if sub is not None else {}
+    )
     commands: List[Dict[str, Any]] = []
     for name, subparser in choices.items():
         spec = _command_spec_for(name)
         entry: Dict[str, Any] = {
             "name": name,
-            "description": subparser.description or "",
+            "description": helps.get(name) or subparser.description or "",
             "parameters": _subparser_params(subparser),
         }
         if spec:
@@ -130,13 +133,15 @@ def list_nested_commands(parser):
         if sub_action is None:
             continue
         for name, sp in getattr(sub_action, "choices", {}).items():
-            out.append({
-                "name": "%s-%s" % (parent_name, name),
-                "description": sp.description or "%s %s" % (parent_name, name),
-                "parameters": _subparser_params(sp),
-                "parent": parent_name,
-                "kali_command": sp.get_default("kali_command") or name,
-            })
+            out.append(
+                {
+                    "name": "%s-%s" % (parent_name, name),
+                    "description": sp.description or "%s %s" % (parent_name, name),
+                    "parameters": _subparser_params(sp),
+                    "parent": parent_name,
+                    "kali_command": sp.get_default("kali_command") or name,
+                }
+            )
     out.sort(key=lambda c: c["name"])
     return out
 

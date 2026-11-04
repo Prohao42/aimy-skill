@@ -49,6 +49,13 @@ def begin_context(tool=None) -> None:
     _CTX["started"] = time.time()
 
 
+def end_context() -> None:
+    """退出命令上下文，后续直接调用 output() 不再注入 _meta。"""
+    _CTX["tool"] = None
+    _CTX["request_id"] = None
+    _CTX["started"] = None
+
+
 def _meta(status="ok", error=None):
     """返回 _meta 信封; 未处于命令上下文时返回 None (不改变裸调用输出)。"""
     if _CTX["request_id"] is None:
@@ -166,4 +173,5 @@ __all__ = [
     "to_json",
     "set_format",
     "begin_context",
+    "end_context",
 ]

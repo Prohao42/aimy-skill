@@ -25,8 +25,10 @@ def main() -> None:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
     n = len(manifest["commands"])
-    print("exported %d commands + %d global params -> %s"
-          % (n, len(manifest["global_parameters"]), args.out))
+    print(
+        "exported %d commands + %d global params -> %s"
+        % (n, len(manifest["global_parameters"]), args.out)
+    )
 
 
 if __name__ == "__main__":

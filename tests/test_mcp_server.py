@@ -2,7 +2,11 @@
 
 import asyncio
 
-import aimy_mcp.server as srv
+import pytest
+
+pytest.importorskip("mcp", reason="MCP SDK requires Python >= 3.10")
+
+import aimy_mcp.server as srv  # noqa: E402
 
 
 def test_mcp_lists_all_commands():

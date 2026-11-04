@@ -48,15 +48,28 @@ def _last_json(capsys):
 
 class TestCmdPoja:
     def test_generates_and_merges(self, capsys):
-        with unittest.mock.patch(
-            "tools.waf_bypass.fingerprint_waf",
-            return_value={"detected": True, "name": "cloudflare", "evidence": [], "all_matches": []},
-        ), unittest.mock.patch(
-            "tools.waf_bypass.adaptive_bypass",
-            return_value={"success": True, "payload": "1%2527..."},
-        ), unittest.mock.patch(
-            "tools.waf_bypass.test_sqli_bypass",
-            return_value={"vulnerable": True, "bypasses": [{"payload": "'"}], "best_payload": "'"},
+        with (
+            unittest.mock.patch(
+                "tools.waf_bypass.fingerprint_waf",
+                return_value={
+                    "detected": True,
+                    "name": "cloudflare",
+                    "evidence": [],
+                    "all_matches": [],
+                },
+            ),
+            unittest.mock.patch(
+                "tools.waf_bypass.adaptive_bypass",
+                return_value={"success": True, "payload": "1%2527..."},
+            ),
+            unittest.mock.patch(
+                "tools.waf_bypass.test_sqli_bypass",
+                return_value={
+                    "vulnerable": True,
+                    "bypasses": [{"payload": "'"}],
+                    "best_payload": "'",
+                },
+            ),
         ):
             main.cmd_poja(_base_args())
 
@@ -70,15 +83,19 @@ class TestCmdPoja:
         assert d["adaptive"]["success"] is True
 
     def test_waf_override_wins_over_fingerprint(self, capsys):
-        with unittest.mock.patch(
-            "tools.waf_bypass.fingerprint_waf",
-            return_value={"detected": False, "name": None, "evidence": [], "all_matches": []},
-        ), unittest.mock.patch(
-            "tools.waf_bypass.adaptive_bypass",
-            return_value={"success": False, "strategies_tried": 22},
-        ), unittest.mock.patch(
-            "tools.waf_bypass.test_sqli_bypass",
-            return_value={"vulnerable": False, "bypasses": [], "best_payload": None},
+        with (
+            unittest.mock.patch(
+                "tools.waf_bypass.fingerprint_waf",
+                return_value={"detected": False, "name": None, "evidence": [], "all_matches": []},
+            ),
+            unittest.mock.patch(
+                "tools.waf_bypass.adaptive_bypass",
+                return_value={"success": False, "strategies_tried": 22},
+            ),
+            unittest.mock.patch(
+                "tools.waf_bypass.test_sqli_bypass",
+                return_value={"vulnerable": False, "bypasses": [], "best_payload": None},
+            ),
         ):
             main.cmd_poja(_base_args(waf="mod_security"))
 

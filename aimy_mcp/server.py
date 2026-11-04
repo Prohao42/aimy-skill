@@ -33,8 +33,9 @@ from tools.output import begin_context, set_format
 # 强制 JSON 输出 (MCP 客户端需要机器可解析，不用 jsonl)
 set_format("json")
 
-_dispatchers = {name: build_dispatcher(spec, _main._sess, _main._output)
-                for name, spec in COMMAND_SPECS.items()}
+_dispatchers = {
+    name: build_dispatcher(spec, _main._sess, _main._output) for name, spec in COMMAND_SPECS.items()
+}
 _parser = build_parser(_dispatchers)
 _funcs = command_funcs(_parser)
 _funcs.update(nested_command_funcs(_parser))
@@ -126,13 +127,16 @@ async def call_tool(name: str, arguments: dict) -> CallToolResult:
     cmd = next((c for c in _commands if c["name"] == name), None)
     if cmd is None:
         return CallToolResult(
-            content=[TextContent(type="text", text=json.dumps({"error": "unknown tool: %s" % name}))],
+            content=[
+                TextContent(type="text", text=json.dumps({"error": "unknown tool: %s" % name}))
+            ],
             isError=True,
         )
     text, err = await asyncio.to_thread(_run, cmd, arguments or {})
     if err and not text.strip():
-        text = json.dumps({"_meta": {"status": "error", "tool": name, "error": err}},
-                          ensure_ascii=False)
+        text = json.dumps(
+            {"_meta": {"status": "error", "tool": name, "error": err}}, ensure_ascii=False
+        )
         return CallToolResult(content=[TextContent(type="text", text=text)], isError=True)
 
     result = CallToolResult(content=[TextContent(type="text", text=text)])

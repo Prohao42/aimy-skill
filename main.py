@@ -7,11 +7,10 @@ import requests
 from cli.arg_parsers import build_parser, validate_args
 from cli.check_commands import COMMAND_SPECS, build_dispatcher
 from tools.log_utils import get_logger
-from tools.output import begin_context, set_format
+from tools.output import begin_context, end_context, progress, set_format
 from tools.output import configure as _configure_output
 from tools.output import error as _error_output
 from tools.output import output as _output
-from tools.output import progress
 from tools.settings import settings
 from tools.version import __version__
 
@@ -854,6 +853,7 @@ def cmd_poja(args):
         generate_sqli_payloads,
         test_sqli_bypass,
     )
+
     sess = _sess(args)
     fp = fingerprint_waf(args.url, sess, args.timeout)
     waf_name = args.waf or fp.get("name")
@@ -892,8 +892,7 @@ def cmd_list(args):
 
     cmds = list_commands()
     if settings.is_rookie():
-        print(json.dumps({c["name"]: c["description"] for c in cmds},
-                         indent=2, ensure_ascii=False))
+        print(json.dumps({c["name"]: c["description"] for c in cmds}, indent=2, ensure_ascii=False))
     else:
         print("  ".join(c["name"] for c in cmds))
 
@@ -1013,6 +1012,8 @@ def main():
         logger.debug("Full traceback:", exc_info=True)
         _error_output(str(e), code="command_failed", command=args.command)
         sys.exit(1)
+    finally:
+        end_context()
 
 
 if __name__ == "__main__":

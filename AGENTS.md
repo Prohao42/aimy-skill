@@ -7,9 +7,9 @@
 
 ```bash
 python main.py <command> [args]      # 所有命令输出结构化 JSON（含 _meta 信封）
-python main.py list                  # 列出全部 88 条命令
+python main.py list                  # 列出全部 90 条命令
 python -m tools.export_manifest      # 导出单一事实源 data/tools.json
-python -m aimy_mcp.server            # MCP 接入（88 命令 + 14 kali 子命令 = 102 工具）
+python -m aimy_mcp.server            # MCP 接入（90 命令 + 14 kali 子命令 = 104 工具）
 ```
 
 ## 六步工作流

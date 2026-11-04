@@ -2,7 +2,16 @@
 
 import json
 
-from tools.output import begin_context, output, set_format, to_json
+import pytest
+
+from tools.output import begin_context, end_context, output, set_format, to_json
+
+
+@pytest.fixture(autouse=True)
+def _reset_context():
+    yield
+    end_context()
+    set_format("json")
 
 
 def test_to_json_adds_meta():

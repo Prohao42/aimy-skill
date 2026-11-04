@@ -1,6 +1,6 @@
 <picture>
-    <source media="(prefers-color-scheme: light)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.5;AI-Ready+Penetration+Test+Kit;149+Modules+%C2%B7+88+CLI+Commands">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.5;AI-Ready+Penetration+Test+Kit;149+Modules+%C2%B7+88+CLI+Commands" alt="aimy-skill typing banner">
+    <source media="(prefers-color-scheme: light)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00FF88&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.5;AI-Ready+Penetration+Test+Kit;149+Modules+%C2%B7+90+CLI+Commands">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&pause=1000&color=00A67E&center=true&vCenter=true&width=700&lines=aimy-skill+v3.7.5;AI-Ready+Penetration+Test+Kit;149+Modules+%C2%B7+90+CLI+Commands" alt="aimy-skill typing banner">
   </picture>
 
 <h1 align="center">🚀 aimy-skill</h1>
@@ -29,7 +29,7 @@
     <img src="https://img.shields.io/badge/version-3.7.5-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
     <img src="https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python">
     <img src="https://img.shields.io/badge/modules-149-orange?style=for-the-badge" alt="modules">
-    <img src="https://img.shields.io/badge/skills-103-8B5CF6?style=for-the-badge" alt="skills">
+    <img src="https://img.shields.io/badge/skills-104-8B5CF6?style=for-the-badge" alt="skills">
     <img src="https://img.shields.io/badge/license-MIT-red?style=for-the-badge" alt="license">
     <img src="https://img.shields.io/badge/tests-2844-22C55E?style=for-the-badge" alt="tests">
     <img src="https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-64748B?style=for-the-badge" alt="os">
@@ -261,7 +261,7 @@ aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `
                     └──────┬───────┘
                            │
                     ┌──────▼───────┐
-                    │   CLI 入口    │   ← 88 命令 · 数据驱动分发
+                    │   CLI 入口    │   ← 90 命令 · 数据驱动分发
                     │  (main.py)   │
                     └──────┬───────┘
                            │
@@ -335,7 +335,7 @@ aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `
 
 | 角色                      | 价值                                       |
 | ------------------------- | ------------------------------------------ |
-| **渗透测试工程师**  | 88 命令覆盖全攻击链，自动化报告           |
+| **渗透测试工程师**  | 90 命令覆盖全攻击链，自动化报告           |
 | **AI Agent 开发者** | 统一接口 + JSON 输出 + 103 Skill，即插即用 |
 | **安全研究员**      | 深度武器化模块 + WAF 绕过引擎              |
 | **CTF 选手**        | 全链路工具包，快速验证漏洞                 |

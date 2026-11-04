@@ -12,7 +12,7 @@ import argparse
 import json
 import os
 import urllib.parse as _urlparse
-from typing import Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from tools.log_utils import get_logger
 from tools.version import __version__
@@ -114,10 +114,13 @@ def build_manifest(parser: argparse.ArgumentParser) -> dict:
     }
 
 
-_GLOBAL_ARG_SPECS = [
+_GLOBAL_ARG_SPECS: List[Tuple[Tuple[str, ...], Dict[str, Any]]] = [
     (("--timeout",), {"type": float, "default": 10.0, "help": "请求超时秒数"}),
     (("--ssl-verify",), {"action": "store_true", "help": "启用SSL证书验证(默认关闭)"}),
-    (("--auth-type",), {"choices": ["form", "api", "basic", ""], "default": "", "help": "认证类型"}),
+    (
+        ("--auth-type",),
+        {"choices": ["form", "api", "basic", ""], "default": "", "help": "认证类型"},
+    ),
     (("--auth-url",), {"default": "", "help": "认证URL"}),
     (("--auth-user",), {"default": "", "help": "认证用户名"}),
     (("--auth-pass",), {"default": "", "help": "认证密码"}),
@@ -131,7 +134,10 @@ _GLOBAL_ARG_SPECS = [
             "help": "输出模式: rookie(详细说明) / veteran(简洁高价值)，默认由 AIMY_MODE 环境变量决定",
         },
     ),
-    (("--format",), {"choices": ["json", "jsonl"], "default": "json", "help": "输出格式: json/jsonl"}),
+    (
+        ("--format",),
+        {"choices": ["json", "jsonl"], "default": "json", "help": "输出格式: json/jsonl"},
+    ),
     (("--delay",), {"type": float, "default": 0.0, "help": "请求间延迟秒数"}),
     (
         ("--json",),
@@ -300,13 +306,17 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p.add_argument("--param", default="id")
     p.add_argument("--payload", default="1' OR 1=1 -- -")
     p.add_argument("--waf", default="", help="显式指定WAF名(默认自动指纹)")
+    p.add_argument("--vuln-type", default="sqli", choices=["sqli", "xss", "lfi", "ssti", "nosqli"])
     p.add_argument(
-        "--vuln-type", default="sqli", choices=["sqli", "xss", "lfi", "ssti", "nosqli"]
+        "--adaptive", action="store_true", default=True, help="自适应编码链穿透(默认开启)"
     )
-    p.add_argument("--adaptive", action="store_true", default=True, help="自适应编码链穿透(默认开启)")
     p.add_argument("--no-adaptive", dest="adaptive", action="store_false", help="关闭自适应")
-    p.add_argument("--test-sqli", action="store_true", default=True, help="定向SQLi穿透测试(默认开启)")
-    p.add_argument("--no-test-sqli", dest="test_sqli", action="store_false", help="关闭定向SQLi测试")
+    p.add_argument(
+        "--test-sqli", action="store_true", default=True, help="定向SQLi穿透测试(默认开启)"
+    )
+    p.add_argument(
+        "--no-test-sqli", dest="test_sqli", action="store_false", help="关闭定向SQLi测试"
+    )
     p.set_defaults(func=cmd_poja)
 
     p = sub.add_parser("bizlogic", help="深度业务逻辑漏洞挖掘(2FA/价格/MassAssn/逻辑)")
@@ -837,9 +847,11 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     pkauto.add_argument("--user", default="")
     pkauto.set_defaults(func=cmd_kali, kali_command="autoexploit")
 
-    # 全局参数在子命令后也能用 (argparse 默认只认子命令前的全局参数)
+    # 全局参数在子命令后也能用 (argparse 默认只认子命令前的全局参数)。
+    # default=SUPPRESS: 子命令未显式传参时不覆盖父解析器已设置的全局值。
     for _sp in sub.choices.values():
         for _args, _kw in _GLOBAL_ARG_SPECS:
+            _kw = dict(_kw, default=argparse.SUPPRESS)
             try:
                 _sp.add_argument(*_args, **_kw)
             except argparse.ArgumentError:

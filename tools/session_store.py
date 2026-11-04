@@ -15,9 +15,7 @@ from tools.log_utils import get_logger
 
 logger = get_logger("session_store")
 
-_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "sessions"
-)
+_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "sessions")
 
 
 def _path(session_id: str) -> str:

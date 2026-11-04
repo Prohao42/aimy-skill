@@ -252,6 +252,7 @@ def auth_from_args(args) -> requests.Session:
     session_file = getattr(args, "session_file", None) or ""
     if session_id:
         from tools.session_store import load as load_by_id
+
         load_by_id(session_id, sess)
     elif session_file:
         try:

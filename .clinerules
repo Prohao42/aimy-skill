@@ -2,7 +2,7 @@
 
 aimy-skill 是验证判定层渗透测试工具链。所有命令输出结构化 JSON（含 `_meta` 信封）。
 
-- 调用：`python main.py <command>`，全部命令见 `python main.py list`（88 条）。
+- 调用：`python main.py <command>`，全部命令见 `python main.py list`（90 条）。
 - 登录保活：`login --auth-url URL --auth-user U --auth-pass P` → 返回 `session_id`，后续命令加 `--session-id <id>`。
 - 路由：数字 id→`sqlcheck`；回显→`xsscheck`；命令执行→`cmdi`；模板→`ssti`；路径→`lfi`；
   外联→`ssrf`；越权→`idor`；JWT→`jwt`；有 WAF→`waf`/`waf-heavy`/`poja`（破甲一键）。

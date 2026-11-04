@@ -4,3 +4,4 @@ PyJWT>=2.6.0
 cryptography>=39.0.0,<49
 PyYAML>=6.0
 defusedxml>=0.7.1
+mcp>=1.0.0; python_version >= "3.10"

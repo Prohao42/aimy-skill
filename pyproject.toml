@@ -53,6 +53,7 @@ BugTracker = "https://github.com/Prohao42/aimy-skill/issues"
 
 [project.scripts]
 aimy = "main:main"
+aimy-mcp = "aimy_mcp.server:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

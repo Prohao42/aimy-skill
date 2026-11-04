@@ -1,5 +1,7 @@
 import json
 import sys
+import time
+import uuid
 
 from tools._finding import Finding
 from tools.log_utils import get_logger
@@ -9,6 +11,15 @@ logger = get_logger("output")
 
 _JSON_MODE = False
 _QUIET = False
+
+# 统一结果信封上下文: main() / MCP 调用前设置，output() 读取后注入 _meta。
+# request_id 为 None 时不注入信封，保持直接调用 output() 的既有契约不变。
+_CTX = {
+    "tool": None,
+    "request_id": None,
+    "started": None,
+    "format": "json",  # json | jsonl
+}
 
 
 def configure(json_mode: bool = False, quiet: bool = False) -> None:
@@ -26,6 +37,34 @@ def progress(message="", *args, **kwargs) -> None:
     kwargs.pop("file", None)
     kwargs.setdefault("flush", True)
     print(text, file=sys.stderr, **kwargs)
+
+
+def set_format(fmt: str) -> None:
+    _CTX["format"] = fmt or "json"
+
+
+def begin_context(tool=None) -> None:
+    _CTX["tool"] = tool
+    _CTX["request_id"] = uuid.uuid4().hex[:12]
+    _CTX["started"] = time.time()
+
+
+def _meta(status="ok", error=None):
+    """返回 _meta 信封; 未处于命令上下文时返回 None (不改变裸调用输出)。"""
+    if _CTX["request_id"] is None:
+        return None
+    m = {
+        "schema_version": 1,
+        "status": status,
+        "tool": _CTX["tool"],
+        "request_id": _CTX["request_id"],
+        "duration_ms": None,
+    }
+    if _CTX["started"] is not None:
+        m["duration_ms"] = int((time.time() - _CTX["started"]) * 1000)
+    if error is not None:
+        m["error"] = str(error)
+    return m
 
 
 def _serialize(item):
@@ -72,20 +111,43 @@ def _enforce_contract(result):
     return CheckResult.from_dict(result).to_dict()
 
 
-def output(result) -> None:
+def to_json(result) -> str:
+    """返回带信封的 JSON 字符串 (不打印)，供 MCP / 程序化调用捕获。"""
     result = _enforce_contract(result)
     if isinstance(result, dict) and "vulnerabilities" in result:
-        vulns = result["vulnerabilities"]
-        result["vulnerabilities"] = _prepare(vulns if isinstance(vulns, list) else [])
-        result_json = json.dumps(result, ensure_ascii=False, default=str)
-    elif isinstance(result, list):
-        result_json = json.dumps(
-            {"vulnerabilities": _prepare(result)}, ensure_ascii=False, default=str
+        out = dict(result)
+        out["vulnerabilities"] = _prepare(
+            result["vulnerabilities"] if isinstance(result["vulnerabilities"], list) else []
         )
+    elif isinstance(result, list):
+        out = {"vulnerabilities": _prepare(result)}
+    elif isinstance(result, dict):
+        out = dict(result)
     else:
-        result_json = json.dumps(result, ensure_ascii=False, default=str)
+        out = {"result": result}
+    meta = _meta()
+    if meta is not None:
+        out["_meta"] = meta
+    return json.dumps(out, ensure_ascii=False, default=str)
 
-    print(result_json)
+
+def _output_jsonl(result) -> None:
+    if isinstance(result, dict) and isinstance(result.get("vulnerabilities"), list):
+        items = result["vulnerabilities"]
+    elif isinstance(result, list):
+        items = result
+    else:
+        items = [result]
+    for it in items:
+        print(json.dumps(_serialize(_enforce_contract(it)), ensure_ascii=False, default=str))
+
+
+def output(result) -> None:
+    """打印带信封的结果。--format jsonl 时按 finding 逐行输出。"""
+    if _CTX["format"] == "jsonl":
+        _output_jsonl(result)
+    else:
+        print(to_json(result))
 
 
 def error(message: str, code: str = "error", **extra) -> None:
@@ -96,4 +158,12 @@ def error(message: str, code: str = "error", **extra) -> None:
     print(json.dumps(payload, ensure_ascii=False, default=str), file=stream)
 
 
-__all__ = ["configure", "progress", "output", "error"]
+__all__ = [
+    "configure",
+    "progress",
+    "output",
+    "error",
+    "to_json",
+    "set_format",
+    "begin_context",
+]

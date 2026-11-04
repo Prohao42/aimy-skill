@@ -2,9 +2,12 @@
 import json
 import sys
 
+import requests
+
 from cli.arg_parsers import build_parser, validate_args
 from cli.check_commands import COMMAND_SPECS, build_dispatcher
 from tools.log_utils import get_logger
+from tools.output import begin_context, set_format
 from tools.output import configure as _configure_output
 from tools.output import error as _error_output
 from tools.output import output as _output
@@ -476,7 +479,19 @@ def cmd_login(args):
     if ok:
         path = args.session_file or "session.json"
         engine.save_session(path)
-        _output({"success": True, "session_file": path, "cookies": len(sess.cookies)})
+        from tools.session_store import new_id
+        from tools.session_store import save as save_by_id
+
+        sid = getattr(args, "session_id", "") or new_id()
+        save_by_id(sid, sess)
+        _output(
+            {
+                "success": True,
+                "session_file": path,
+                "session_id": sid,
+                "cookies": len(sess.cookies),
+            }
+        )
     else:
         _error_output("login failed", code="auth_failed")
         sys.exit(1)
@@ -830,14 +845,67 @@ def cmd_kali(args):
         _output({"success": False, "error": "Unknown kali sub-command: %s" % sub})
 
 
-def cmd_list(args):
-    from tools.tool_registry import list_all
+def cmd_poja(args):
+    """破甲(防御绕过)一键流程: WAF指纹 -> 绕过payload生成 -> 穿透验证 -> 证据。"""
+    from tools.waf_bypass import (
+        adaptive_bypass,
+        fingerprint_waf,
+        generate_bypasses,
+        generate_sqli_payloads,
+        test_sqli_bypass,
+    )
+    sess = _sess(args)
+    fp = fingerprint_waf(args.url, sess, args.timeout)
+    waf_name = args.waf or fp.get("name")
 
-    tools = list_all()
+    result = {
+        "waf": fp,
+        "param": args.param,
+        "payload": args.payload,
+        "waf_name": waf_name,
+        "bypass_payloads": generate_bypasses(args.vuln_type),
+        "encoded_variants": generate_sqli_payloads(args.payload, waf_name),
+        "vulnerable": False,
+        "best_payload": None,
+        "bypasses": [],
+    }
+
+    if args.adaptive:
+        a = adaptive_bypass(args.url, args.param, args.payload, sess, args.timeout)
+        result["adaptive"] = a
+        result["vulnerable"] = result["vulnerable"] or bool(a.get("success"))
+        if a.get("success"):
+            result["best_payload"] = a.get("payload")
+
+    if args.test_sqli:
+        t = test_sqli_bypass(args.url, args.param, sess, waf_name, args.timeout)
+        result["sqli_test"] = t
+        result["vulnerable"] = result["vulnerable"] or bool(t.get("vulnerable"))
+        result["bypasses"] = t.get("bypasses", []) or result["bypasses"]
+        result["best_payload"] = t.get("best_payload") or result["best_payload"]
+
+    _output(result)
+
+
+def cmd_list(args):
+    from tools.manifest import list_commands
+
+    cmds = list_commands()
     if settings.is_rookie():
-        print(json.dumps(tools, indent=2, ensure_ascii=False))
+        print(json.dumps({c["name"]: c["description"] for c in cmds},
+                         indent=2, ensure_ascii=False))
     else:
-        print("  ".join(tools.keys()))
+        print("  ".join(c["name"] for c in cmds))
+
+
+def _configure_encoding():
+    """Windows 下把 stdout/stderr 强制 UTF-8，避免中文 JSON 与 banner 在 GBK 控制台乱码。"""
+    if sys.platform == "win32":
+        for stream in (sys.stdout, sys.stderr):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except Exception:
+                pass
 
 
 def _write_wordlist(words, path):
@@ -907,6 +975,7 @@ def cmd_manifest(args):
 
 
 def main():
+    _configure_encoding()
     dispatchers = {
         name: build_dispatcher(spec, _sess, _output) for name, spec in COMMAND_SPECS.items()
     }
@@ -924,16 +993,21 @@ def main():
         settings.verify_ssl = True
     if hasattr(args, "mode") and args.mode is not None:
         settings.set_mode(args.mode)
+    set_format(getattr(args, "format", "json"))
     if not (json_mode or quiet):
         from tools.mode import show_banner
 
         show_banner()
 
+    begin_context(args.command)
+
     try:
         validate_args(args)
         args.func(args)
-    except SystemExit:
-        raise
+    except requests.exceptions.Timeout:
+        logger.error("Command '%s' timed out", args.command)
+        _error_output("timeout", code="timeout", command=args.command)
+        sys.exit(3)
     except Exception as e:
         logger.error("Command '%s' failed: %s", args.command, e)
         logger.debug("Full traceback:", exc_info=True)

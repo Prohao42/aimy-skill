@@ -246,11 +246,23 @@ def auth_from_args(args) -> requests.Session:
                 key_file=getattr(args, "kali_key", "") or "",
             )
 
+    # 优先复用已有登录态: --session-id (本地KV) 或 --session-file (文件)
+    engine = AuthSession(sess)
+    session_id = getattr(args, "session_id", None) or ""
+    session_file = getattr(args, "session_file", None) or ""
+    if session_id:
+        from tools.session_store import load as load_by_id
+        load_by_id(session_id, sess)
+    elif session_file:
+        try:
+            engine.load_session(session_file)
+        except Exception as e:
+            logger.debug("session file load: %s", e)
+
     auth_type = getattr(args, "auth_type", None)
     if not auth_type:
         return sess
 
-    engine = AuthSession(sess)
     auth_url = getattr(args, "auth_url", "") or ""
     auth_user = getattr(args, "auth_user", "") or ""
     auth_pass = getattr(args, "auth_pass", "") or ""
@@ -261,12 +273,5 @@ def auth_from_args(args) -> requests.Session:
         engine.login_api(auth_url, auth_user, auth_pass)
     elif auth_type == "basic":
         engine.login_basic(auth_url, auth_user, auth_pass)
-
-    session_file = getattr(args, "session_file", None)
-    if session_file:
-        try:
-            engine.load_session(session_file)
-        except Exception as e:
-            logger.debug("session file load: %s", e)
 
     return sess

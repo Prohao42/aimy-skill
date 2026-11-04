@@ -114,6 +114,44 @@ def build_manifest(parser: argparse.ArgumentParser) -> dict:
     }
 
 
+_GLOBAL_ARG_SPECS = [
+    (("--timeout",), {"type": float, "default": 10.0, "help": "请求超时秒数"}),
+    (("--ssl-verify",), {"action": "store_true", "help": "启用SSL证书验证(默认关闭)"}),
+    (("--auth-type",), {"choices": ["form", "api", "basic", ""], "default": "", "help": "认证类型"}),
+    (("--auth-url",), {"default": "", "help": "认证URL"}),
+    (("--auth-user",), {"default": "", "help": "认证用户名"}),
+    (("--auth-pass",), {"default": "", "help": "认证密码"}),
+    (("--session-file",), {"default": "", "help": "会话文件路径(.json)"}),
+    (("--session-id",), {"default": "", "help": "会话ID(login后复用, 替代--session-file)"}),
+    (
+        ("--mode",),
+        {
+            "choices": ["rookie", "veteran"],
+            "default": None,
+            "help": "输出模式: rookie(详细说明) / veteran(简洁高价值)，默认由 AIMY_MODE 环境变量决定",
+        },
+    ),
+    (("--format",), {"choices": ["json", "jsonl"], "default": "json", "help": "输出格式: json/jsonl"}),
+    (("--delay",), {"type": float, "default": 0.0, "help": "请求间延迟秒数"}),
+    (
+        ("--json",),
+        {"action": "store_true", "help": "仅输出 JSON；进度/日志走 stderr，适合 AI Agent 与 CI"},
+    ),
+    (("--quiet",), {"action": "store_true", "help": "静默进度输出"}),
+    (("--kali-host",), {"default": "", "help": "Kali Linux SSH 主机地址"}),
+    (("--kali-port",), {"type": int, "default": 22, "help": "Kali SSH 端口"}),
+    (("--kali-user",), {"default": "root", "help": "Kali SSH 用户名"}),
+    (("--kali-pass",), {"default": "", "help": "Kali SSH 密码"}),
+    (("--kali-key",), {"default": "", "help": "Kali SSH 私钥路径"}),
+    (("--kali-local",), {"action": "store_true", "help": "本地 Kali 模式 (直接用本机工具)"}),
+]
+
+
+def _add_global_args(p) -> None:
+    for args_spec, kw in _GLOBAL_ARG_SPECS:
+        p.add_argument(*args_spec, **kw)
+
+
 def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     """Build the full CLI argument parser.
 
@@ -147,6 +185,7 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
         cmd_mobile_scan,
         cmd_param_mine,
         cmd_payload_mutate,
+        cmd_poja,
         cmd_portscan,
         cmd_proxy,
         cmd_quickscan,
@@ -162,34 +201,7 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
         description="aimy-skill v%s - 轻量级渗透测试辅助工具链" % VERSION,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--timeout", type=float, default=10.0, help="请求超时秒数")
-    parser.add_argument("--ssl-verify", action="store_true", help="启用SSL证书验证(默认关闭)")
-    parser.add_argument(
-        "--auth-type", choices=["form", "api", "basic", ""], default="", help="认证类型"
-    )
-    parser.add_argument("--auth-url", default="", help="认证URL")
-    parser.add_argument("--auth-user", default="", help="认证用户名")
-    parser.add_argument("--auth-pass", default="", help="认证密码")
-    parser.add_argument("--session-file", default="", help="会话文件路径(.json)")
-    parser.add_argument(
-        "--mode",
-        choices=["rookie", "veteran"],
-        default=None,
-        help="输出模式: rookie(详细说明) / veteran(简洁高价值)，默认由 AIMY_MODE 环境变量决定",
-    )
-    parser.add_argument("--delay", type=float, default=0.0, help="请求间延迟秒数")
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="仅输出 JSON；进度/日志走 stderr，适合 AI Agent 与 CI",
-    )
-    parser.add_argument("--quiet", action="store_true", help="静默进度输出")
-    parser.add_argument("--kali-host", default="", help="Kali Linux SSH 主机地址")
-    parser.add_argument("--kali-port", type=int, default=22, help="Kali SSH 端口")
-    parser.add_argument("--kali-user", default="root", help="Kali SSH 用户名")
-    parser.add_argument("--kali-pass", default="", help="Kali SSH 密码")
-    parser.add_argument("--kali-key", default="", help="Kali SSH 私钥路径")
-    parser.add_argument("--kali-local", action="store_true", help="本地 Kali 模式 (直接用本机工具)")
+    _add_global_args(parser)
     parser.add_argument("-v", "--version", action="version", version=VERSION)
     sub = parser.add_subparsers(dest="command")
 
@@ -282,6 +294,20 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p = sub.add_parser("waf-heavy", help="WAF严格绕过注入检测(HPP/分块/Unicode/注释嵌套)")
     _add_url_arg(p, default_param="id")
     p.set_defaults(func=dispatchers["waf-heavy"])
+
+    p = sub.add_parser("poja", help="破甲一键流程(WAF指纹+绕过payload+穿透验证)")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
+    p.add_argument("--payload", default="1' OR 1=1 -- -")
+    p.add_argument("--waf", default="", help="显式指定WAF名(默认自动指纹)")
+    p.add_argument(
+        "--vuln-type", default="sqli", choices=["sqli", "xss", "lfi", "ssti", "nosqli"]
+    )
+    p.add_argument("--adaptive", action="store_true", default=True, help="自适应编码链穿透(默认开启)")
+    p.add_argument("--no-adaptive", dest="adaptive", action="store_false", help="关闭自适应")
+    p.add_argument("--test-sqli", action="store_true", default=True, help="定向SQLi穿透测试(默认开启)")
+    p.add_argument("--no-test-sqli", dest="test_sqli", action="store_false", help="关闭定向SQLi测试")
+    p.set_defaults(func=cmd_poja)
 
     p = sub.add_parser("bizlogic", help="深度业务逻辑漏洞挖掘(2FA/价格/MassAssn/逻辑)")
     _add_url_arg(p, default_param="id")
@@ -811,6 +837,14 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     pkauto.add_argument("--user", default="")
     pkauto.set_defaults(func=cmd_kali, kali_command="autoexploit")
 
+    # 全局参数在子命令后也能用 (argparse 默认只认子命令前的全局参数)
+    for _sp in sub.choices.values():
+        for _args, _kw in _GLOBAL_ARG_SPECS:
+            try:
+                _sp.add_argument(*_args, **_kw)
+            except argparse.ArgumentError:
+                pass  # 子命令已定义同名参数(如 quickscan --timeout)，保留其本地定义
+
     return parser
 
 
@@ -839,6 +873,7 @@ def validate_args(args) -> None:
         "xss-validate",
         "waf",
         "waf-heavy",
+        "poja",
         "bizlogic",
         "chain",
         "sqli-weaponize",

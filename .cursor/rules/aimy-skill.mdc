@@ -1,0 +1,25 @@
+---
+description: aimy-skill 渗透测试工具链接入规则 — 如何调用 CLI、选命令、读技能
+globs: "**/*"
+alwaysApply: false
+---
+
+# aimy-skill 工具链
+
+验证判定层工具链。发现可疑点后用 `python main.py <command>` 快速确认、取证据、出报告。
+
+## 调用方式
+
+- 所有命令输出结构化 JSON（含 `_meta` 信封），直接 `json.loads` 解析。
+- 全部命令：`python main.py list`（88 条）。
+- 保持登录态：先 `login --auth-url ... --auth-user ... --auth-pass ...` 拿 `session_id`，后续命令加 `--session-id <id>`。
+
+## 路由（可疑点 → 命令）
+
+数字 id → `sqlcheck`；回显点 → `xsscheck`；命令执行点 → `cmdi`；模板点 → `ssti`；
+路径参数 → `lfi`；外联参数 → `ssrf`；越权 → `idor`；JWT → `jwt`；
+有 WAF → `waf`/`waf-heavy`/`poja`（破甲一键）。
+
+## 技能库
+
+`ai-mian/hack-skills/skills/<name>/SKILL.md`（104 个，纯 Markdown，按需直接读取）。

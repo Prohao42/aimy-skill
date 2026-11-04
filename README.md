@@ -67,7 +67,7 @@ result = checker.check(
 | 🔐**认证突破**   | 认证绕过 · JWT 检测/破解 · CORS · 双会话 BOLA · SAML                                                |
 | 🧠**业务逻辑**   | 价格篡改 · 条件竞争 · 工作流绕过 · Mass Assignment ·**TOCTOU 竞态**                           |
 | ⚔️**武器化**   | SQL 数据提取 · SSRF 云元数据 · JWT 伪造 · 反序列化 · 反弹 Shell ·**多跳 SSRF 链**            |
-| 🛡️**WAF 绕过** | 14 种 WAF 指纹 · 11 编码器 · HTTP 协议绕过                                                            |
+| 🛡️**WAF 绕过** | 30+ 种 WAF 指纹 · 20 编码器 · HTTP 协议绕过                                                            |
 | ✅**验证**       | **5+ payload 交叉验证** · Oracle 验证 · 误报过滤 · 鲁棒验证                                    |
 
 
@@ -183,7 +183,7 @@ reverse-shell   反弹 Shell 生成器
 ### 🛡️ WAF 绕过
 
 ```
-waf             WAF 指纹识别（14 种）
+waf             WAF 指纹识别（30+ 种）
 waf-heavy       WAF 严格绕过注入检测
 ```
 
@@ -309,7 +309,7 @@ aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `
 | **sql_injection**       | 黑盒上下文探测(数字/字符串) · 真实 UNION 列数枚举+回显点识别 · 布尔多对确认+单对复验 · 时间盲注负对照(零延迟孪生 payload) |
 | **ssrf_pwn**            | AWS / GCP / Azure / 阿里云元数据 · IMDSv2 · k8s 发现                                                                       |
 | **ssrf_chain**          | 多跳内网穿透 · Redis / SQL / Docker / K8s 协议转换                                                                          |
-| **waf_bypass**          | 14 种 WAF 指纹 · 16 编码器 · 按 WAF 分派的编码链策略                                                                       |
+| **waf_bypass**          | 30+ 种 WAF 指纹 · 20 编码器 · 按 WAF 分派的编码链策略                                                                       |
 | **dual_session**        | 双会话 BOLA 差分 · JSON 字段级比对                                                                                          |
 | **session_matrix**      | 多身份矩阵 · 跨会话持久化                                                                                                   |
 | **payload_engine**      | 200+ 种子(6 DBMS 时间型/UNION 到 10 列/XSS 7 上下文/SSTI 多引擎 RCE 链) · YAML 覆盖 · 编码链                               |

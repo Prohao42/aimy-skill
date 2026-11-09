@@ -72,7 +72,7 @@ result = checker.check(
 
 
 ## ✨ 联系方式
-- **X (Twitter)**：[@Fakerrf5](https://x.com/Fakerrf5)
+- **X (Twitter)**：[@Prohao42](https://x.com/Prohao42)
 - **Telegram**：[@Prohao42](https://t.me/Prohao42)
 - **抖音**：[炸炸酥~](https://www.douyin.com/user/MS4wLjABAAAAfgxDFsrK3Fgf_PnJRcPeFdjjKnqtLNTR_q4KKKZKHyGlzYz8T3mZf3V4qax05lFb)
 - **知识星球**：[@炸炸酥](https://t.zsxq.com/FGUeq)

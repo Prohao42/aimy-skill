@@ -633,7 +633,7 @@ class TestSemanticStructure:
         )
         outs = [
             subprocess.run(
-                [sys.executable, "-c", code], cwd=str(root), capture_output=True, text=True
+                [sys.executable, "-c", code], cwd=str(root), capture_output=True, encoding="utf-8"
             ).stdout.strip()
             for _ in range(2)
         ]

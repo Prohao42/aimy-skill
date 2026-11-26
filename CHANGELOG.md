@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.7.6] - 2026-11-26
+
+Agent 接入、真实靶场验收与检测可靠性版本。
+
+### 主要变更
+- **CLI/MCP 契约**: 统一 `_meta`、JSONL 与 `invalid_args` 错误协议；MCP 只暴露 104 个可执行工具并复用 CLI 校验。
+- **并发隔离**: 输出上下文改为 `ContextVar`，MCP 命令串行执行，避免 stdout、request_id、tool 串线。
+- **能力自检**: 新增 `doctor`，检查依赖、MCP、Playwright、Kali、OOB 和目录权限。
+- **真实靶场**: 新增可移植 DVWA 启动脚本和四级别 CI 验收；内置靶场扩展到 25 用例、9 类漏洞。
+- **检测修复**: 修复 LFI/CMDi/JWT/SAML/SMB/双会话/竞态的误报与成功判定缺陷；CMDi 增加 POST 支持。
+- **性能**: SQLi 单点约 25s→0.7s，CMDi 约 9-11s→2.1s，完整 DVWA 约 90s→30s。
+- **版本指纹**: CVE 匹配改为显式版本区间，移除“主版本号当年份”的错误匹配。
+- **跨平台**: 修复 Windows `ping`/`ipconfig`、报告文件名、GBK 测试解码和 PDML 解析回退。
+- **CI**: 增加 Windows 全量测试、25 用例内置靶场和 DVWA 四级别任务。
+
+### 验证
+- 全量测试 **2946 passed**，覆盖率 **85.08%**。
+- 内置靶场 **18 TP / 7 TN / 0 FP / 0 FN**。
+- DVWA **12 TP / 6 TN / 0 FP / 0 FN**，Precision/Recall 均 100%。
+- Ruff、格式检查、Mypy 全绿。
+
 ## [Unreleased] - 质量收尾 (mypy 清零 · 覆盖率 49%→72% · 缺陷修复)
 
 全量 `1955 passed` (本机 Python 3.14), `ruff`/`mypy`/`bandit` 全绿。

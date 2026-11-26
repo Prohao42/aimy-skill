@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -52,7 +53,8 @@ def save_report(report: Dict[str, Any], directory: str = "reports") -> Dict:
     """Persist a scan report as JSON/HTML/SARIF/Markdown. Returns file paths."""
     try:
         os.makedirs(directory, exist_ok=True)
-        target = (report.get("target") or "target").split("//")[-1].replace("/", "_")[:40]
+        raw_target = (report.get("target") or "target").split("//")[-1][:80]
+        target = re.sub(r"[^A-Za-z0-9._-]+", "_", raw_target).strip("._")[:40] or "target"
         ts = time.strftime("%Y%m%d_%H%M%S")
         base = "%s_%s" % (target, ts)
         json_path = os.path.join(directory, base + ".json")

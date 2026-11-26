@@ -100,7 +100,7 @@ class RaceConditionTester:
 
         if not round_result["vulnerable"]:
             success_bodies = [r["body"] for r in responses if r["status"] in (200, 201)]
-            if len(success_bodies) >= 2 and len(set(tuple(b) for b in success_bodies)) > 1:
+            if len(success_bodies) >= 2 and len(set(success_bodies)) > 1:
                 round_result["vulnerable"] = True
                 round_result["type"] = "body_differential"
                 round_result["evidence"].append(
@@ -108,23 +108,30 @@ class RaceConditionTester:
                     % (len(success_bodies[0]), len(success_bodies[1]))
                 )
 
-        for r in responses:
-            if r["body"] and bl_body and r["body"] != bl_body:
-                for kw in SUCCESS_KEYWORDS:
-                    if kw in r["body"].lower():
-                        round_result["vulnerable"] = True
-                        round_result["type"] = "duplicate_success"
-                        round_result["evidence"].append(
-                            "duplicate '%s' at %.0fms" % (kw, r.get("elapsed_ms", 0))
-                        )
+        if not round_result["vulnerable"]:
+            for r in responses:
+                if r["body"] and bl_body and r["body"] != bl_body:
+                    for kw in SUCCESS_KEYWORDS:
+                        if kw in r["body"].lower():
+                            round_result["vulnerable"] = True
+                            round_result["type"] = "duplicate_success"
+                            round_result["evidence"].append(
+                                "duplicate '%s' at %.0fms" % (kw, r.get("elapsed_ms", 0))
+                            )
+                            break
+                    if round_result["vulnerable"]:
                         break
-                if round_result["vulnerable"]:
-                    break
 
         return round_result
 
     def test_endpoint(
-        self, url: str, param: str, method: str = "GET", concurrency: int = 20, rounds: int = 3
+        self,
+        url: str,
+        param: str,
+        method: str = "GET",
+        concurrency: int = 20,
+        rounds: int = 3,
+        data: Optional[dict] = None,
     ) -> Dict:
         result = {
             "vulnerable": False,
@@ -135,19 +142,17 @@ class RaceConditionTester:
             "rounds_tested": 0,
         }
 
-        param_lower = param.lower()
-        for sname, sdata in RACE_SCENARIOS.items():
-            if any(k in param_lower for k in sdata["key_patterns"]):
-                break
-
-        data = {param: "1"}
+        request_data = dict(data or {})
+        request_data.setdefault(param, "1")
 
         baseline = None
         try:
             if method == "POST":
-                baseline = self.sess.post(url, data=data, timeout=self.timeout)
+                baseline = self.sess.post(url, data=request_data, timeout=self.timeout)
             else:
-                baseline = self.sess.get(build_url(url, param, "1"), timeout=self.timeout)
+                baseline = self.sess.get(
+                    build_url(url, param, request_data.get(param, "1")), timeout=self.timeout
+                )
         except Exception as e:
             logger.debug("race baseline: %s", e)
             return result
@@ -157,7 +162,7 @@ class RaceConditionTester:
         bl_body = baseline.text if baseline else ""
 
         for round_idx in range(rounds):
-            responses = self._run_round(url, param, method, concurrency, data)
+            responses = self._run_round(url, param, method, concurrency, request_data)
             result["race_window_ms"].append(responses[0].get("elapsed_ms", 0) if responses else 0)
             analysis = self._analyze_round(responses, bl_status, bl_len, bl_body)
             if analysis["vulnerable"]:
@@ -178,14 +183,24 @@ class RaceConditionTester:
 
 
 def check(
-    url: str, param: str, sess: Optional[requests.Session] = None, timeout: float = 10.0
+    url: str,
+    param: str,
+    sess: Optional[requests.Session] = None,
+    timeout: float = 10.0,
+    post_body: bool = False,
+    post_data: Optional[dict] = None,
 ) -> Dict:
     tester = RaceConditionTester(sess, timeout)
     method = (
         "POST"
-        if any(
-            k in url.lower() for k in ["login", "register", "create", "submit", "order", "checkout"]
+        if post_body or post_data
+        else (
+            "POST"
+            if any(
+                k in url.lower()
+                for k in ["login", "register", "create", "submit", "order", "checkout"]
+            )
+            else "GET"
         )
-        else "GET"
     )
-    return tester.test_endpoint(url, param, method=method)
+    return tester.test_endpoint(url, param, method=method, data=post_data)

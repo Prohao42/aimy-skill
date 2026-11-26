@@ -14,8 +14,8 @@
 - `wordlists/` — 内置弱口令字典 + john/hashcat 规则（随 wheel 打包，仅授权测试）
 - `data/` — 指纹与 CMS 漏洞库（随 wheel 打包）
 - `docs/` — 实战手册（`src_hunting` / `vuln_playbooks` / `tool_guide` / `report_writing`）
-- `ai-mian/hack-skills/skills/` — 103 个漏洞打法技能（每个目录一个 `SKILL.md`）
-- `tests/` — pytest 测试集（2857 个用例，默认离线）
+- `ai-mian/hack-skills/skills/` — 104 个漏洞打法技能（每个目录一个 `SKILL.md`）
+- `tests/` — pytest 测试集（2946 个用例，默认离线）
 
 ## 常用命令
 ### 信息收集

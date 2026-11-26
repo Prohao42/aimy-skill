@@ -1,14 +1,18 @@
 """单一事实源清单测试: 覆盖 COMMAND_SPECS + argparse -> 机器可读清单的提取。"""
 
+import json
+from pathlib import Path
+
 from cli.arg_parsers import build_parser
 from cli.check_commands import COMMAND_SPECS
-from tools.manifest import build_manifest, command_funcs, list_commands
+from tools.manifest import build_manifest, command_funcs, list_commands, list_nested_commands
 
 
 def test_manifest_has_all_commands():
     m = build_manifest()
     assert m["schema_version"] == 1
-    assert len(m["commands"]) >= 80
+    assert len(m["commands"]) == 91
+    assert len(m["nested_commands"]) == 14
     names = {c["name"] for c in m["commands"]}
     for expected in ("sqlcheck", "waf", "poja", "auto", "login", "recon"):
         assert expected in names
@@ -32,8 +36,10 @@ def test_command_funcs_registered():
     dummy = {n: (lambda *a, **k: None) for n in COMMAND_SPECS}
     parser = build_parser(dummy)
     funcs = command_funcs(parser)
+    assert len(funcs) == 90
     assert "sqlcheck" in funcs and "poja" in funcs
     assert callable(funcs["sqlcheck"])
+    assert "kali" not in funcs
 
 
 def test_list_commands_sorted_and_complete():
@@ -41,3 +47,12 @@ def test_list_commands_sorted_and_complete():
     names = [c["name"] for c in cmds]
     assert names == sorted(names)
     assert all(c["parameters"] is not None for c in cmds)
+    dummy = {n: (lambda *a, **k: None) for n in COMMAND_SPECS}
+    nested_names = [c["name"] for c in list_nested_commands(build_parser(dummy))]
+    assert nested_names == sorted(nested_names)
+
+
+def test_exported_manifest_is_fresh():
+    path = Path(__file__).resolve().parents[1] / "data" / "tools.json"
+    exported = json.loads(path.read_text(encoding="utf-8"))
+    assert exported == build_manifest(), "run python -m tools.export_manifest"

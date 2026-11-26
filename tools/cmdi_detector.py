@@ -133,12 +133,28 @@ class _OobServer:
                 pass
 
 
-def _measure_baseline_timing(url, param, sess, timeout):
+def _send(
+    sess: requests.Session,
+    url: str,
+    param: str,
+    payload: str,
+    timeout: float,
+    post_body: bool = False,
+    post_data: Optional[dict] = None,
+):
+    if post_body:
+        data = dict(post_data or {})
+        data[param] = payload
+        return sess.post(url, data=data, timeout=timeout)
+    return sess.get(build_url(url, param, payload), timeout=timeout)
+
+
+def _measure_baseline_timing(url, param, sess, timeout, post_body=False, post_data=None):
     samples = []
     for _ in range(3):
         try:
             start = time.time()
-            sess.get(build_url(url, param, CLEAN_VALUE), timeout=timeout)
+            _send(sess, url, param, CLEAN_VALUE, timeout, post_body, post_data)
             samples.append(time.time() - start)
         except Exception:
             pass
@@ -155,6 +171,8 @@ def check(
     waf_name: Optional[str] = None,
     oob_url: Optional[str] = None,
     oob_domain: Optional[str] = None,
+    post_body: bool = False,
+    post_data: Optional[dict] = None,
 ) -> dict:
     if sess is None:
         sess = requests.Session()
@@ -169,24 +187,37 @@ def check(
 
     voter = ConfidenceVoter()
 
+    baseline_text = ""
+    try:
+        baseline = _send(sess, url, param, CLEAN_VALUE, timeout, post_body, post_data)
+        baseline_text = baseline.text
+    except Exception as e:
+        logger.debug("cmdi baseline: %s", e)
+
     output_seeds = generate("cmdi", "output", "all", waf_name)
     output_hits = 0
     for entry in output_seeds:
         payload = entry["payload"]
         indicator = entry.get("indicator")
         try:
-            r = sess.get(build_url(url, param, payload), timeout=timeout)
-            if indicator and indicator in r.text:
-                output_hits += 1
-                result["evidence"].append("cmdi: %s => %s" % (payload[:15], indicator))
-                result["payload"] = payload
+            r = _send(sess, url, param, payload, timeout, post_body, post_data)
+            hit_label = None
+            # indicator 必须相对基线新增, 否则错误页里的 "/"、Linux 等通用文本
+            # 会把任何响应都误判成命令回显。
+            if indicator and indicator in r.text and indicator not in baseline_text:
+                hit_label = indicator
                 voter.add_vote("output_indicator", 0.7)
-            for pat, label in OUTPUT_INDICATORS:
-                if re.search(pat, r.text):
-                    output_hits += 1
-                    result["evidence"].append("cmdi: %s matched <%s>" % (payload[:15], label))
-                    result["payload"] = payload
-                    voter.add_vote("output_pattern_%s" % label, 0.65)
+            if hit_label is None:
+                for pat, label in OUTPUT_INDICATORS:
+                    if re.search(pat, r.text) and not re.search(pat, baseline_text):
+                        hit_label = label
+                        voter.add_vote("output_pattern_%s" % label, 0.65)
+                        break
+            if hit_label:
+                output_hits += 1
+                result["evidence"].append("cmdi: %s => %s" % (payload[:15], hit_label))
+                result["payload"] = payload
+                if output_hits >= 2:
                     break
         except Exception as e:
             logger.debug("cmdi payload %s: %s", payload[:15], e)
@@ -201,7 +232,7 @@ def check(
         result["type"] = "output"
 
     if not result["vulnerable"]:
-        baseline_sec = _measure_baseline_timing(url, param, sess, timeout)
+        baseline_sec = _measure_baseline_timing(url, param, sess, timeout, post_body, post_data)
         if baseline_sec < timeout * 0.8:
             threshold = max(2.5, baseline_sec * 1.5 + 2.0)
             time_hits = 0
@@ -210,7 +241,7 @@ def check(
                 payload = entry["payload"]
                 try:
                     start = time.time()
-                    sess.get(build_url(url, param, payload), timeout=timeout + 3)
+                    _send(sess, url, param, payload, timeout + 3, post_body, post_data)
                     elapsed = time.time() - start
                     if elapsed >= threshold:
                         time_hits += 1
@@ -271,7 +302,7 @@ def check(
                 ]
             for payload in templates:
                 try:
-                    sess.get(build_url(url, param, payload), timeout=timeout)
+                    _send(sess, url, param, payload, timeout, post_body, post_data)
                 except Exception:
                     pass
 

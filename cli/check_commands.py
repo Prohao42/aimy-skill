@@ -76,7 +76,9 @@ COMMAND_SPECS: Dict[str, CheckSpec] = {
         "check",
         args=["url", "param", _SESS, "timeout", "post", "data", "context"],
     ),
-    "cmdi": CheckSpec("tools.cmdi_detector", "check", args=["url", "param", _SESS, "timeout"]),
+    "cmdi": CheckSpec(
+        "tools.cmdi_detector", "check", args=["url", "param", _SESS, "timeout", "post", "data"]
+    ),
     "ssti": CheckSpec("tools.ssti_detector", "check", args=["url", "param", _SESS, "timeout"]),
     "ssrf": CheckSpec("tools.ssrf_detector", "check", args=["url", "param", _SESS, "timeout"]),
     "nosqli": CheckSpec("tools.nosqli_detector", "check", args=["url", "param", _SESS, "timeout"]),
@@ -163,7 +165,9 @@ COMMAND_SPECS: Dict[str, CheckSpec] = {
             "pass_field": "pass_field",
         },
     ),
-    "race": CheckSpec("tools.race_condition", "check", args=["url", "param", _SESS, "timeout"]),
+    "race": CheckSpec(
+        "tools.race_condition", "check", args=["url", "param", _SESS, "timeout", "post", "data"]
+    ),
     "race-profile": CheckSpec(
         "tools.race_profiler", "check", args=["url", "param", _SESS, "timeout"]
     ),

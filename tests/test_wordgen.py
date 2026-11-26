@@ -106,6 +106,7 @@ class TestCli:
             cwd=str(ROOT),
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=60,
             env=ENV,
         )
@@ -121,6 +122,7 @@ class TestCli:
             cwd=str(ROOT),
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=60,
             env=ENV,
         )
@@ -137,10 +139,11 @@ class TestCli:
             cwd=str(ROOT),
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=60,
             env=ENV,
         )
-        assert proc.returncode == 1
+        assert proc.returncode == 2
         import json
 
         payload = json.loads(proc.stdout)

@@ -14,6 +14,7 @@
 
 import argparse
 import concurrent.futures
+import inspect
 import json
 import os
 import sys
@@ -26,9 +27,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tools import (  # noqa: E402
     cmdi_detector,
+    deserialization_detector,
+    jwt_detector,
     lfi_scanner,
     nosqli_detector,
     sql_injection,
+    ssrf_detector,
     ssti_detector,
     xss_detector,
 )
@@ -41,6 +45,9 @@ DETECTORS = {
     "lfi": lfi_scanner.check,
     "ssti": ssti_detector.check,
     "nosqli": nosqli_detector.check,
+    "ssrf": ssrf_detector.check,
+    "jwt": jwt_detector.check,
+    "deser": deserialization_detector.check,
 }
 
 BENIGN_VALUE = {
@@ -50,6 +57,9 @@ BENIGN_VALUE = {
     "lfi": "include.php",
     "ssti": "world",
     "nosqli": "1",
+    "ssrf": "http://example.com/",
+    "jwt": "1",
+    "deser": "1",
 }
 
 
@@ -75,12 +85,12 @@ def build_request(case, base_url):
 def run_case(case, sess, timeout):
     fn = DETECTORS[case["vuln_class"]]
     url, kwargs = build_request(case, case["_base_url"])
+    accepted = inspect.signature(fn).parameters
+    kwargs = {key: value for key, value in kwargs.items() if key in accepted}
+    effective_timeout = case.get("timeout", timeout)
     try:
-        r = fn(url, case["param"], sess=sess, timeout=timeout, **kwargs)
+        r = fn(url, case["param"], sess=sess, timeout=effective_timeout, **kwargs)
         return bool(r.get("vulnerable")), r.get("type", ""), None
-    except TypeError:
-        # 个别检测器不接受 post_body/post_data -> 降级为 GET 语义报错标注
-        return False, "", "detector does not support POST contract"
     except Exception as e:
         return False, "", "%s: %s" % (type(e).__name__, str(e)[:80])
 
@@ -187,7 +197,7 @@ def main():
     ap = argparse.ArgumentParser(description="aimy-skill benchmark runner")
     ap.add_argument("--profile", default="dvwa", help="profiles/ 下的清单名 (dvwa/lab)")
     ap.add_argument("--base-url", default=None, help="覆盖清单中的 base_url")
-    ap.add_argument("--levels", default="low,medium,high", help="DVWA 要跑的安全级别")
+    ap.add_argument("--levels", default="low,medium,high,impossible", help="DVWA 要跑的安全级别")
     ap.add_argument("--timeout", type=float, default=10.0)
     ap.add_argument(
         "--case-timeout",
@@ -201,6 +211,7 @@ def main():
     ap.add_argument("--only", default="", help="只跑指定用例名，逗号分隔")
     ap.add_argument("--limit", type=int, default=0, help="最多跑 N 个用例（0=全部）")
     ap.add_argument("--fail-on-fp", action="store_true", help="存在 FP 时退出码为 1")
+    ap.add_argument("--min-recall", type=float, default=0.0, help="召回率低于该值时退出码为 1")
     args = ap.parse_args()
 
     prof_path = os.path.join(os.path.dirname(__file__), "profiles", args.profile + ".yml")
@@ -316,6 +327,8 @@ def main():
     print("[*] 报告: %s / %s" % (jpath, mpath))
 
     if args.fail_on_fp and m["fp"]:
+        sys.exit(1)
+    if args.min_recall > 0 and m["recall"] < args.min_recall:
         sys.exit(1)
 
 

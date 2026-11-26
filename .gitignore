@@ -30,6 +30,7 @@ Desktop.ini
 # Project
 *.pkl
 *.log
+/session.json
 output/
 reports/
 .cache/
@@ -57,6 +58,7 @@ data/*.db-wal
 !data/cms_vulns.json
 !data/cms_map.json
 !data/fingerprint.json
+!data/tools.json
 # 敏感: 扫描目标清单与扫描产物不得入库 (含真实目标 IP, 历史中已存在的需另行清理)
 data/src_targets.txt
 data/backup_leaks.json

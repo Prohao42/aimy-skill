@@ -19,7 +19,12 @@ JWT_HEADER_KEYS = ["authorization", "x-jwt", "x-auth-token", "token", "bearer"]
 __all__ = ["JWT_REGEX", "JWT_HEADER_KEYS", "decode_jwt_header", "decode_jwt_payload", "check"]
 
 
-def check_jwt_none(sess: requests.Session, url: str = None, token_header: str = None) -> Dict:
+def check_jwt_none(
+    sess: requests.Session,
+    url: str = None,
+    token_header: str = None,
+    baseline_status: Optional[int] = None,
+) -> Dict:
     result = {"vulnerable": False, "type": None, "evidence": []}
     header = {"alg": "none", "typ": "JWT"}
     payload = {"sub": "admin", "role": "admin", "iat": _time.time()}
@@ -30,7 +35,12 @@ def check_jwt_none(sess: requests.Session, url: str = None, token_header: str = 
     if url and sess:
         try:
             r = sess.get(url, headers={"Authorization": "Bearer %s" % token}, timeout=10)
-            if r.status_code in (200, 201, 204):
+            accepted = r.status_code in (200, 201, 204)
+            # 带基线时只接受“401/403 被绕过”的明确证据；公开页面返回 200
+            # 不能说明 alg:none 被信任。直接调用 check_jwt_none 时保留旧行为。
+            if accepted and baseline_status is not None:
+                accepted = baseline_status in (401, 403)
+            if accepted:
                 result["vulnerable"] = True
                 result["type"] = "alg_none"
                 result["evidence"].append(
@@ -41,6 +51,9 @@ def check_jwt_none(sess: requests.Session, url: str = None, token_header: str = 
             logger.debug("jwt none test: %s", e)
 
     return {
+        "vulnerable": False,
+        "type": None,
+        "evidence": [],
         "token": token,
         "header": header,
         "payload": payload,
@@ -90,11 +103,13 @@ def check(
     if sess is None:
         sess = requests.Session()
     sess.verify = settings.verify_ssl
-    result = {"vulnerable": False, "tokens_found": [], "findings": []}
+    result = {"vulnerable": False, "type": None, "tokens_found": [], "findings": []}
+    baseline_status = None
 
     if url:
         try:
             r = sess.get(url, timeout=timeout)
+            baseline_status = r.status_code
             for m in re.finditer(JWT_REGEX, r.text):
                 token = m.group(0)
                 if len(token.split(".")) == 3:
@@ -111,6 +126,8 @@ def check(
                             result["findings"].append("alg:none token header detected in page body")
                         ws = check_jwt_weak_secret(token)
                         if ws["vulnerable"]:
+                            result["vulnerable"] = True
+                            result["type"] = "weak_secret"
                             result["findings"].append("weak secret: %s" % ws["found_secret"])
 
             for key, value in r.headers.items():
@@ -135,12 +152,10 @@ def check(
         except Exception as e:
             logger.debug("jwt scan: %s", e)
 
-    if result["tokens_found"] or result["findings"]:
-        result["vulnerable"] = True
-
-    none_result = check_jwt_none(sess, url)
+    none_result = check_jwt_none(sess, url, baseline_status=baseline_status)
     if none_result.get("vulnerable"):
         result["vulnerable"] = True
+        result["type"] = "alg_none" if not result["type"] else result["type"]
         result["findings"].extend(none_result.get("evidence", []))
     result["alg_none_test"] = none_result
 

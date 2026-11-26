@@ -50,6 +50,19 @@ class TestCheckJwtNone:
         result = check_jwt_none(sess, "http://test.com/admin")
         assert result["vulnerable"] is True
 
+    @responses.activate
+    def test_alg_none_public_200_is_not_acceptance(self):
+        responses.add(
+            responses.GET,
+            "http://test.com/public",
+            body="public page",
+            status=200,
+        )
+        import requests
+
+        result = check_jwt_none(requests.Session(), "http://test.com/public", baseline_status=200)
+        assert result["vulnerable"] is False
+
 
 class TestCheckJwtWeakSecret:
     def test_weak_secret_found(self):
@@ -92,8 +105,32 @@ class TestJWTCheck:
             status=200,
         )
         result = check("http://test.com/page")
-        assert result["vulnerable"] is True
+        assert result["vulnerable"] is False
         assert len(result["tokens_found"]) > 0
+        assert any("high-privilege" in finding for finding in result["findings"])
+
+    @responses.activate
+    def test_jwt_weak_secret_in_body_is_vulnerable(self):
+        import hashlib
+        import hmac
+
+        hdr = _make_b64({"alg": "HS256", "typ": "JWT"})
+        pld = _make_b64({"sub": "admin", "role": "admin"})
+        signature = hmac.new(b"secret", f"{hdr}.{pld}".encode(), hashlib.sha256).digest()
+        token = "%s.%s.%s" % (
+            hdr,
+            pld,
+            base64.urlsafe_b64encode(signature).decode().rstrip("="),
+        )
+        responses.add(
+            responses.GET,
+            "http://test.com/weak",
+            body="<html>token: %s</html>" % token,
+            status=200,
+        )
+        result = check("http://test.com/weak")
+        assert result["vulnerable"] is True
+        assert result["type"] == "weak_secret"
 
     @responses.activate
     def test_no_jwt_found(self):

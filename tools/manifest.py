@@ -121,8 +121,12 @@ def get_subparsers(parser):
 
 
 def command_funcs(parser):
-    """返回 {命令名: callable}，callable 是解析器 set_defaults(func=...) 注册的调用体。"""
-    return {name: sp.get_default("func") for name, sp in get_subparsers(parser).items()}
+    """返回具有可执行处理函数的顶层命令，排除 kali 这类纯容器命令。"""
+    return {
+        name: func
+        for name, sp in get_subparsers(parser).items()
+        if callable((func := sp.get_default("func")))
+    }
 
 
 def list_nested_commands(parser):
@@ -158,8 +162,8 @@ def nested_command_funcs(parser):
     return out
 
 
-def build_manifest() -> Dict[str, Any]:
-    parser = _build_parser()
+def build_manifest(parser=None) -> Dict[str, Any]:
+    parser = parser or _build_parser()
     return {
         "schema_version": 1,
         "project": "aimy-skill",

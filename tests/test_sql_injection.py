@@ -94,19 +94,14 @@ class TestSqlInjectionCheck:
         import time
 
         def delayed_callback(request):
-            time.sleep(3)
+            if "SLEEP" in request.url.upper():
+                time.sleep(3)
             return (200, {}, "ok")
 
         responses.add_callback(
             responses.GET,
-            re.compile(r"http://test\.com/page\?.*SLEEP.*"),
-            callback=delayed_callback,
-        )
-        responses.add(
-            responses.GET,
             re.compile(r"http://test\.com/page\?.*"),
-            body="normal",
-            status=200,
+            callback=delayed_callback,
         )
 
         result = check("http://test.com/page", "id")

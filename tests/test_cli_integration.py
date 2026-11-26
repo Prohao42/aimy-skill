@@ -35,8 +35,30 @@ def test_success_envelope(capsys):
 
 
 def test_missing_required_exits_nonzero(capsys):
-    code, _ = _run_main(["login"], capsys)
-    assert code == 1
+    code, out = _run_main(["--json", "login"], capsys)
+    assert code == 2
+    result = json.loads(out)
+    assert result["_meta"]["status"] == "error"
+    assert result["_meta"]["tool"] == "login"
+    assert result["code"] == "invalid_args"
+
+
+def test_argparse_error_is_structured(capsys):
+    code, out = _run_main(["--json", "fuzz"], capsys)
+    assert code == 2
+    result = json.loads(out)
+    assert result["code"] == "invalid_args"
+    assert result["_meta"]["tool"] == "fuzz"
+    assert "required: url" in result["error"]
+
+
+def test_validation_error_is_structured(capsys):
+    code, out = _run_main(["--json", "fuzz", "not-a-valid-url"], capsys)
+    assert code == 2
+    result = json.loads(out)
+    assert result["code"] == "invalid_args"
+    assert result["command"] == "fuzz"
+    assert "valid scheme" in result["error"]
 
 
 def test_format_jsonl(capsys):
@@ -44,7 +66,9 @@ def test_format_jsonl(capsys):
     assert code == 0
     lines = [l for l in out.splitlines() if l.strip()]
     assert len(lines) >= 1
-    assert json.loads(lines[0])["encoded"] is not None
+    result = json.loads(lines[0])
+    assert result["encoded"] is not None
+    assert result["_meta"]["tool"] == "payload-mutate"
 
 
 def test_list_includes_poja(capsys):
@@ -53,3 +77,48 @@ def test_list_includes_poja(capsys):
     d = json.loads(out.strip())
     assert "poja" in d
     assert "sqlcheck" in d
+    assert d["_meta"]["tool"] == "list"
+
+
+def test_fuzz_executes_custom_payloads(capsys):
+    from unittest.mock import MagicMock, patch
+
+    response = MagicMock(status_code=200, text="ok")
+    response.elapsed.total_seconds.return_value = 0.1
+    sess = MagicMock()
+    sess.get.return_value = response
+    with patch.object(main, "_sess", return_value=sess):
+        code, out = _run_main(
+            [
+                "--json",
+                "fuzz",
+                "http://target.test",
+                "--param",
+                "q",
+                "--payloads",
+                "one,two",
+            ],
+            capsys,
+        )
+    assert code == 0
+    result = json.loads(out)
+    assert result["payloads_tested"] == 2
+    assert [r["payload"] for r in result["results"]] == ["one", "two"]
+    assert sess.get.call_count == 3
+
+
+def test_smuggler_exploit_emits_single_json(capsys):
+    from unittest.mock import MagicMock, patch
+
+    detection = {"vulnerable": True, "type": "smuggling", "smuggling_type": "cl_te"}
+    with (
+        patch.object(main, "_sess", return_value=MagicMock()),
+        patch("tools.smuggler.check", return_value=detection),
+        patch("tools.smuggler.exploit", return_value={"success": True}),
+    ):
+        code, out = _run_main(["--json", "smuggler", "http://target.test", "--exploit"], capsys)
+    assert code == 0
+    assert len([line for line in out.splitlines() if line.strip()]) == 1
+    result = json.loads(out)
+    assert result["smuggling_exploit"]["success"] is True
+    assert result["_meta"]["status"] == "ok"

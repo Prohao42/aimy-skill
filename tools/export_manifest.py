@@ -1,10 +1,10 @@
-"""导出单一事实源 tools.json: 从 COMMAND_SPECS + argparse 生成机器可读清单。
+"""从运行时解析器导出可再生命令清单 tools.json。
 
 用法:
-    python tools/export_manifest.py [--out data/tools.json]
+    python -m tools.export_manifest [--out data/tools.json]
 
-生成的文件供 mcp/server.py、文档生成、OpenAI function 定义等共享，
-改命令只改 COMMAND_SPECS / arg_parsers 一处，重新导出即全端同步。
+CLI 与 MCP 运行时直接共用 argparse 定义；本文件是供文档生成和其他 Agent
+集成使用的派生产物。修改命令后必须重新导出，测试会检查产物是否漂移。
 """
 
 from __future__ import annotations

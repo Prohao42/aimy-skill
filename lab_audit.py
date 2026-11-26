@@ -1,4 +1,8 @@
-"""Quantitative acceptance: run core detectors against the 10-endpoint lab."""
+"""Quantitative acceptance for the legacy core subset of the hardened lab.
+
+The full 25-case matrix, including SSRF/JWT/deserialization, lives in
+``bench/profiles/lab.yml`` and is the authoritative benchmark used by CI.
+"""
 
 import sys
 import time

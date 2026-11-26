@@ -605,15 +605,11 @@ def _detect_boolean_sqli(
         except Exception:
             pass
 
-    if result["vulnerable"] and total_pairs > 0:
-        vote = pair_confirmed / total_pairs
-        result["confidence_score"] = round(min(0.95, vote * 0.9), 2)
-        if vote >= 0.6:
-            result["confidence"] = "high"
-        elif vote >= 0.3:
-            result["confidence"] = "medium"
-        else:
-            result["confidence"] = "low"
+    if result["vulnerable"]:
+        # 单对差异已经过二次重放验证；多对命中的证据更强。
+        score = 0.7 if pair_confirmed <= 1 else min(0.95, 0.65 + 0.1 * pair_confirmed)
+        result["confidence_score"] = round(score, 2)
+        result["confidence"] = "high" if score >= 0.75 else "medium"
 
     return result
 
@@ -839,7 +835,6 @@ def check(
 
     detectors = [
         ("error", _detect_error_sqli),
-        ("time", _detect_time_sqli),
         ("boolean", _detect_boolean_sqli),
         ("union", _detect_union_sqli),
         ("stacked", _detect_stacked_sqli),
@@ -862,6 +857,14 @@ def check(
                 result["confidence"] = r["confidence"]
         if conf >= 0.7:
             break  # confident enough; skip the slower remaining detectors
+
+    # 时间盲注最慢：只有所有廉价检测器都没有证据时才回退。
+    if not result["vulnerable"]:
+        r = _run("time", _detect_time_sqli)
+        if r["vulnerable"]:
+            result.update(r)
+            result["confidence_score"] = r.get("confidence_score", 0.0) or 0.0
+            result["confidence"] = r.get("confidence", "low")
 
     if not result["vulnerable"]:
         result["confidence_score"] = 0.0

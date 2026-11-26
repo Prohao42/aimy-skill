@@ -95,11 +95,13 @@ class DualSessionManager:
                         length_diff,
                     )
                 )
-            if length_diff < 50 and low_ok and high_ok:
-                result["info_disclosure"] = True
-                result["evidence"].append(
-                    "info_disclosure: identical response (%sB)" % result["low_length"]
-                )
+                # 公开接口返回相同内容是正常行为；只有敏感端点的相同响应才作为
+                # 信息泄露线索，避免把公共首页/健康检查误报成越权。
+                if length_diff < 50:
+                    result["info_disclosure"] = True
+                    result["evidence"].append(
+                        "info_disclosure: identical protected response (%sB)" % result["low_length"]
+                    )
 
         if low_ok and not high_ok:
             result["access_control_bypass"] = True

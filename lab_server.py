@@ -1,8 +1,12 @@
+import base64
+import hashlib
+import hmac
+import json
 import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
-# Hardened lab: 19 endpoints (DVWA-style + obfuscation/context/POST contracts)
+# Hardened lab: 25 endpoints (DVWA-style + obfuscation/context/POST contracts)
 # /sqli_error   : error-based SQLi (MySQL)
 # /sqli_bool    : boolean-blind SQLi
 # /sqli_union   : union injectable, 3 cols, reflects col2, tables/cols/rows
@@ -18,10 +22,27 @@ from urllib.parse import parse_qs, urlparse
 # /lfi_hardened : plain ../ filtered, only ....// or %2f encoding works
 # /nosql        : NoSQLi $where oracle (JSON POST)
 # /nosqli_get   : NoSQLi operator injection via GET param
+# /ssrf         : server-side fetch simulation returning cloud metadata
+# /jwt_weak     : JWT signed with weak secret in page body
+# /deser        : PHP unserialize error on POST body
 # /clean_sqli   : parameterized query (NOT injectable)
 # /clean_xss    : HTML-escaped echo (NOT injectable)
 # /clean_attr   : attribute context but escaped (NOT injectable)
 # /clean_ssti   : literal echo, never evaluates (NOT injectable)
+# /clean_ssrf   : fetch failures only (NOT SSRF)
+# /jwt_clean    : JWT signed with a strong secret (NOT vulnerable)
+# /clean_deser  : normal response for serialized payloads (NOT vulnerable)
+
+
+def _b64(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def _jwt_token(secret: str) -> str:
+    header = _b64(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
+    payload = _b64(json.dumps({"sub": "admin", "role": "admin"}).encode())
+    signature = hmac.new(secret.encode(), f"{header}.{payload}".encode(), hashlib.sha256).digest()
+    return "%s.%s.%s" % (header, payload, _b64(signature))
 
 
 class H(BaseHTTPRequestHandler):
@@ -36,7 +57,9 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         p = urlparse(self.path).path
         q = parse_qs(urlparse(self.path).query)
-        v = q.get("id", q.get("q", q.get("cmd", q.get("name", q.get("file", ["7"])))))[0]
+        v = q.get(
+            "id", q.get("q", q.get("cmd", q.get("name", q.get("file", q.get("url", ["7"])))))
+        )[0]
 
         if p == "/sqli_error":
             if "'" in v:
@@ -124,6 +147,25 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, "x" * 120 + "operator-bypass")
             return self._send(200, "x")
 
+        if p == "/ssrf":
+            if any(
+                marker in v
+                for marker in ("169.254.169.254", "metadata.google.internal", "etc/passwd")
+            ):
+                return self._send(200, "ami-id: ami-0123456789abcdef0\ninstance-id: i-lab")
+            return self._send(200, "fetch failed: connection refused")
+
+        if p == "/clean_ssrf":
+            return self._send(200, "fetch failed: connection refused")
+
+        if p == "/jwt_weak":
+            return self._send(200, json.dumps({"token": _jwt_token("secret")}))
+
+        if p == "/jwt_clean":
+            return self._send(
+                200, json.dumps({"token": _jwt_token("v3ry-strong-lab-secret-not-guessable")})
+            )
+
         if p == "/clean_sqli":
             # parameterized: input is data, never SQL
             return self._send(200, "Search results for: " + v[:20])
@@ -165,10 +207,21 @@ class H(BaseHTTPRequestHandler):
             v = q.get("q", [""])[0]
             return self._send(200, "<html><body>Hello " + v + "</body></html>")
 
+        if p == "/deser":
+            values = " ".join(value for values in parse_qs(body).values() for value in values)
+            if "O:" in values or "a:1:" in values:
+                return self._send(
+                    500,
+                    "PHP Fatal error: Uncaught Error: "
+                    "unserialize(): Error at offset 0; __PHP_Incomplete_Class",
+                )
+            return self._send(200, "ok")
+
+        if p == "/clean_deser":
+            return self._send(200, "ok")
+
         if p == "/nosql":
             try:
-                import json
-
                 payload = json.loads(body or "{}").get("id", {})
             except Exception:
                 payload = {}

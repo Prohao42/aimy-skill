@@ -1,3 +1,5 @@
+import base64
+import binascii
 import os
 import re
 from typing import Dict, List, Optional
@@ -59,6 +61,27 @@ SESSION_POISON_PATHS = [
 
 PROC_FD_PATHS = ["/proc/self/fd/%d" % i for i in range(0, 50)]
 
+_BASE64_BLOB = re.compile(r"[A-Za-z0-9+/]{24,}={0,2}")
+_DISCLOSURE_MARKERS = ("root:", "<?php", "[extensions]", "[fonts]", "LFI_TEST")
+
+
+def _base64_disclosure(text: str) -> bool:
+    """只在 base64 解码后出现文件内容标记时才认定 filter wrapper 成功。"""
+    for match in _BASE64_BLOB.finditer(text):
+        try:
+            decoded = base64.b64decode(match.group(0), validate=True).decode(
+                "utf-8", errors="ignore"
+            )
+        except (binascii.Error, ValueError):
+            continue
+        if any(marker in decoded for marker in _DISCLOSURE_MARKERS):
+            return True
+    return False
+
+
+def _looks_like_session_data(text: str) -> bool:
+    return bool(re.search(r"\|\w+:\d+:\"", text) or "LFI_TEST" in text)
+
 
 class LFIScanner:
     def __init__(
@@ -107,12 +130,12 @@ class LFIScanner:
             try:
                 r = self.sess.get(build_url(url, param, payload), timeout=self.timeout)
                 if wrapper_type == "base64":
-                    if re.search(r"[A-Za-z0-9+/]{20,}={0,2}", r.text):
+                    if _base64_disclosure(r.text):
                         results.append(
                             {"payload": payload[:35], "type": "base64", "size": len(r.text)}
                         )
                 elif wrapper_type == "rce":
-                    if "uid=" in r.text or "LFI_TEST" in r.text or len(r.text) > 10:
+                    if "uid=" in r.text or "LFI_TEST" in r.text:
                         results.append(
                             {"payload": payload[:35], "type": "rce_data", "size": len(r.text)}
                         )
@@ -176,13 +199,13 @@ class LFIScanner:
 
     def check_session_poison(self, url: str, param: str, session_id: str = None) -> List[Dict]:
         results = []
-        sid = session_id or "sess_" + os.urandom(8).hex()
+        sid = session_id or self.sess.cookies.get("PHPSESSID") or "sess_" + os.urandom(8).hex()
         unique_paths = list(dict.fromkeys(SESSION_POISON_PATHS))
         for sess_path_tpl in unique_paths:
             try:
                 payload = sess_path_tpl % sid
                 r = self.sess.get(build_url(url, param, payload), timeout=self.timeout)
-                if len(r.text) > 20:
+                if _looks_like_session_data(r.text):
                     results.append({"session_path": payload, "size": len(r.text)})
             except Exception as e:
                 logger.debug("lfi session poison %s: %s", sess_path_tpl, e)
@@ -193,7 +216,7 @@ class LFIScanner:
         for payload in PHAR_WRAPPER_PAYLOADS:
             try:
                 r = self.sess.get(build_url(url, param, payload), timeout=self.timeout)
-                if "LFI_TEST_SUCCESS" in r.text or len(r.text) > 100:
+                if "LFI_TEST_SUCCESS" in r.text or "uid=" in r.text:
                     results.append(
                         {
                             "payload": payload[:35],
@@ -209,7 +232,7 @@ class LFIScanner:
         results = []
         try:
             r = self.sess.get(build_url(url, param, PEARCMD_PAYLOAD), timeout=self.timeout)
-            if "uid=" in r.text or "LFI_TEST" in r.text or len(r.text) > 100:
+            if "uid=" in r.text or "LFI_TEST" in r.text:
                 results.append(
                     {"payload": "pearcmd.php", "type": "pearcmd_rce", "size": len(r.text)}
                 )

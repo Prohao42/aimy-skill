@@ -707,7 +707,7 @@ CMDI_SEEDS: Dict[str, List[dict]] = {
         {"raw": "; cat /etc/passwd", "indicator": "root:", "ctx": ["all"]},
         {"raw": "| cat /etc/passwd", "indicator": "root:", "ctx": ["all"]},
         {"raw": "; echo test123", "indicator": "test123", "ctx": ["all"]},
-        {"raw": "; pwd", "indicator": "/", "ctx": ["all"]},
+        {"raw": "; echo CMDI_$(pwd)", "indicator": "CMDI_/", "ctx": ["all"]},
         {"raw": "| dir", "indicator": "Directory:", "ctx": ["all"]},
         {"raw": "; uname -a", "indicator": "Linux", "ctx": ["all"]},
         {"raw": "| uname -a", "indicator": "Linux", "ctx": ["all"]},

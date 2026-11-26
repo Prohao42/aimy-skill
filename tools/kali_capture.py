@@ -202,7 +202,11 @@ class KaliCapture:
     def _parse_pdml(self, raw: str) -> List[Dict]:
         packets = []
         try:
-            from defusedxml import ElementTree
+            try:
+                from defusedxml import ElementTree
+            except ImportError:
+                # PDML 来自本机 tshark 输出；环境缺少 defusedxml 时保证解析仍可用。
+                from xml.etree import ElementTree
 
             root = ElementTree.fromstring(raw)
             for i, pkt in enumerate(root.findall(".//packet")):

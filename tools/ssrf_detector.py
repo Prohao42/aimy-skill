@@ -299,13 +299,13 @@ def _test_oob(
                 sess.get(build_url(url, param, payload), timeout=timeout)
             except Exception as e:
                 logger.debug("ssrf oob %s: %s", payload[:30], e)
-            if http_listener.caught.wait(timeout=oob_timeout):
-                result["vulnerable"] = True
-                result["type"] = "oob_http_callback"
-                result["evidence"].append("HTTP OOB: %s" % str(http_listener.request_data)[:60])
-                result["payload"] = payload
-                result["oob_methods"].append("http")
-                break
+        # 先发完全部候选再统一等待回调，避免每个 payload 各等满超时。
+        if http_listener.caught.wait(timeout=oob_timeout):
+            result["vulnerable"] = True
+            result["type"] = "oob_http_callback"
+            result["evidence"].append("HTTP OOB: %s" % str(http_listener.request_data)[:60])
+            result["payload"] = test_payloads[0]
+            result["oob_methods"].append("http")
 
     http_listener.stop()
 
@@ -324,13 +324,12 @@ def _test_oob(
                     sess.get(build_url(url, param, payload), timeout=timeout)
                 except Exception as e:
                     logger.debug("ssrf dns oob %s: %s", payload[:30], e)
-                if dns_listener.caught.wait(timeout=oob_timeout):
-                    result["vulnerable"] = True
-                    result["type"] = "oob_dns_callback"
-                    result["evidence"].append("DNS OOB: %s" % dns_listener.queried_domain)
-                    result["payload"] = payload
-                    result["oob_methods"].append("dns")
-                    break
+            if dns_listener.caught.wait(timeout=oob_timeout):
+                result["vulnerable"] = True
+                result["type"] = "oob_dns_callback"
+                result["evidence"].append("DNS OOB: %s" % dns_listener.queried_domain)
+                result["payload"] = dns_payloads[0]
+                result["oob_methods"].append("dns")
 
         dns_listener.stop()
 

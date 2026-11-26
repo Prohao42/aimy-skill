@@ -1,3 +1,5 @@
+import os
+
 import responses
 
 from tools.auth_engine import AuthSession, detect_form_fields
@@ -393,8 +395,9 @@ class TestAuthSession:
         engine.set_cookies({"session": "abc"})
         engine.set_header_token("tok_val")
 
-        path = str(tmp_path / "session.pkl")
+        path = str(tmp_path / "nested" / "session.json")
         engine.save_session(path)
+        assert os.path.isfile(path)
 
         engine2 = AuthSession()
         loaded = engine2.load_session(path)

@@ -11,13 +11,49 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional, Tuple
 
 from tools.log_utils import get_logger
-from tools.version import __version__
 
 logger = get_logger("arg_parsers")
+
+
+class InvalidArgumentError(ValueError):
+    """用户输入无法通过命令校验；由 CLI/MCP 统一转换为 invalid_args。"""
+
+
+def _json_requested(argv=None) -> bool:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if "--json" in args:
+        return True
+    for index, value in enumerate(args):
+        if value == "--format" and index + 1 < len(args):
+            return args[index + 1] == "json"
+        if value.startswith("--format="):
+            return value.split("=", 1)[1] == "json"
+    return False
+
+
+def _tool_name(prog: str) -> str:
+    for token in reversed(str(prog).split()):
+        if token not in ("main.py", "__main__.py") and not token.startswith("-"):
+            return token
+    return "cli"
+
+
+class AimyArgumentParser(argparse.ArgumentParser):
+    """argparse 的 JSON 错误边界，保证 --json 模式 stdout 始终可解析。"""
+
+    def error(self, message):
+        if _json_requested():
+            from tools.output import error_json
+
+            print(error_json(message, code="invalid_args", tool=_tool_name(self.prog)))
+            raise SystemExit(2)
+        super().error(message)
+
 
 URL_SCHEMES = ("http://", "https://", "file://", "gopher://", "dict://")
 
@@ -62,56 +98,11 @@ def _add_url_arg(
             p.add_argument(*args_spec[0], **args_spec[1])
 
 
-def _action_to_manifest(action):
-    """Serialize one argparse action for the Claude/Agent tool manifest."""
-    if isinstance(action, argparse._SubParsersAction) or action.dest == "help":
-        return None
-    item = {"dest": action.dest}
-    if action.option_strings:
-        item["options"] = list(action.option_strings)
-        item["required"] = bool(getattr(action, "required", False))
-    else:
-        item["required"] = action.nargs not in ("?", "*")
-    if action.nargs is not None:
-        item["nargs"] = action.nargs
-    if action.choices:
-        item["choices"] = [str(choice) for choice in action.choices]
-    if isinstance(action.type, type):
-        item["type"] = action.type.__name__
-    if action.default is not None and action.default != "":
-        item["default"] = action.default
-    if action.help:
-        item["help"] = action.help
-    return item
+def build_manifest(parser: Optional[argparse.ArgumentParser] = None) -> dict:
+    """兼容旧导入；实际格式与 MCP、tools.json 共用 tools.manifest。"""
+    from tools.manifest import build_manifest as build_canonical_manifest
 
-
-def build_manifest(parser: argparse.ArgumentParser) -> dict:
-    """Build a machine-readable command/argument manifest for agent tool use."""
-    sub = next(
-        (a for a in parser._actions if isinstance(a, argparse._SubParsersAction)),
-        None,
-    )
-    commands = {}
-    if sub:
-        helps = {a.dest: a.help for a in sub._choices_actions}
-        for name, subparser in sub.choices.items():
-            commands[name] = {
-                "help": helps.get(name, subparser.description or ""),
-                "arguments": [
-                    item
-                    for action in subparser._actions
-                    if (item := _action_to_manifest(action)) is not None
-                ],
-            }
-    return {
-        "name": "aimy-skill",
-        "version": __version__,
-        "command_count": len(commands),
-        "global_arguments": [
-            item for action in parser._actions if (item := _action_to_manifest(action)) is not None
-        ],
-        "commands": commands,
-    }
+    return build_canonical_manifest(parser)
 
 
 _GLOBAL_ARG_SPECS: List[Tuple[Tuple[str, ...], Dict[str, Any]]] = [
@@ -179,6 +170,7 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
         cmd_csrf,
         cmd_deepscan,
         cmd_dirfuzz,
+        cmd_doctor,
         cmd_domain,
         cmd_fuzz,
         cmd_fuzz_engine,
@@ -203,13 +195,13 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
         cmd_workflow,
     )
 
-    parser = argparse.ArgumentParser(
+    parser = AimyArgumentParser(
         description="aimy-skill v%s - 轻量级渗透测试辅助工具链" % VERSION,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     _add_global_args(parser)
     parser.add_argument("-v", "--version", action="version", version=VERSION)
-    sub = parser.add_subparsers(dest="command")
+    sub = parser.add_subparsers(dest="command", parser_class=AimyArgumentParser)
 
     # ---- Recon / simple commands ----
     p = sub.add_parser("portscan", help="TCP端口扫描")
@@ -232,7 +224,7 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p.set_defaults(func=dispatchers["xsscheck"])
 
     p = sub.add_parser("cmdi", help="命令注入检测")
-    _add_url_arg(p, default_param="cmd")
+    _add_url_arg(p, default_param="cmd", include_post=True, include_data=True)
     p.set_defaults(func=dispatchers["cmdi"])
 
     p = sub.add_parser("ssti", help="模板注入检测")
@@ -390,7 +382,7 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p.set_defaults(func=dispatchers["verify"])
 
     p = sub.add_parser("race", help="竞争条件检测")
-    _add_url_arg(p, default_param="q")
+    _add_url_arg(p, default_param="q", include_post=True, include_data=True)
     p.set_defaults(func=dispatchers["race"])
 
     p = sub.add_parser("race-profile", help="竞争条件探测器(自动分析)")
@@ -666,10 +658,10 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p.add_argument("--max-pages", type=int, default=30)
     p.set_defaults(func=dispatchers["crawl"])
 
-    p = sub.add_parser("fuzz", help="模糊测试")
-    p.add_argument("--payloads", default="")
-    p.add_argument("--threads", type=int, default=5)
-    p.add_argument("--delay", type=float, default=0)
+    p = sub.add_parser("fuzz", help="自定义 Payload 模糊测试")
+    p.add_argument("url")
+    p.add_argument("--param", default="id")
+    p.add_argument("--payloads", default="", help="逗号分隔的自定义 Payload")
     p.set_defaults(func=cmd_fuzz)
 
     p = sub.add_parser("payload-mutate", help="Payload变异")
@@ -699,6 +691,9 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_mobile_scan)
 
     # ---- List / unauth / leak / weakpass / batch ----
+    p = sub.add_parser("doctor", help="环境与能力自检（依赖/Kali/浏览器/OOB/目录）")
+    p.set_defaults(func=cmd_doctor)
+
     p = sub.add_parser("list", help="列出所有可用工具")
     p.set_defaults(func=cmd_list)
 
@@ -758,7 +753,7 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
 
     # ---- kali sub-command ----
     pk = sub.add_parser("kali", help="Kali Linux 工具调用 (需配置 --kali-host/--kali-local)")
-    ksub = pk.add_subparsers(dest="kali_command")
+    ksub = pk.add_subparsers(dest="kali_command", required=True)
 
     pke = ksub.add_parser("exec", help="在 Kali 上执行任意命令")
     pke.add_argument("cmd", help="要执行的命令")
@@ -860,6 +855,16 @@ def build_parser(dispatchers: dict) -> argparse.ArgumentParser:
     return parser
 
 
+def _validate_target(target: str, name: str = "target") -> None:
+    """接受完整 URL 或裸主机名/IP，兼容 portscan/recon 的两种写法。"""
+    if "://" in target:
+        _validate_url(target, name)
+        return
+    parsed = _urlparse.urlparse("//" + target)
+    if not target or not parsed.hostname or any(ch.isspace() for ch in target):
+        raise ValueError("Invalid %s (expected URL, hostname or IP): %s" % (name, target))
+
+
 def validate_args(args) -> None:
     """Validate parsed args: URLs, ports, wordlists; initialize Kali."""
     from tools.kali_executor import init_kali, init_kali_local
@@ -867,6 +872,8 @@ def validate_args(args) -> None:
 
     url_cmds = {
         "dirfuzz",
+        "fuzz",
+        "fuzz-engine",
         "sqlcheck",
         "xsscheck",
         "cmdi",
@@ -925,10 +932,7 @@ def validate_args(args) -> None:
             try:
                 _validate_url(u)
             except ValueError as e:
-                logger.error("URL validation failed: %s", e)
-                import sys
-
-                sys.exit(1)
+                raise InvalidArgumentError(str(e)) from e
     target_cmds = (
         "portscan",
         "param-mine",
@@ -942,25 +946,16 @@ def validate_args(args) -> None:
     if args.command in target_cmds:
         t = getattr(args, "target", "") or ""
         try:
-            _validate_url(t, "target")
+            _validate_target(t, "target")
         except ValueError as e:
-            logger.error("Target validation failed: %s", e)
-            import sys
-
-            sys.exit(1)
+            raise InvalidArgumentError(str(e)) from e
     if args.command == "portscan" and args.ports:
         for p in args.ports.split(","):
             p = p.strip()
             if not p.isdigit() or not (1 <= int(p) <= 65535):
-                logger.error("Invalid port number: %s", p)
-                import sys
-
-                sys.exit(1)
+                raise InvalidArgumentError("Invalid port number: %s" % p)
     if args.command == "dirfuzz" and args.wordlist and not os.path.isfile(args.wordlist):
-        logger.error("Wordlist file not found: %s", args.wordlist)
-        import sys
-
-        sys.exit(1)
+        raise InvalidArgumentError("Wordlist file not found: %s" % args.wordlist)
 
     if args.kali_local:
         init_kali_local()

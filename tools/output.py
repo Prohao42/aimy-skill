@@ -1,3 +1,4 @@
+import contextvars
 import json
 import sys
 import time
@@ -14,12 +15,13 @@ _QUIET = False
 
 # 统一结果信封上下文: main() / MCP 调用前设置，output() 读取后注入 _meta。
 # request_id 为 None 时不注入信封，保持直接调用 output() 的既有契约不变。
-_CTX = {
+_DEFAULT_CTX = {
     "tool": None,
     "request_id": None,
     "started": None,
     "format": "json",  # json | jsonl
 }
+_CTX: contextvars.ContextVar = contextvars.ContextVar("aimy_output_ctx", default=_DEFAULT_CTX)
 
 
 def configure(json_mode: bool = False, quiet: bool = False) -> None:
@@ -40,35 +42,49 @@ def progress(message="", *args, **kwargs) -> None:
 
 
 def set_format(fmt: str) -> None:
-    _CTX["format"] = fmt or "json"
+    ctx = _CTX.get()
+    _CTX.set({**ctx, "format": fmt or "json"})
 
 
 def begin_context(tool=None) -> None:
-    _CTX["tool"] = tool
-    _CTX["request_id"] = uuid.uuid4().hex[:12]
-    _CTX["started"] = time.time()
+    ctx = _CTX.get()
+    _CTX.set(
+        {
+            **ctx,
+            "tool": tool,
+            "request_id": uuid.uuid4().hex[:12],
+            "started": time.time(),
+        }
+    )
 
 
 def end_context() -> None:
     """退出命令上下文，后续直接调用 output() 不再注入 _meta。"""
-    _CTX["tool"] = None
-    _CTX["request_id"] = None
-    _CTX["started"] = None
+    ctx = _CTX.get()
+    _CTX.set(
+        {
+            "tool": None,
+            "request_id": None,
+            "started": None,
+            "format": ctx["format"],
+        }
+    )
 
 
 def _meta(status="ok", error=None):
     """返回 _meta 信封; 未处于命令上下文时返回 None (不改变裸调用输出)。"""
-    if _CTX["request_id"] is None:
+    ctx = _CTX.get()
+    if ctx["request_id"] is None:
         return None
     m = {
         "schema_version": 1,
         "status": status,
-        "tool": _CTX["tool"],
-        "request_id": _CTX["request_id"],
+        "tool": ctx["tool"],
+        "request_id": ctx["request_id"],
         "duration_ms": None,
     }
-    if _CTX["started"] is not None:
-        m["duration_ms"] = int((time.time() - _CTX["started"]) * 1000)
+    if ctx["started"] is not None:
+        m["duration_ms"] = int((time.time() - ctx["started"]) * 1000)
     if error is not None:
         m["error"] = str(error)
     return m
@@ -118,7 +134,7 @@ def _enforce_contract(result):
     return CheckResult.from_dict(result).to_dict()
 
 
-def to_json(result) -> str:
+def to_json(result, status: str = "ok", error=None) -> str:
     """返回带信封的 JSON 字符串 (不打印)，供 MCP / 程序化调用捕获。"""
     result = _enforce_contract(result)
     if isinstance(result, dict) and "vulnerabilities" in result:
@@ -132,7 +148,7 @@ def to_json(result) -> str:
         out = dict(result)
     else:
         out = {"result": result}
-    meta = _meta()
+    meta = _meta(status=status, error=error)
     if meta is not None:
         out["_meta"] = meta
     return json.dumps(out, ensure_ascii=False, default=str)
@@ -146,23 +162,42 @@ def _output_jsonl(result) -> None:
     else:
         items = [result]
     for it in items:
-        print(json.dumps(_serialize(_enforce_contract(it)), ensure_ascii=False, default=str))
+        record = _serialize(_enforce_contract(it))
+        meta = _meta()
+        if meta is not None:
+            record["_meta"] = meta
+        print(json.dumps(record, ensure_ascii=False, default=str))
 
 
 def output(result) -> None:
     """打印带信封的结果。--format jsonl 时按 finding 逐行输出。"""
-    if _CTX["format"] == "jsonl":
+    if _CTX.get()["format"] == "jsonl":
         _output_jsonl(result)
     else:
         print(to_json(result))
 
 
-def error(message: str, code: str = "error", **extra) -> None:
-    """Emit a structured error envelope (stdout in JSON mode, stderr otherwise)."""
+def error_json(message: str, code: str = "error", tool=None, **extra) -> str:
+    """返回带 _meta 的错误 JSON；无命令上下文时也保证信封完整。"""
     payload = {"ok": False, "error": str(message), "code": code}
     payload.update(extra)
+    meta = _meta(status="error", error=message)
+    if meta is None:
+        meta = {
+            "schema_version": 1,
+            "status": "error",
+            "tool": tool or "cli",
+            "request_id": uuid.uuid4().hex[:12],
+            "duration_ms": 0,
+        }
+    payload["_meta"] = meta
+    return json.dumps(payload, ensure_ascii=False, default=str)
+
+
+def error(message: str, code: str = "error", **extra) -> None:
+    """Emit a structured error envelope (stdout in JSON mode, stderr otherwise)."""
     stream = sys.stdout if _JSON_MODE else sys.stderr
-    print(json.dumps(payload, ensure_ascii=False, default=str), file=stream)
+    print(error_json(message, code=code, **extra), file=stream)
 
 
 __all__ = [
@@ -170,6 +205,7 @@ __all__ = [
     "progress",
     "output",
     "error",
+    "error_json",
     "to_json",
     "set_format",
     "begin_context",

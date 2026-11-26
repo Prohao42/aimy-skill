@@ -10,9 +10,15 @@ Tests for common SAML-related vulnerabilities:
 import base64
 import zlib
 from typing import Dict, Optional
+from urllib.parse import unquote
 
 import requests
-from defusedxml import ElementTree
+
+try:
+    from defusedxml import ElementTree
+except ImportError:
+    # SAML 解析仍应可用；缺少加固依赖时回退标准库。
+    from xml.etree import ElementTree
 
 from tools.log_utils import get_logger
 
@@ -78,7 +84,8 @@ def check(
             if "SAML" in location or "saml" in location:
                 try:
                     if "?" in location and "SAMLResponse" in location:
-                        saml_resp = location.split("SAMLResponse=")[1].split("&")[0]
+                        raw_resp = location.split("SAMLResponse=")[1].split("&")[0]
+                        saml_resp = unquote(raw_resp)
                     else:
                         saml_resp = None
 
@@ -108,7 +115,7 @@ def check(
                             for assertion in assertions:
                                 name_id = assertion.find(".//saml:NameID", SAML_NAMESPACES)
                                 if name_id is not None and name_id.text:
-                                    if not assertion.find(".//saml:Attribute", SAML_NAMESPACES):
+                                    if assertion.find(".//saml:Attribute", SAML_NAMESPACES) is None:
                                         finding = {
                                             "type": "saml_sso",
                                             "endpoint": location,

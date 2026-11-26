@@ -13,7 +13,7 @@
 <p><strong>维护状态：持续维护中</strong></p>
 项目可以继续更新了，兄弟们
 
-<p>当前版本 v3.7.5：已补齐 wheel 资源打包、离线测试、CI 质量门禁、SARIF/Markdown 报告与 <code>--json</code> 机器可读输出。欢迎提交 Issue / PR。</p>
+<p>当前版本 v3.7.6：强化 Agent 接入、MCP 错误协议、真实靶场验收与检测误报控制。欢迎提交 Issue / PR。</p>
 <div align="center">
     <a href="https://aimy-skill.netlify.app/"><b>🌐 官网</b></a> •
     <a href="#-核心优势"><b>✨ 优势</b></a> •
@@ -26,12 +26,12 @@
 <br>
 
 <div align="center">
-    <img src="https://img.shields.io/badge/version-3.7.5-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
+    <img src="https://img.shields.io/badge/version-3.7.6-00A67E?style=for-the-badge&logo=semver&logoColor=white" alt="version">
     <img src="https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python">
     <img src="https://img.shields.io/badge/modules-149-orange?style=for-the-badge" alt="modules">
     <img src="https://img.shields.io/badge/skills-104-8B5CF6?style=for-the-badge" alt="skills">
     <img src="https://img.shields.io/badge/license-MIT-red?style=for-the-badge" alt="license">
-    <img src="https://img.shields.io/badge/tests-2844-22C55E?style=for-the-badge" alt="tests">
+    <img src="https://img.shields.io/badge/tests-2946-22C55E?style=for-the-badge" alt="tests">
     <img src="https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-64748B?style=for-the-badge" alt="os">
   </div>
 
@@ -99,13 +99,19 @@ python -m venv .venv
 
 ```bash
 python -m build --wheel
-pip install dist/aimy_skill-3.7.5-py3-none-any.whl
+pip install dist/aimy_skill-3.7.6-py3-none-any.whl
+```
+
+安装后先运行能力自检，确认依赖、Kali、Playwright、OOB 和目录权限：
+
+```bash
+python main.py --json doctor
 ```
 
 ### 2️⃣ 安装 AI Agent 提示词
 
 ```bash
-# 103 Attack Skill，即插即用
+# 104 Attack Skill，即插即用
 https://github.com/Prohao42/aimy-skill  完整安装项目
 ```
 
@@ -119,7 +125,7 @@ https://github.com/Prohao42/aimy-skill  完整安装项目
 
 | 依赖                             | 说明                      |
 | -------------------------------- | ------------------------- |
-| **Python 3.9+**            | 核心运行环境              |
+| **Python 3.9+**            | 核心运行环境；MCP 需 3.10+ |
 | **OS**                     | Windows / Linux / macOS   |
 | **Playwright** *(可选)*  | SPA 爬虫 & XSS 浏览器验证 |
 | **Kali 工具集** *(可选)* | 扩展高级功能              |
@@ -208,8 +214,10 @@ capture         数据包捕获
 ### 🛠 工具
 
 ```
-fuzz            模糊测试
+fuzz            自定义 Payload 模糊测试 (fuzz URL --param id --payloads "1,2")
+fuzz-engine     语法生成式模糊测试 (fuzz-engine URL --vuln-type sql --count 20)
 payload-mutate  Payload 变异
+doctor          环境与能力自检（依赖/Kali/浏览器/OOB/目录）
 list            列出所有工具
 manifest        机器可读的命令/参数清单 (Claude / Agent 集成)
 wordgen         弱口令字典生成/合并（仅授权测试）
@@ -257,11 +265,11 @@ aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `
 ```
 ┌──────────────┐
                     │   AI Agent   │   ← Claude Code / AutoGPT / Cursor
-                    │  (ai-mian/)  │   ← 103 Attack Skill 文件
+                    │  (ai-mian/)  │   ← 104 Attack Skill 文件
                     └──────┬───────┘
                            │
                     ┌──────▼───────┐
-                    │   CLI 入口    │   ← 90 命令 · 数据驱动分发
+                    │   CLI 入口    │   ← 91 命令 · 数据驱动分发
                     │  (main.py)   │
                     └──────┬───────┘
                            │
@@ -335,8 +343,8 @@ aimy-skill 提供两种输出模式，可通过 `--mode` 参数或环境变量 `
 
 | 角色                      | 价值                                       |
 | ------------------------- | ------------------------------------------ |
-| **渗透测试工程师**  | 90 命令覆盖全攻击链，自动化报告           |
-| **AI Agent 开发者** | 统一接口 + JSON 输出 + 103 Skill，即插即用 |
+| **渗透测试工程师**  | 91 命令覆盖全攻击链，自动化报告           |
+| **AI Agent 开发者** | 统一接口 + JSON 输出 + 104 Skill，即插即用 |
 | **安全研究员**      | 深度武器化模块 + WAF 绕过引擎              |
 | **CTF 选手**        | 全链路工具包，快速验证漏洞                 |
 | **企业安全团队**    | 自动化流水线 + 持续集成                    |

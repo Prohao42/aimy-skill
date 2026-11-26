@@ -16,6 +16,7 @@ def test_json_mode_keeps_stdout_pure():
         cwd=str(ROOT),
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=60,
         env=ENV,
     )
@@ -33,6 +34,7 @@ def test_quiet_flag_hides_progress():
         cwd=str(ROOT),
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=60,
         env=ENV,
     )

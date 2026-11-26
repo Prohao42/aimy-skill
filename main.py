@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-import json
 import sys
 
 import requests
 
-from cli.arg_parsers import build_parser, validate_args
+from cli.arg_parsers import InvalidArgumentError, build_parser, validate_args
 from cli.check_commands import COMMAND_SPECS, build_dispatcher
 from tools.log_utils import get_logger
 from tools.output import begin_context, end_context, progress, set_format
@@ -96,15 +95,14 @@ def cmd_smuggler(args):
     from tools.smuggler import check as smuggle_check
 
     r = smuggle_check(args.url, sess=_sess(args), timeout=args.timeout)
-    _output(r)
     if r.get("vulnerable") and args.exploit:
         from tools.smuggler import exploit as smuggle_exploit
 
         attack_body = args.attack_body or "GET /admin HTTP/1.1\r\nHost: localhost\r\n\r\n"
-        e = smuggle_exploit(
+        r["smuggling_exploit"] = smuggle_exploit(
             args.url, attack_type=r["smuggling_type"], attack_body=attack_body, timeout=args.timeout
         )
-        _output({"smuggling_exploit": e})
+    _output(r)
 
 
 def cmd_cloud_pwn(args):
@@ -460,7 +458,7 @@ def cmd_login(args):
             "login 需要 --auth-url --auth-user --auth-pass",
             code="invalid_args",
         )
-        sys.exit(1)
+        sys.exit(2)
     sess = requests.Session()
     sess.verify = settings.verify_ssl
     engine = AuthSession(sess)
@@ -476,7 +474,7 @@ def cmd_login(args):
             args.auth_url, args.auth_user, args.auth_pass
         )
     if ok:
-        path = args.session_file or "session.json"
+        path = args.session_file or "data/sessions/session.json"
         engine.save_session(path)
         from tools.session_store import new_id
         from tools.session_store import save as save_by_id
@@ -507,13 +505,22 @@ def cmd_param_mine(args):
 def cmd_fuzz(args):
     from tools.fuzz_engine import FuzzEngine
 
-    fe = FuzzEngine(args.threads, args.delay)
-    if args.payloads:
-        payloads = [p.strip() for p in args.payloads.split(",")]
-    else:
+    payloads = [p.strip() for p in args.payloads.split(",") if p.strip()]
+    if not payloads:
         payloads = ["test", "admin", "1", "true"]
-    result = fe.fuzz(payloads, lambda payload: {"tested": payload})
-    _output({"payloads_tested": len(result)})
+    fe = FuzzEngine(_sess(args), args.timeout)
+    results = fe.test_payloads(args.url, args.param, payloads)
+    interesting = [r for r in results if r.get("interesting")]
+    _output(
+        {
+            "url": args.url,
+            "param": args.param,
+            "payloads_tested": len(results),
+            "interesting": len(interesting),
+            "interesting_results": interesting,
+            "results": results,
+        }
+    )
 
 
 def cmd_fuzz_engine(args):
@@ -887,14 +894,17 @@ def cmd_poja(args):
     _output(result)
 
 
+def cmd_doctor(args):
+    from tools.capabilities import check_capabilities
+
+    _output(check_capabilities())
+
+
 def cmd_list(args):
     from tools.manifest import list_commands
 
     cmds = list_commands()
-    if settings.is_rookie():
-        print(json.dumps({c["name"]: c["description"] for c in cmds}, indent=2, ensure_ascii=False))
-    else:
-        print("  ".join(c["name"] for c in cmds))
+    _output({c["name"]: c["description"] for c in cmds})
 
 
 def _configure_encoding():
@@ -920,7 +930,7 @@ def cmd_wordgen(args):
         paths = [p.strip() for p in args.merge.split(",") if p.strip()]
         if not paths:
             _error_output("wordgen --merge 需要至少一个文件路径", code="invalid_args")
-            sys.exit(1)
+            sys.exit(2)
         words = wordgen.merge_wordlists(paths, args.out or None)
         _output({"merged": len(words), "out": args.out or ""})
         return
@@ -947,7 +957,7 @@ def cmd_wordgen(args):
             "wordgen 需要 --keywords a,b,c 或 --bundled top_passwords 或 --merge file",
             code="invalid_args",
         )
-        sys.exit(1)
+        sys.exit(2)
     years = [int(y) for y in args.years]
     words = wordgen.generate_wordlist(
         keywords,
@@ -962,9 +972,10 @@ def cmd_wordgen(args):
 
 
 def cmd_manifest(args):
-    """Emit a machine-readable command/argument manifest for Claude/Agent."""
-    from cli.arg_parsers import build_manifest, build_parser
+    """Emit the canonical machine-readable command/argument manifest."""
+    from cli.arg_parsers import build_parser
     from cli.check_commands import COMMAND_SPECS, build_dispatcher
+    from tools.manifest import build_manifest
 
     dispatchers = {
         name: build_dispatcher(spec, _sess, _output) for name, spec in COMMAND_SPECS.items()
@@ -980,13 +991,16 @@ def main():
     }
     parser = build_parser(dispatchers)
     args = parser.parse_args()
-    if not args.command:
-        parser.print_help()
-        sys.exit(1)
-
     json_mode = bool(getattr(args, "json", False))
     quiet = bool(getattr(args, "quiet", False))
     _configure_output(json_mode=json_mode, quiet=quiet)
+
+    if not args.command:
+        if json_mode:
+            _error_output("a command is required", code="invalid_args")
+        else:
+            parser.print_help()
+        sys.exit(2)
 
     if args.ssl_verify:
         settings.verify_ssl = True
@@ -1003,6 +1017,10 @@ def main():
     try:
         validate_args(args)
         args.func(args)
+    except InvalidArgumentError as e:
+        logger.error("Invalid arguments for '%s': %s", args.command, e)
+        _error_output(str(e), code="invalid_args", command=args.command)
+        sys.exit(2)
     except requests.exceptions.Timeout:
         logger.error("Command '%s' timed out", args.command)
         _error_output("timeout", code="timeout", command=args.command)

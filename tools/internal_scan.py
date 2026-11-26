@@ -1,4 +1,5 @@
 import ipaddress
+import platform
 import re
 import socket
 import subprocess
@@ -11,6 +12,12 @@ from tools.recon.port_scanner import _scan_port
 logger = get_logger("internal_scan")
 
 
+def _ping_command(host: str, timeout: float) -> List[str]:
+    if platform.system().lower() == "windows":
+        return ["ping", "-n", "1", "-w", str(max(1, int(timeout * 1000))), host]
+    return ["ping", "-c1", "-W", str(max(1, int(timeout))), host]
+
+
 def ping_sweep(subnet: str, timeout: float = 2.0, threads: int = 50) -> List[str]:
     alive = []
     net = ipaddress.ip_network(subnet, strict=False)
@@ -19,7 +26,7 @@ def ping_sweep(subnet: str, timeout: float = 2.0, threads: int = 50) -> List[str
     def _ping(host: str) -> Optional[str]:
         try:
             r = subprocess.run(
-                ["ping", "-c1", "-W", str(int(timeout)), host],
+                _ping_command(host, timeout),
                 capture_output=True,
                 text=True,
                 timeout=timeout + 1,
@@ -48,13 +55,11 @@ def arp_scan(interface: str = "") -> List[Dict]:
             text=True,
             timeout=10,
         )
-        for line in r.stdout.split("\n"):
-            m = re.search(r"\(?(\d+\.\d+\.\d+\.\d+)\)?\s+.*?(\S[\w:]{14,}\S)", line)
+        mac_pattern = r"((?:[0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2})"
+        for line in r.stdout.splitlines():
+            m = re.search(r"(\d+\.\d+\.\d+\.\d+).*?" + mac_pattern, line)
             if m:
                 entries.append({"ip": m.group(1), "mac": m.group(2)})
-            m2 = re.search(r"(\d+\.\d+\.\d+\.\d+)\s+.*?(\S[\w:]{14,}\S)", line)
-            if m2:
-                entries.append({"ip": m2.group(1), "mac": m2.group(2)})
     except Exception as e:
         logger.debug("arp scan: %s", e)
     seen = set()
@@ -78,8 +83,13 @@ def get_local_networks() -> List[str]:
     except Exception:
         pass
     try:
-        r = subprocess.run(["ifconfig"], capture_output=True, text=True, timeout=5)
-        for m in re.finditer(r"inet (\d+\.\d+\.\d+)\.", r.stdout):
+        if platform.system().lower() == "windows":
+            r = subprocess.run(["ipconfig"], capture_output=True, text=True, timeout=5)
+            pattern = r"IPv4[^:]*:\s*(\d+\.\d+\.\d+)\.\d+"
+        else:
+            r = subprocess.run(["ifconfig"], capture_output=True, text=True, timeout=5)
+            pattern = r"inet (\d+\.\d+\.\d+)\."
+        for m in re.finditer(pattern, r.stdout):
             net = f"{m.group(1)}.0/24"
             if net not in nets:
                 nets.append(net)

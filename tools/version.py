@@ -5,6 +5,6 @@ invocation, and the old ``importlib.metadata`` lookup dragged in the whole
 ``email``/``zipfile`` chain (~1s) on every ``aimy`` run.
 """
 
-__version__ = "3.7.5"
+__version__ = "3.7.6"
 
 __all__ = ["__version__"]

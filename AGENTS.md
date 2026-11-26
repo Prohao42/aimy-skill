@@ -6,17 +6,19 @@
 ## 运行方式（任意 agent 通用）
 
 ```bash
-python main.py <command> [args]      # 所有命令输出结构化 JSON（含 _meta 信封）
-python main.py list                  # 列出全部 90 条命令
-python -m tools.export_manifest      # 导出单一事实源 data/tools.json
-python -m aimy_mcp.server            # MCP 接入（90 命令 + 14 kali 子命令 = 104 工具）
+python main.py <command> [args]      # 命令结果输出结构化 JSON（含 _meta；JSONL 每行均有）
+python main.py --json doctor         # 装后自检：依赖/Kali/浏览器/OOB/目录权限
+python main.py list                  # 列出全部 91 条命令
+python main.py --json manifest       # 命令契约（与 data/tools.json 同 schema）
+python -m tools.export_manifest      # 从运行时解析器再生成 data/tools.json
+python -m aimy_mcp.server            # MCP 接入（90 个可执行顶层命令 + 14 个 kali 子命令 = 104 工具）
 ```
 
 ## 六步工作流
 
 1. **信息收集** `python main.py recon TARGET --deep` / `waf TARGET` / `portscan` / `dirfuzz`
 2. **攻击面** `crawl` / `param-mine` / `graphql`
-3. **登录保活** `login --auth-url URL --auth-type form --auth-user U --auth-pass P` → 返回 `session_id`
+3. **登录保活** `login --auth-url URL --auth-type form --auth-user U --auth-pass P` → 返回 `session_id`；会话默认写入已忽略的 `data/sessions/`
 4. **定向检测** 按下方路由表选命令，追加 `--session-id <id>` 保持登录态
 5. **验证穿透** 工具自带负对照/误报过滤，报告前人工复测一次
 6. **报告** 要素 = 接口 + 参数 + payload + 响应差异 + 影响面 + 复现步骤

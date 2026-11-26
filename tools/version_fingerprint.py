@@ -50,47 +50,37 @@ ERROR_VERSION_PATTERNS = [
     (r"MySQL (\d+\.\d+\.\d+)", "mysql"),
     (r"SQLite (\d+\.\d+\.\d+)", "sqlite"),
     (r"ThinkPHP.*V(\d+\.\d+\.\d+)", "thinkphp"),
-    (r"Laravel.*v(\d+\.\d+\.\d+)", "laravel"),
+    (r"Laravel.*?v?(\d+\.\d+\.\d+)", "laravel"),
     (r"WebLogic.*?(\d+\.\d+\.\d+)", "weblogic"),
     (r"Apache Struts/(\d+\.\d+\.\d+)", "struts"),
     (r"JBoss/(\d+\.\d+\.\d+)", "jboss"),
     (r"WildFly/(\d+\.\d+\.\d+)", "wildfly"),
 ]
 
-YEAR_CVE_MAP = {
-    "spring": {
-        (2022, 2023): ["CVE-2022-22965", "CVE-2022-22950", "CVE-2023-20861", "CVE-2023-20863"],
-        (2021, 2022): ["CVE-2022-22965", "CVE-2021-22118", "CVE-2022-22950"],
-        (2020, 2021): ["CVE-2021-22118", "CVE-2020-5421"],
-        (2019, 2020): ["CVE-2020-5421", "CVE-2019-3774"],
-    },
-    "thinkphp": {
-        (2018, 2019): ["CVE-2018-20062", "CVE-2019-9082"],
-        (2019, 2020): ["CVE-2019-9082"],
-        (2020, 2022): ["ThinkPHP-RCE-5.0.23", "ThinkPHP-RCE-5.1.31"],
-    },
-    "weblogic": {
-        (2017, 2020): ["CVE-2017-10271", "CVE-2019-2725", "CVE-2019-2729", "CVE-2020-14882"],
-        (2020, 2023): ["CVE-2020-14882", "CVE-2020-14883", "CVE-2021-2109"],
-    },
-    "laravel": {
-        (2021, 2022): ["CVE-2021-3129"],
-        (2022, 2023): ["CVE-2021-3129"],
-    },
-    "tomcat": {
-        (2020, 2023): ["CVE-2020-1938", "CVE-2020-13935", "CVE-2021-25329"],
-    },
-    "struts": {
-        (2017, 2018): ["CVE-2017-5638", "CVE-2017-9805", "CVE-2017-9804"],
-        (2018, 2020): ["CVE-2018-11776"],
-    },
-    "drupal": {
-        (2018, 2019): ["CVE-2018-7600"],
-        (2019, 2020): ["CVE-2019-6341"],
-    },
-    "wordpress": {
-        (2019, 2023): ["WP-Plugin-Vulns"],
-    },
+# 显式受影响版本区间；区间两端均为闭区间，版本按三段数值比较。
+# 不把主版本号当成年份猜测 CVE，避免“Tomcat 9 / Spring 5 永远无漏洞”的漏报。
+VERSION_CVE_RANGES = {
+    "spring": [
+        ((5, 3, 0), (5, 3, 17), ["CVE-2022-22965"]),
+        ((5, 2, 0), (5, 2, 19), ["CVE-2022-22965"]),
+    ],
+    "tomcat": [
+        ((9, 0, 0), (9, 0, 30), ["CVE-2020-1938"]),
+        ((8, 5, 0), (8, 5, 50), ["CVE-2020-1938"]),
+        ((7, 0, 0), (7, 0, 99), ["CVE-2020-1938"]),
+    ],
+    "laravel": [
+        ((6, 0, 0), (8, 4, 2), ["CVE-2021-3129"]),
+    ],
+    "struts": [
+        ((2, 3, 5), (2, 3, 31), ["CVE-2017-5638"]),
+        ((2, 5, 0), (2, 5, 10), ["CVE-2017-5638"]),
+    ],
+    "drupal": [
+        ((7, 0, 0), (7, 57, 0), ["CVE-2018-7600"]),
+        ((8, 0, 0), (8, 3, 8), ["CVE-2018-7600"]),
+        ((8, 4, 0), (8, 4, 5), ["CVE-2018-7600"]),
+    ],
 }
 
 
@@ -157,24 +147,23 @@ class VersionFingerprint:
 
     def _match_cve(self, info: VersionInfo):
         product = info.product.lower()
-        version = info.version
-
-        if product not in YEAR_CVE_MAP:
+        ranges = VERSION_CVE_RANGES.get(product)
+        if not ranges:
             return
 
-        try:
-            parts = version.split(".")
-            major = int(parts[0]) if parts[0].isdigit() else 0
-            for (start, end), cves in YEAR_CVE_MAP[product].items():
-                if start <= major <= end:
-                    info.cve_matches = cves
-                    if len(cves) >= 2:
-                        info.risk_level = "critical"
-                    elif cves:
-                        info.risk_level = "high"
-                    break
-        except (ValueError, IndexError):
-            pass
+        parts = re.findall(r"\d+", info.version)
+        if len(parts) < 2:
+            return
+        version = tuple(int(part) for part in parts[:3])
+        version = version + (0,) * (3 - len(version))
+
+        matched = []
+        for start, end, cves in ranges:
+            if start <= version <= end:
+                matched.extend(cves)
+        if matched:
+            info.cve_matches = sorted(set(matched))
+            info.risk_level = "critical" if len(info.cve_matches) >= 2 else "high"
 
     def get_risk_summary(self) -> Dict:
         critical = [v for v in self.versions if v.risk_level == "critical"]

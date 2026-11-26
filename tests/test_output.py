@@ -37,8 +37,10 @@ def test_output_jsonl_streams_findings(capsys):
     output({"vulnerabilities": [{"type": "xss"}, {"type": "sqli"}]})
     lines = [l for l in capsys.readouterr().out.splitlines() if l.strip()]
     assert len(lines) == 2
-    assert json.loads(lines[0])["type"] == "xss"
-    assert json.loads(lines[1])["type"] == "sqli"
+    first = json.loads(lines[0])
+    assert first["type"] == "xss"
+    assert first["_meta"]["tool"] == "x"
+    assert json.loads(lines[1])["_meta"]["status"] == "ok"
     set_format("json")  # 复位，避免污染其他测试
 
 
@@ -50,3 +52,21 @@ def test_output_json_single_line(capsys):
     assert out.count("\n") == 0
     assert json.loads(out)["_meta"]["status"] == "ok"
     set_format("json")
+
+
+def test_context_is_isolated_between_threads():
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    barrier = threading.Barrier(2)
+
+    def worker(tool):
+        begin_context(tool)
+        barrier.wait(timeout=2)
+        result = json.loads(to_json({"vulnerable": False}))
+        end_context()
+        return result["_meta"]["tool"]
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        tools = list(pool.map(worker, ["alpha", "beta"]))
+    assert tools == ["alpha", "beta"]

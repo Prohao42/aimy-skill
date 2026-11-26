@@ -90,8 +90,8 @@ cases:
     level: high
     path: /vulnerabilities/xss_r/
     param: name
-    expected: false
-    note: htmlspecialchars 全量转义, 不可注入 -> 必须是 TN, 衡量误报
+    expected: true
+    note: 仅过滤 <script>, img/svg 事件处理器仍可执行 -> TP, 不能标成 TN
 
   - name: xss_s_stored
     vuln_class: xss
@@ -106,7 +106,8 @@ cases:
     level: low
     path: /vulnerabilities/exec/
     param: ip
-    extra_query: {Submit: Submit}
+    method: POST
+    post_data: {ip: "127.0.0.1", Submit: Submit}
     expected: true
 
   - name: exec_medium
@@ -114,7 +115,8 @@ cases:
     level: medium
     path: /vulnerabilities/exec/
     param: ip
-    extra_query: {Submit: Submit}
+    method: POST
+    post_data: {ip: "127.0.0.1", Submit: Submit}
     expected: true
     note: 黑名单仅 && 和 ;, | & 换行符等均可绕过
 
@@ -123,7 +125,8 @@ cases:
     level: high
     path: /vulnerabilities/exec/
     param: ip
-    extra_query: {Submit: Submit}
+    method: POST
+    post_data: {ip: "127.0.0.1", Submit: Submit}
     expected: true
     note: 黑名单扩充但 & 与换行仍可绕过, 最难档
 
@@ -179,3 +182,48 @@ cases:
     expected: true
     status: skipped
     skip_reason: 会话 ID 可预测性需要多次采样统计, 属会话安全专项
+
+  # ---------- Impossible: 强防护负对照 ----------
+  - name: sqli_impossible
+    vuln_class: sqli
+    level: impossible
+    path: /vulnerabilities/sqli/
+    param: id
+    extra_query: {Submit: Submit}
+    expected: false
+    note: 参数化查询, 必须 TN
+
+  - name: sqli_blind_impossible
+    vuln_class: sqli
+    level: impossible
+    path: /vulnerabilities/sqli_blind/
+    param: id
+    extra_query: {Submit: Submit}
+    expected: false
+    note: 参数化查询, 必须 TN
+
+  - name: xss_r_impossible
+    vuln_class: xss
+    level: impossible
+    path: /vulnerabilities/xss_r/
+    param: name
+    expected: false
+    note: htmlspecialchars 全量转义, 必须 TN
+
+  - name: exec_impossible
+    vuln_class: cmdi
+    level: impossible
+    path: /vulnerabilities/exec/
+    param: ip
+    method: POST
+    post_data: {ip: "127.0.0.1", Submit: Submit}
+    expected: false
+    note: 严格 IP 白名单, 必须 TN
+
+  - name: fi_impossible
+    vuln_class: lfi
+    level: impossible
+    path: /vulnerabilities/fi/
+    param: page
+    expected: false
+    note: 严格文件白名单, 必须 TN

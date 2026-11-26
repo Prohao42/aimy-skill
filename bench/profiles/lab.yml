@@ -21,7 +21,13 @@ cases:
   - {name: lfi_hardened, vuln_class: lfi,  level: any, path: /lfi_hardened, param: file, expected: true, note: 仅 ....// 或 %2f 可绕过}
   - {name: nosql,       vuln_class: nosqli, level: any, path: /nosql,      param: id,   expected: true}
   - {name: nosqli_get,  vuln_class: nosqli, level: any, path: /nosqli_get, param: id,   expected: true, note: GET 操作符注入}
+  - {name: ssrf_metadata, vuln_class: ssrf, level: any, path: /ssrf,       param: url,  expected: true, note: 服务端抓取返回云元数据}
+  - {name: jwt_weak,    vuln_class: jwt,   level: any, path: /jwt_weak,   param: token, expected: true, note: 页面 JWT 使用弱密钥}
+  - {name: deser_php,   vuln_class: deser, level: any, path: /deser,      param: data, expected: true, method: POST, note: PHP unserialize 错误}
   - {name: clean_sqli,  vuln_class: sqli,  level: any, path: /clean_sqli,  param: q,    expected: false, note: 参数化查询, 必须 TN}
   - {name: clean_xss,   vuln_class: xss,   level: any, path: /clean_xss,   param: q,    expected: false, note: HTML 转义回显, 必须 TN}
   - {name: clean_attr,  vuln_class: xss,   level: any, path: /clean_attr,  param: q,    expected: false, note: 属性上下文已转义, 必须 TN}
   - {name: clean_ssti,  vuln_class: ssti,  level: any, path: /clean_ssti,  param: name, expected: false, note: 字面量回显不求值, 必须 TN}
+  - {name: clean_ssrf,  vuln_class: ssrf,  level: any, path: /clean_ssrf,  param: url,  expected: false, timeout: 1, note: 抓取失败, 必须 TN}
+  - {name: jwt_clean,   vuln_class: jwt,   level: any, path: /jwt_clean,  param: token, expected: false, note: 强密钥 JWT, 必须 TN}
+  - {name: clean_deser, vuln_class: deser, level: any, path: /clean_deser, param: data, expected: false, method: POST, note: 正常反序列化响应, 必须 TN}

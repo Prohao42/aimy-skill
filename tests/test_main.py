@@ -38,7 +38,7 @@ class TestCmdLogin:
     def test_missing_args_exits(self):
         with pytest.raises(SystemExit) as exc:
             main.cmd_login(_base_args())
-        assert exc.value.code == 1
+        assert exc.value.code == 2
 
     @responses.activate
     def test_success_saves_session(self, tmp_path, capsys):

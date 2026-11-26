@@ -1,4 +1,4 @@
-# aimy-skill 项目地图（v3.7.5）
+# aimy-skill 项目地图（v3.7.6）
 
 ## 1. 定位
 
@@ -26,7 +26,7 @@ aimy-skill/
 ├── payload_seeds/             # 16 个 YAML 种子库（作为 Python 包随 wheel 发布）
 ├── wordlists/                 # 内置弱口令字典 + john/hashcat 规则（随 wheel 发布，仅授权测试）
 ├── data/                      # CMS/指纹 JSON 库（作为 Python 包随 wheel 发布）
-├── ai-mian/hack-skills/skills/# 103 个 SKILL.md 漏洞打法技能
+├── ai-mian/hack-skills/skills/# 104 个 SKILL.md 漏洞打法技能
 ├── bench/                     # ground-truth 基准（DVWA / 内置 lab 靶场）
 ├── tests/                     # 2844 个 pytest 用例（默认离线）
 └── docs/                      # 实战手册与架构文档

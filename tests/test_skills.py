@@ -13,7 +13,7 @@ FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.S)
 
 def test_skill_directories_and_frontmatter():
     skill_dirs = sorted(p for p in SKILLS_DIR.iterdir() if p.is_dir())
-    assert len(skill_dirs) >= 100
+    assert len(skill_dirs) == 104
     for directory in skill_dirs:
         skill_file = directory / "SKILL.md"
         assert skill_file.exists(), "%s is missing SKILL.md" % directory.name

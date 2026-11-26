@@ -16,7 +16,9 @@ jobs:
       - name: Format check
         run: ruff format --check .
       - name: Type check
-        run: mypy tools/ engine/ cli/ main.py
+        run: |
+          mypy tools/ engine/ cli/ main.py
+          mypy aimy_mcp --follow-imports=skip
       - name: Security scan (high severity)
         run: bandit -r tools/ engine/ cli/ main.py -c pyproject.toml -q -lll
 
@@ -33,7 +35,17 @@ jobs:
       - run: pip install ".[dev]"
       - run: python -m pytest tests/ -v --timeout=30
 
-  bench-smoke:
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ".[dev]"
+      - run: python -m pytest tests/ -v --timeout=30
+
+  bench-lab:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,13 +53,39 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install ".[dev]"
-      - name: Lab benchmark smoke (2 TP + 2 TN)
+      - name: Full lab benchmark (25 cases)
         run: |
           python lab_server.py &
           LAB=$!
           sleep 1
-          python bench/run_bench.py --profile lab --only sqli_error,xss_reflect,clean_sqli,clean_xss --case-timeout 30 --fail-on-fp
+          python bench/run_bench.py --profile lab --case-timeout 30 --fail-on-fp --min-recall 1.0
           kill $LAB
+
+  bench-dvwa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install DVWA runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-cli php-mysql mariadb-server unzip curl
+      - run: pip install ".[dev]"
+      - name: Start DVWA and run four-level benchmark
+        run: |
+          bash bench/setup_dvwa.sh
+          python bench/run_bench.py --profile dvwa --base-url http://127.0.0.1:8081 \
+            --case-timeout 30 --timeout 10 --fail-on-fp --min-recall 1.0
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dvwa-benchmark
+          path: reports/bench_dvwa_*
+          if-no-files-found: ignore
 
   package:
     runs-on: ubuntu-latest
